@@ -1,0 +1,46 @@
+# =========================
+# 1. Dependencias y Compilados Locales
+# (Docker se encarga de instalar y compilar esto por su cuenta)
+# =========================
+node_modules/
+dist/
+.nest/
+*.log
+
+# =========================
+# 2. Variables de Entorno y Secretos
+# =========================
+.env
+.env.*
+!.env.example
+
+# =========================
+# 3. Volúmenes de Bases de Datos
+# (Evita que la información real de MariaDB, Mongo o Redis se suba a GitHub)
+# =========================
+/data
+/db
+/mysql_data
+/mongo_data
+/redis_data
+
+# =========================
+# 4. Carpetas no utilizadas en esta fase del proyecto
+# (Bloqueamos lo que no es estrictamente los 5 microservicios)
+# =========================
+client/
+database/
+docker/
+docs/
+gateway/
+nginx/
+scripts/
+shared/
+
+# =========================
+# 5. Archivos de Sistema Operativo y Editores
+# =========================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

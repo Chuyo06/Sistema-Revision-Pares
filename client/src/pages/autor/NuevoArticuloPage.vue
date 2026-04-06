@@ -9,12 +9,13 @@
           Artículo enviado correctamente. Puede seguir su progreso en "Mis artículos".
         </v-alert>
 
-        <v-form ref="formulario" v-model="valido" @submit.prevent="enviar">
+        <v-form ref="formulario" v-model="valido">
           <v-text-field
             v-model="form.titulo"
             label="Título del artículo *"
             :rules="[r => !!r || 'El título es requerido']"
             class="mb-3"
+            :disabled="enviado"
           />
           <v-select
             v-model="form.convocatoria"
@@ -24,6 +25,7 @@
             label="Convocatoria *"
             :rules="[r => !!r || 'Seleccione una convocatoria']"
             class="mb-3"
+            :disabled="enviado"
           />
           <v-textarea
             v-model="form.resumen"
@@ -31,20 +33,21 @@
             :rules="[r => !!r || 'El resumen es requerido', r => r.length >= 100 || 'Mínimo 100 caracteres']"
             rows="5"
             class="mb-3"
-          />
-          <v-file-input
-            v-model="form.archivo"
-            label="Archivo PDF *"
-            accept=".pdf"
-            :rules="[r => !!r?.length || 'El archivo es requerido']"
-            class="mb-3"
+            :disabled="enviado"
           />
 
-          <v-divider class="my-4" />
+          <v-divider class="my-6" />
 
-          <div class="d-flex justify-end">
-            <v-btn type="submit" color="primary" :loading="cargando" :disabled="!valido">Enviar artículo</v-btn>
+          <!-- Nuevo componente de subida que cumple con los requerimientos -->
+          <div v-if="valido || enviado">
+            <PdfUploader 
+              @uploaded="onPdfUploaded" 
+              @reset="onReset"
+            />
           </div>
+          <v-alert v-else type="info" variant="tonal" density="compact">
+            Complete la información arriba para habilitar la subida del archivo PDF.
+          </v-alert>
         </v-form>
       </v-card-text>
     </v-card>
@@ -54,32 +57,35 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useAutorStore } from '@/store/autor/index.js'
+import PdfUploader from '@/components/common/PdfUploader.vue'
 
 const autorStore = useAutorStore()
 
 const valido = ref(false)
-const cargando = ref(false)
 const enviado = ref(false)
 
 const form = ref({
   titulo: '',
   convocatoria: '',
   resumen: '',
-  archivo: null,
 })
 
 const convocatoriasAbiertas = computed(() => autorStore.convocatorias.filter(c => c.estado === 'ABIERTA'))
 
-async function enviar() {
-  cargando.value = true
-  await new Promise(r => setTimeout(r, 1000))
+function onPdfUploaded({ reference }) {
+  // Cuando el PDF se sube (con todos sus requisitos de tamaño/tipo y su número de referencia)
+  // Finalizamos el envío del manuscrito completo al store
   autorStore.enviarManuscrito({
     titulo: form.value.titulo,
     resumen: form.value.resumen,
     convocatoria: form.value.convocatoria,
+    referencia: reference // Guardamos la referencia generada
   })
-  cargando.value = false
   enviado.value = true
-  form.value = { titulo: '', convocatoria: '', resumen: '', archivo: null }
+}
+
+function onReset() {
+  enviado.value = false
+  form.value = { titulo: '', convocatoria: '', resumen: '' }
 }
 </script>

@@ -35,7 +35,12 @@
     <v-row>
       <v-col v-for="m in manuscritosFiltrados" :key="m.id" cols="12" md="6">
         <v-card class="mb-2">
-          <v-card-title class="text-body-1">{{ m.titulo }}</v-card-title>
+          <v-card-title class="text-body-1 d-flex justify-space-between align-center">
+            {{ m.titulo }}
+            <v-chip v-if="m.referencia" size="x-small" color="secondary" variant="flat" class="ml-2">
+              REF: {{ m.referencia }}
+            </v-chip>
+          </v-card-title>
           <v-card-subtitle>{{ m.convocatoria }} — {{ estadoLabel(m.estado) }}</v-card-subtitle>
           <v-card-text>
             <p class="text-body-2 mb-2" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">

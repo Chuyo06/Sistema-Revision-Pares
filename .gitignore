@@ -15,7 +15,13 @@ build/
 .nuxt/
 
 # =========================================
-# 3. BASES DE DATOS LOCALES (Si mapean volúmenes)
+# 3. SEGURIDAD Y CONFIGURACIÓN
+# =========================================
+.env
+.env.local
+
+# =========================================
+# 4. BASES DE DATOS LOCALES (Si mapean volúmenes)
 # =========================================
 # Si alguna vez la base de datos se guarda en su compu, esto evita que se suba
 /docker_data/
@@ -23,7 +29,7 @@ build/
 *.sql.gz
 
 # =========================================
-# 4. ARCHIVOS DE SISTEMA OPERATIVO Y EDITORES
+# 5. ARCHIVOS DE SISTEMA OPERATIVO Y EDITORES
 # =========================================
 # Windows y Mac
 Thumbs.db

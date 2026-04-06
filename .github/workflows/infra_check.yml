@@ -1,0 +1,64 @@
+name: Infra-Validation-Pipeline
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate-services:
+    runs-on: ubuntu-latest
+
+    services:
+      mariadb:
+        image: mariadb:latest
+        env:
+          MYSQL_ROOT_PASSWORD: root_password
+          MYSQL_DATABASE: mi_base_datos
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+      mongodb:
+        image: mongo:latest
+        env:
+          MONGO_INITDB_ROOT_USERNAME: admin
+          MONGO_INITDB_ROOT_PASSWORD: password
+        ports:
+          - 27017:27017
+        options: --health-cmd="mongosh --eval 'db.adminCommand(\"ping\")'" --health-interval=10s --health-timeout=5s --health-retries=3
+
+      redis:
+        image: redis:alpine
+        ports:
+          - 6379:6379
+        options: --health-cmd="redis-cli ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Validar Conexión MariaDB
+        run: |
+          sudo apt-get install -y mysql-client
+          mysql -h 127.0.0.1 -u root -proot_password -e "SHOW DATABASES;"
+          echo "MariaDB lista."
+
+      - name: Validar Conexión MongoDB
+        run: |
+          # Instalamos una herramienta rápida para pingear Mongo
+          wget -qO- https://www.mongodb.org/static/pgp/server-7.0.asc | sudo tee /etc/apt/trusted.gpg.d/server-7.0.asc
+          echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
+          sudo apt-get update && sudo apt-get install -y mongodb-mongosh
+          mongosh "mongodb://admin:password@127.0.0.1:27017/" --eval "db.adminCommand('ping')"
+          echo "MongoDB lista."
+
+      - name: Validar Conexión Redis
+        run: |
+          sudo apt-get install -y redis-tools
+          redis-cli -h 127.0.0.1 -p 6379 ping
+          echo "Redis lista."
+
+      - name: Reporte de Exito
+        run: echo "La infraestructura base está operativa y validada!"

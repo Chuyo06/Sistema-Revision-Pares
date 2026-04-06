@@ -13,6 +13,9 @@ services:
       MYSQL_DATABASE: mi_base_datos
     ports:
       - "3306:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql 
+      - ${PWD}/../database/mariadb/init:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 10s
@@ -26,8 +29,12 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: mi_base_datos
     ports:
       - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db 
+      - ${PWD}/../database/mongodb/seeders:/docker-entrypoint-initdb.d
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
       interval: 10s
@@ -45,77 +52,3 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
-  # ==========================================
-  # MICROSERVICIOS NESTJS
-  # ==========================================
-  usuarios:
-    build:
-      context: ./microservices/usuarios
-      dockerfile: Dockerfile
-    container_name: ms_usuarios
-    ports:
-      - "3001:3000"
-    environment:
-      - NODE_ENV=development
-      # Ejemplo de conexión: mysql://root:root_password@mariadb:3306/mi_base_datos
-    depends_on:
-      mariadb:
-        condition: service_healthy
-
-  manuscritos:
-    build:
-      context: ./microservices/manuscritos
-      dockerfile: Dockerfile
-    container_name: ms_manuscritos
-    ports:
-      - "3002:3000"
-    environment:
-      - NODE_ENV=development
-    depends_on:
-      mariadb:
-        condition: service_healthy
-
-  revision:
-    build:
-      context: ./microservices/revision
-      dockerfile: Dockerfile
-    container_name: ms_revision
-    ports:
-      - "3003:3000"
-    environment:
-      - NODE_ENV=development
-      # Ejemplo de conexión: mongodb://admin:password@mongodb:27017
-    depends_on:
-      mongodb:
-        condition: service_healthy
-
-  matching:
-    build:
-      context: ./microservices/matching
-      dockerfile: Dockerfile
-    container_name: ms_matching
-    ports:
-      - "3004:3000"
-    environment:
-      - NODE_ENV=development
-    depends_on:
-      mariadb:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-
-  analisis-ia:
-    build:
-      context: ./microservices/analisis-ia
-      dockerfile: Dockerfile
-    container_name: ms_analisis_ia
-    ports:
-      - "3005:3000"
-    environment:
-      - NODE_ENV=development
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      redis:
-        condition: service_healthy

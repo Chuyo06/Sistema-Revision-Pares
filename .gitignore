@@ -1,46 +1,33 @@
-# =========================
-# 1. Dependencias y Compilados Locales
-# (Docker se encarga de instalar y compilar esto por su cuenta)
-# =========================
+# =========================================
+# 1. DEPENDENCIAS (¡El culpable de los 2000 archivos!)
+# =========================================
 node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# =========================================
+# 2. CARPETAS DE COMPILACIÓN
+# =========================================
 dist/
-.nest/
-*.log
+build/
+.output/
+.nuxt/
 
-# =========================
-# 2. Variables de Entorno y Secretos
-# =========================
-.env
-.env.*
-!.env.example
+# =========================================
+# 3. BASES DE DATOS LOCALES (Si mapean volúmenes)
+# =========================================
+# Si alguna vez la base de datos se guarda en su compu, esto evita que se suba
+/docker_data/
+/data/
+*.sql.gz
 
-# =========================
-# 3. Volúmenes de Bases de Datos
-# (Evita que la información real de MariaDB, Mongo o Redis se suba a GitHub)
-# =========================
-/data
-/db
-/mysql_data
-/mongo_data
-/redis_data
-
-# =========================
-# 4. Carpetas no utilizadas en esta fase del proyecto
-# (Bloqueamos lo que no es estrictamente los 5 microservicios)
-# =========================
-client/
-database/
-docker/
-docs/
-gateway/
-nginx/
-scripts/
-shared/
-
-# =========================
-# 5. Archivos de Sistema Operativo y Editores
-# =========================
-.DS_Store
+# =========================================
+# 4. ARCHIVOS DE SISTEMA OPERATIVO Y EDITORES
+# =========================================
+# Windows y Mac
 Thumbs.db
+.DS_Store
+# VS Code (Ignoramos configuraciones personales, pero permitimos las del equipo)
 .vscode/
-.idea/
+!.vscode/settings.json

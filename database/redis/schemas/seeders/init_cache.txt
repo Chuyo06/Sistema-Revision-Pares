@@ -1,0 +1,2 @@
+SET sesion:user1 "{\"id\": 1, \"status\": \"online\"}"
+SET sesion:user2 "{\"id\": 2, \"status\": \"offline\"}"

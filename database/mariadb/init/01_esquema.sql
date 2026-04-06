@@ -1,0 +1,39 @@
+-- MICROSERVICIO: USUARIOS (Gestión de Identidad)
+-- ==========================================
+
+-- Tabla principal de autenticación y roles
+CREATE TABLE usuarios (
+    id_usuario INT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(150) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    rol ENUM('AUTOR', 'REVISOR', 'EDITOR', 'ADMIN') DEFAULT 'AUTOR',
+    estado ENUM('ACTIVO', 'INACTIVO', 'SUSPENDIDO') DEFAULT 'ACTIVO',
+    fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tabla de información pública/académica (Separada por seguridad y normalización)
+CREATE TABLE perfiles_profesionales (
+    id_perfil INT AUTO_INCREMENT PRIMARY KEY,
+    id_usuario INT NOT NULL UNIQUE,
+    nombre_completo VARCHAR(150) NOT NULL,
+    institucion VARCHAR(200),
+    orcid VARCHAR(50) UNIQUE, -- Identificador estándar para investigadores
+    especialidad_academica VARCHAR(200),
+    FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario) ON DELETE CASCADE
+);
+
+
+-- MICROSERVICIO: REVISION (Flujo Editorial)
+-- ==========================================
+
+-- Tabla transaccional para evitar colisiones en las asignaciones
+CREATE TABLE asignaciones_revision (
+    id_asignacion INT AUTO_INCREMENT PRIMARY KEY,
+    id_revisor INT NOT NULL,
+    id_manuscrito_mongo VARCHAR(100) NOT NULL, -- Referencia al _id del documento en MongoDB
+    estado ENUM('INVITADO', 'ACEPTADO', 'DECLINADO', 'COMPLETADA', 'EXPIRADA') DEFAULT 'INVITADO',
+    fecha_invitacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    fecha_limite DATE NOT NULL,
+    fecha_completada TIMESTAMP NULL,
+    FOREIGN KEY (id_revisor) REFERENCES usuarios(id_usuario) ON DELETE RESTRICT
+);

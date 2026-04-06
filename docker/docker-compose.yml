@@ -1,4 +1,13 @@
 services:
+  client:
+    build:
+      context: ../client
+      dockerfile: Dockerfile
+    container_name: rpp_client
+    ports:
+      - "8080:80"
+    restart: always
+
   mariadb:
     image: mariadb:latest
     container_name: mi_mariadb

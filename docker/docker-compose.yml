@@ -1,6 +1,15 @@
 version: '3.8'
 
 services:
+  client:
+    build:
+      context: ../client
+      dockerfile: Dockerfile
+    container_name: rpp_client
+    ports:
+      - "8080:80"
+    restart: always
+
   # ==========================================
   # BASES DE DATOS (Tu configuración)
   # ==========================================
@@ -52,3 +61,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+volumes:
+  mariadb_data:
+  mongodb_data:

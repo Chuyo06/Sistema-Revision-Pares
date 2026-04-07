@@ -1,18 +1,4 @@
-version: '3.8'
-
 services:
-  client:
-    build:
-      context: ../client
-      dockerfile: Dockerfile
-    container_name: rpp_client
-    ports:
-      - "8080:80"
-    restart: always
-
-  # ==========================================
-  # BASES DE DATOS (Tu configuración)
-  # ==========================================
   mariadb:
     image: mariadb:latest
     container_name: mi_mariadb
@@ -24,6 +10,7 @@ services:
       - "3306:3306"
     volumes:
       - mariadb_data:/var/lib/mysql 
+      # 👇 ACTUALIZADO: Ruta para crear las tablas al iniciar
       - ${PWD}/../database/mariadb/init:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
@@ -62,6 +49,26 @@ services:
       timeout: 5s
       retries: 5
 
+  minio:
+    image: minio/minio
+    container_name: mi_minio
+    restart: always
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: password 
+    ports:
+      - "9000:9000" 
+      - "9001:9001" 
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   mariadb_data:
   mongodb_data:
+  minio_data:

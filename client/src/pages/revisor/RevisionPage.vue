@@ -1,30 +1,56 @@
 <template>
   <div>
-    <v-btn variant="text" to="/revisor/asignados" class="mb-4">← Volver</v-btn>
+    <v-btn variant="text" color="primary" prepend-icon="mdi-arrow-left" to="/revisor/asignados" class="mb-4">
+      Volver a asignados
+    </v-btn>
 
     <div v-if="articulo">
-      <v-card class="mb-4">
-        <v-card-title>{{ articulo.titulo }}</v-card-title>
-        <v-card-subtitle>{{ articulo.autores }} · {{ articulo.convocatoria }}</v-card-subtitle>
-        <v-card-text>
-          <p class="text-body-2">{{ articulo.resumen }}</p>
+      <!-- Info del artículo -->
+      <v-card class="mb-4" color="surface" border>
+        <div style="background:#546e7a; height:6px; border-radius:8px 8px 0 0" />
+        <v-card-text class="pa-4">
+          <div class="text-h6 font-weight-bold mb-1" style="color:#3e2723">{{ articulo.titulo }}</div>
+          <div class="text-caption mb-3" style="color:#8d6e63">
+            {{ articulo.autores }} · {{ articulo.convocatoria }}
+          </div>
+          <p class="text-body-2" style="color:#5d4037">{{ articulo.resumen }}</p>
         </v-card-text>
       </v-card>
 
-      <v-card>
-        <v-card-title>Formulario de revisión</v-card-title>
-        <v-card-text>
+      <!-- Formulario de revisión -->
+      <v-card color="surface" border>
+        <div style="background:#5d4037; height:6px; border-radius:8px 8px 0 0" />
+        <v-card-title class="pa-4 pb-2" style="color:#3e2723">
+          <v-icon start color="primary">mdi-clipboard-edit-outline</v-icon>
+          Formulario de revisión
+        </v-card-title>
+        <v-divider />
+
+        <v-card-text class="pa-5">
           <v-form ref="form" v-model="valido" @submit.prevent="enviarRevision">
 
-            <p class="text-subtitle-2 mb-2">Evaluación general</p>
+            <!-- Evaluación -->
+            <p class="text-caption font-weight-bold mb-3" style="color:#8d6e63; text-transform:uppercase; letter-spacing:0.05em">
+              Evaluación general
+            </p>
             <v-row class="mb-3">
               <v-col v-for="dim in dimensiones" :key="dim.campo" cols="12" sm="6">
-                <div class="text-body-2 mb-1">{{ dim.label }}</div>
-                <v-rating v-model="revision[dim.campo]" :length="5" density="compact" />
+                <div class="text-body-2 mb-1" style="color:#3e2723">{{ dim.label }}</div>
+                <v-rating
+                  v-model="revision[dim.campo]"
+                  :length="5"
+                  density="compact"
+                  color="warning"
+                  active-color="warning"
+                />
               </v-col>
             </v-row>
 
-            <v-divider class="my-3" />
+            <v-divider class="my-4" />
+
+            <p class="text-caption font-weight-bold mb-3" style="color:#8d6e63; text-transform:uppercase; letter-spacing:0.05em">
+              Dictamen
+            </p>
 
             <v-select
               v-model="revision.recomendacion"
@@ -32,47 +58,58 @@
               item-title="label"
               item-value="value"
               label="Recomendación *"
+              prepend-inner-icon="mdi-gavel"
               :rules="[r => !!r || 'Seleccione una recomendación']"
               class="mb-3"
             />
-
             <v-textarea
               v-model="revision.comentariosAutor"
               label="Comentarios para el autor *"
+              prepend-inner-icon="mdi-comment-text-outline"
               :rules="[r => !!r || 'Los comentarios son requeridos', r => r.length >= 50 || 'Mínimo 50 caracteres']"
-              rows="6"
+              rows="5"
               class="mb-3"
             />
-
             <v-textarea
               v-model="revision.comentariosEditor"
               label="Comentarios confidenciales para el editor"
+              prepend-inner-icon="mdi-comment-lock-outline"
               rows="3"
-              class="mb-3"
+              class="mb-4"
             />
 
-            <v-divider class="my-3" />
-
             <div class="d-flex justify-end">
-              <v-btn type="submit" color="primary" :loading="enviando" :disabled="!valido">Enviar revisión</v-btn>
+              <v-btn
+                type="submit"
+                color="primary"
+                :loading="enviando"
+                :disabled="!valido"
+                prepend-icon="mdi-send"
+              >
+                Enviar revisión
+              </v-btn>
             </div>
           </v-form>
         </v-card-text>
       </v-card>
 
-      <v-dialog v-model="dialogoConfirmacion" max-width="400">
-        <v-card>
-          <v-card-title>Revisión enviada</v-card-title>
-          <v-card-text>Tu revisión ha sido enviada correctamente.</v-card-text>
-          <v-card-actions>
-            <v-spacer />
+      <!-- Confirmación -->
+      <v-dialog v-model="dialogoConfirmacion" max-width="380">
+        <v-card color="surface">
+          <div style="background:#558b2f; height:6px; border-radius:8px 8px 0 0" />
+          <v-card-text class="pa-5 text-center">
+            <v-icon size="40" color="success" class="mb-2">mdi-check-circle</v-icon>
+            <div class="text-h6" style="color:#3e2723">Revisión enviada</div>
+            <p class="text-body-2 mt-1" style="color:#8d6e63">Tu revisión fue registrada correctamente.</p>
+          </v-card-text>
+          <v-card-actions class="justify-center pb-4">
             <v-btn color="primary" @click="irAsignados">Ver mis artículos</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
     </div>
 
-    <p v-else class="text-body-2">Artículo no encontrado.</p>
+    <p v-else class="text-body-2" style="color:#8d6e63">Artículo no encontrado.</p>
   </div>
 </template>
 
@@ -93,27 +130,22 @@ const enviando = ref(false)
 const dialogoConfirmacion = ref(false)
 
 const revision = reactive({
-  originalidad: 0,
-  metodologia: 0,
-  claridad: 0,
-  relevancia: 0,
-  recomendacion: '',
-  comentariosAutor: '',
-  comentariosEditor: '',
+  originalidad: 0, metodologia: 0, claridad: 0, relevancia: 0,
+  recomendacion: '', comentariosAutor: '', comentariosEditor: '',
 })
 
 const dimensiones = [
   { campo: 'originalidad', label: 'Originalidad' },
-  { campo: 'metodologia', label: 'Metodología' },
-  { campo: 'claridad', label: 'Claridad' },
-  { campo: 'relevancia', label: 'Relevancia' },
+  { campo: 'metodologia',  label: 'Metodología' },
+  { campo: 'claridad',     label: 'Claridad' },
+  { campo: 'relevancia',   label: 'Relevancia' },
 ]
 
 const recomendaciones = [
-  { value: 'ACEPTAR', label: 'Aceptar' },
-  { value: 'REVISION_MENOR', label: 'Revisiones menores' },
-  { value: 'REVISION_MAYOR', label: 'Revisiones mayores' },
-  { value: 'RECHAZAR', label: 'Rechazar' },
+  { value: 'ACEPTAR',         label: 'Aceptar' },
+  { value: 'REVISION_MENOR',  label: 'Revisiones menores' },
+  { value: 'REVISION_MAYOR',  label: 'Revisiones mayores' },
+  { value: 'RECHAZAR',        label: 'Rechazar' },
 ]
 
 async function enviarRevision() {

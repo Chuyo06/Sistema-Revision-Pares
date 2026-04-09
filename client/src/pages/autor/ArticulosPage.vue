@@ -1,61 +1,79 @@
 <template>
-  <div>
-    <v-row class="mb-4" align="center">
-      <v-col>
-        <h2 class="text-h6">Mis artículos</h2>
-      </v-col>
-      <v-col cols="12" sm="auto">
-        <v-text-field
-          v-model="busqueda"
-          placeholder="Buscar..."
-          density="compact"
-          hide-details
-          style="min-width: 200px"
-        />
-      </v-col>
-      <v-col cols="auto">
-        <v-btn color="primary" to="/autor/nuevo">Nuevo</v-btn>
-      </v-col>
-    </v-row>
+  <div style="max-width:800px; padding:20px">
 
-    <v-row class="mb-4" align="center">
-      <v-col cols="auto">
-        <span class="text-body-2 mr-2">Filtrar:</span>
-      </v-col>
-      <v-col cols="12" sm="4">
-        <v-select
-          v-model="filtroEstado"
-          :items="['TODOS', 'BORRADOR', 'EN_REVISION', 'ACEPTADO', 'RECHAZADO']"
-          density="compact"
-          hide-details
-        />
-      </v-col>
-    </v-row>
+    <!-- Barra de acciones -->
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px; flex-wrap:wrap">
+      <v-text-field
+        v-model="busqueda"
+        placeholder="Buscar artículo..."
+        prepend-inner-icon="mdi-magnify"
+        density="compact"
+        hide-details
+        clearable
+        style="max-width:260px; flex:1; min-width:160px"
+      />
+      <v-select
+        v-model="filtroEstado"
+        :items="filtros"
+        item-title="label"
+        item-value="value"
+        density="compact"
+        hide-details
+        style="max-width:200px; flex:1; min-width:140px"
+      />
+      <v-btn color="primary" prepend-icon="mdi-plus" to="/autor/nuevo" style="flex-shrink:0">
+        Nuevo
+      </v-btn>
+    </div>
 
-    <v-row>
-      <v-col v-for="m in manuscritosFiltrados" :key="m.id" cols="12" md="6">
-        <v-card class="mb-2">
-          <v-card-title class="text-body-1 d-flex justify-space-between align-center">
-            {{ m.titulo }}
-            <v-chip v-if="m.referencia" size="x-small" color="secondary" variant="flat" class="ml-2">
-              REF: {{ m.referencia }}
-            </v-chip>
-          </v-card-title>
-          <v-card-subtitle>{{ m.convocatoria }} — {{ estadoLabel(m.estado) }}</v-card-subtitle>
-          <v-card-text>
-            <p class="text-body-2 mb-2" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-              {{ m.resumen }}
-            </p>
-            <span class="text-caption">{{ m.revisores }} revisores</span>
-            <span v-if="m.fechaEnvio" class="text-caption ml-3">{{ m.fechaEnvio }}</span>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
+    <!-- Lista feed de artículos -->
+    <div
+      v-for="m in manuscritosFiltrados"
+      :key="m.id"
+      style="background:#fdfbf5; border:1px solid #e8ddd0; border-radius:12px; margin-bottom:10px; overflow:hidden"
+    >
+      <div :style="`height:5px; background:${hexEstado(m.estado)}`" />
+      <div style="padding:16px">
+        <!-- Fila 1: Título + chip (no se enciman) -->
+        <div style="display:flex; align-items:flex-start; gap:10px; margin-bottom:6px">
+          <div style="flex:1; min-width:0">
+            <div style="font-size:15px; font-weight:600; color:#3e2723; word-break:break-word">
+              {{ m.titulo }}
+            </div>
+          </div>
+          <v-chip
+            :color="chipEstado(m.estado)"
+            label
+            size="small"
+            style="flex-shrink:0; margin-top:1px"
+          >
+            {{ estadoLabel(m.estado) }}
+          </v-chip>
+        </div>
 
-    <p v-if="manuscritosFiltrados.length === 0" class="text-body-2 text-center mt-4">
-      No se encontraron artículos.
-    </p>
+        <!-- Fila 2: Subtítulo -->
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap">
+          <span style="font-size:12px; color:#8d6e63">{{ m.convocatoria }}</span>
+          <span v-if="m.fechaEnvio" style="font-size:12px; color:#bda89a">·</span>
+          <span v-if="m.fechaEnvio" style="font-size:12px; color:#8d6e63">{{ m.fechaEnvio }}</span>
+          <v-chip v-if="m.referencia" size="x-small" variant="tonal" color="secondary">
+            REF: {{ m.referencia }}
+          </v-chip>
+        </div>
+
+        <!-- Fila 3: Resumen -->
+        <p style="font-size:13px; color:#5d4037; margin-top:8px; margin-bottom:0;
+                  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden">
+          {{ m.resumen }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Vacío -->
+    <div v-if="manuscritosFiltrados.length === 0" style="text-align:center; padding:48px 0; color:#8d6e63">
+      <v-icon size="44" color="secondary">mdi-file-search-outline</v-icon>
+      <p style="font-size:14px; margin-top:10px">No se encontraron artículos.</p>
+    </div>
   </div>
 </template>
 
@@ -67,21 +85,27 @@ const autorStore = useAutorStore()
 const busqueda = ref('')
 const filtroEstado = ref('TODOS')
 
-const manuscritosFiltrados = computed(() => {
-  return autorStore.manuscritos.filter(m => {
-    const coincideBusqueda = m.titulo.toLowerCase().includes(busqueda.value.toLowerCase())
-    const coincideEstado = filtroEstado.value === 'TODOS' || m.estado === filtroEstado.value
-    return coincideBusqueda && coincideEstado
-  })
-})
+const filtros = [
+  { label:'Todos los estados', value:'TODOS' },
+  { label:'Borrador',    value:'BORRADOR' },
+  { label:'En revisión', value:'EN_REVISION' },
+  { label:'Aceptado',    value:'ACEPTADO' },
+  { label:'Rechazado',   value:'RECHAZADO' },
+]
 
-const ESTADOS = {
-  BORRADOR: 'Borrador',
-  ENVIADO: 'Enviado',
-  EN_REVISION: 'En revisión',
-  ACEPTADO: 'Aceptado',
-  RECHAZADO: 'Rechazado',
-}
+const manuscritosFiltrados = computed(() =>
+  autorStore.manuscritos.filter(m => {
+    const b = m.titulo.toLowerCase().includes(busqueda.value.toLowerCase())
+    const e = filtroEstado.value === 'TODOS' || m.estado === filtroEstado.value
+    return b && e
+  })
+)
+
+const ESTADOS = { BORRADOR:'Borrador', ENVIADO:'Enviado', EN_REVISION:'En revisión', ACEPTADO:'Aceptado', RECHAZADO:'Rechazado' }
+const HEX     = { BORRADOR:'#9e9e9e', ENVIADO:'#546e7a', EN_REVISION:'#e65100', ACEPTADO:'#558b2f', RECHAZADO:'#c62828' }
+const CHIPS   = { BORRADOR:'secondary', ENVIADO:'info', EN_REVISION:'warning', ACEPTADO:'success', RECHAZADO:'error' }
 
 function estadoLabel(e) { return ESTADOS[e] ?? e }
+function hexEstado(e)   { return HEX[e]     ?? '#9e9e9e' }
+function chipEstado(e)  { return CHIPS[e]   ?? 'secondary' }
 </script>

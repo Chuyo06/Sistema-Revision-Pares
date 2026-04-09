@@ -1,39 +1,52 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { loginApi } from '@/services/api/auth.js'
 
-const USUARIOS_MOCK = [
-  { id: 1, nombre: 'Ana García', email: 'autor@demo.com', password: '1234', rol: 'autor', avatar: 'AG' },
-  { id: 2, nombre: 'Carlos López', email: 'revisor@demo.com', password: '1234', rol: 'revisor', avatar: 'CL' },
-  { id: 3, nombre: 'Dr. Martínez', email: 'editor@demo.com', password: '1234', rol: 'editor', avatar: 'DM' },
-  { id: 4, nombre: 'Admin Sistema', email: 'admin@demo.com', password: '1234', rol: 'administrador', avatar: 'AS' },
-]
+function cargarUsuarioPersistido() {
+  const raw = JSON.parse(localStorage.getItem('rpp_usuario') || 'null')
+  if (!raw) return null
+  // Migra el formato viejo ({ rol: 'autor' }) al nuevo ({ roles: [...], rolActivo })
+  if (!raw.roles || !raw.rolActivo) {
+    if (raw.rol) {
+      return { ...raw, roles: [raw.rol], rolActivo: raw.rol }
+    }
+    localStorage.removeItem('rpp_usuario')
+    return null
+  }
+  return raw
+}
 
 export const useAuthStore = defineStore('auth', () => {
-  const usuario = ref(JSON.parse(localStorage.getItem('rpp_usuario') || 'null'))
+  const usuario  = ref(cargarUsuarioPersistido())
   const cargando = ref(false)
-  const error = ref(null)
+  const error    = ref(null)
 
   const estaAutenticado = computed(() => !!usuario.value)
-  const rol = computed(() => usuario.value?.rol ?? null)
+  const roles           = computed(() => usuario.value?.roles ?? [])
+  const rolActivo       = computed(() => usuario.value?.rolActivo ?? null)
+  // Alias para compatibilidad con código existente
+  const rol             = computed(() => rolActivo.value)
+  const tieneMultiplesRoles = computed(() => roles.value.length > 1)
 
-  function login(email, password) {
+  async function login(email, password) {
     cargando.value = true
     error.value = null
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const encontrado = USUARIOS_MOCK.find(u => u.email === email && u.password === password)
-        if (encontrado) {
-          usuario.value = encontrado
-          localStorage.setItem('rpp_usuario', JSON.stringify(encontrado))
-          cargando.value = false
-          resolve(encontrado)
-        } else {
-          error.value = 'Credenciales incorrectas'
-          cargando.value = false
-          reject(new Error('Credenciales incorrectas'))
-        }
-      }, 600)
-    })
+    try {
+      const data = await loginApi(email, password)
+      persistir(data)
+      return data
+    } catch (e) {
+      error.value = e.message || 'Error al iniciar sesión'
+      throw e
+    } finally {
+      cargando.value = false
+    }
+  }
+
+  function cambiarRol(nuevoRol) {
+    if (!usuario.value) return
+    if (!usuario.value.roles.includes(nuevoRol)) return
+    persistir({ ...usuario.value, rolActivo: nuevoRol })
   }
 
   function logout() {
@@ -41,5 +54,14 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('rpp_usuario')
   }
 
-  return { usuario, cargando, error, estaAutenticado, rol, login, logout }
+  function persistir(data) {
+    usuario.value = data
+    localStorage.setItem('rpp_usuario', JSON.stringify(data))
+  }
+
+  return {
+    usuario, cargando, error,
+    estaAutenticado, roles, rolActivo, rol, tieneMultiplesRoles,
+    login, logout, cambiarRol,
+  }
 })

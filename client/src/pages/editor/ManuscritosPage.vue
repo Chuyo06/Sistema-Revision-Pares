@@ -1,49 +1,97 @@
 <template>
-  <div>
-    <v-row class="mb-4" align="center">
-      <v-col>
-        <h2 class="text-h6">Gestión de manuscritos</h2>
-      </v-col>
-      <v-col cols="12" sm="auto">
-        <v-text-field
-          v-model="busqueda"
-          placeholder="Buscar..."
-          density="compact"
-          hide-details
-          style="min-width: 200px"
-        />
-      </v-col>
-    </v-row>
+  <div style="max-width:900px; padding:20px">
 
-    <v-row class="mb-4" align="center">
-      <v-col cols="auto"><span class="text-body-2 mr-2">Filtrar:</span></v-col>
-      <v-col cols="12" sm="4">
-        <v-select
-          v-model="filtroEstado"
-          :items="['TODOS', 'ENVIADO', 'EN_REVISION', 'ACEPTADO', 'RECHAZADO']"
-          density="compact"
-          hide-details
-        />
-      </v-col>
-    </v-row>
+    <!-- Filtros -->
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px; flex-wrap:wrap">
+      <v-text-field
+        v-model="busqueda"
+        placeholder="Buscar manuscrito..."
+        prepend-inner-icon="mdi-magnify"
+        density="compact"
+        hide-details
+        clearable
+        style="max-width:260px; flex:1; min-width:160px"
+      />
+      <v-select
+        v-model="filtroEstado"
+        :items="filtros"
+        item-title="label"
+        item-value="value"
+        density="compact"
+        hide-details
+        style="max-width:220px; flex:1; min-width:140px"
+      />
+    </div>
 
-    <v-card v-for="m in manuscritosFiltrados" :key="m.id" class="mb-3">
-      <v-card-title class="text-body-1">{{ m.titulo }}</v-card-title>
-      <v-card-subtitle>{{ m.autores }} · {{ m.convocatoria }} · {{ m.fechaEnvio }} — {{ estadoLabel(m.estado) }}</v-card-subtitle>
-      <v-card-text>
-        <p v-for="(alerta, i) in m.alertas" :key="i" class="text-caption text-warning">⚠ {{ alerta }}</p>
-        <p class="text-body-2">Revisores: {{ m.revisionesCompletadas }}/{{ m.revisoresAsignados }} completadas</p>
-      </v-card-text>
-      <v-card-actions>
-        <v-btn variant="text" color="primary" :to="`/editor/asignacion/${m.id}`">Gestionar revisores</v-btn>
-        <template v-if="m.estado === 'EN_REVISION' && m.revisionesCompletadas >= 2">
-          <v-btn size="small" color="success" @click="decidir(m.id, 'ACEPTADO')">Aceptar</v-btn>
-          <v-btn size="small" color="error" @click="decidir(m.id, 'RECHAZADO')">Rechazar</v-btn>
-        </template>
-      </v-card-actions>
-    </v-card>
+    <!-- Lista -->
+    <div
+      v-for="m in manuscritosFiltrados"
+      :key="m.id"
+      style="background:#fdfbf5; border:1px solid #e8ddd0; border-radius:12px; margin-bottom:12px; overflow:hidden"
+    >
+      <div :style="`height:5px; background:${hexEstado(m.estado)}`" />
+      <div style="padding:16px">
 
-    <p v-if="manuscritosFiltrados.length === 0" class="text-body-2 text-center mt-4">Sin resultados.</p>
+        <!-- Fila 1: Título + chip -->
+        <div style="display:flex; align-items:flex-start; gap:10px; margin-bottom:6px">
+          <div style="flex:1; min-width:0">
+            <div style="font-size:15px; font-weight:600; color:#3e2723; word-break:break-word">
+              {{ m.titulo }}
+            </div>
+          </div>
+          <v-chip :color="chipEstado(m.estado)" label size="small" style="flex-shrink:0">
+            {{ estadoLabel(m.estado) }}
+          </v-chip>
+        </div>
+
+        <!-- Fila 2: Meta -->
+        <div style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:8px">
+          <span style="font-size:12px; color:#8d6e63">{{ m.autores }}</span>
+          <span style="font-size:12px; color:#bda89a">·</span>
+          <span style="font-size:12px; color:#8d6e63">{{ m.convocatoria }}</span>
+          <span v-if="m.fechaEnvio" style="font-size:12px; color:#bda89a">·</span>
+          <span v-if="m.fechaEnvio" style="font-size:12px; color:#8d6e63">{{ m.fechaEnvio }}</span>
+        </div>
+
+        <!-- Fila 3: Progreso + alertas -->
+        <div style="display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-bottom:10px">
+          <span style="font-size:12px; color:#5d4037; display:flex; align-items:center; gap:4px">
+            <v-icon size="13" color="secondary">mdi-account-multiple-check-outline</v-icon>
+            {{ m.revisionesCompletadas }}/{{ m.revisoresAsignados }} revisiones
+          </span>
+          <span
+            v-for="(alerta, i) in m.alertas"
+            :key="i"
+            style="font-size:12px; color:#c62828; display:flex; align-items:center; gap:3px"
+          >
+            <v-icon size="13" color="error">mdi-alert-outline</v-icon>{{ alerta }}
+          </span>
+        </div>
+
+        <!-- Acciones -->
+        <div style="border-top:1px solid #f0e9df; padding-top:10px; display:flex; align-items:center; gap:8px; flex-wrap:wrap">
+          <v-btn
+            variant="text"
+            color="primary"
+            size="small"
+            :to="`/editor/asignacion/${m.id}`"
+            prepend-icon="mdi-account-plus-outline"
+          >
+            Gestionar revisores
+          </v-btn>
+          <template v-if="m.estado === 'EN_REVISION' && m.revisionesCompletadas >= 2">
+            <v-btn size="small" color="success" elevation="0" rounded="lg" @click="decidir(m.id, 'ACEPTADO')">Aceptar</v-btn>
+            <v-btn size="small" color="error"   elevation="0" rounded="lg" @click="decidir(m.id, 'RECHAZADO')">Rechazar</v-btn>
+          </template>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vacío -->
+    <div v-if="manuscritosFiltrados.length === 0" style="text-align:center; padding:48px 0; color:#8d6e63">
+      <v-icon size="44" color="secondary">mdi-file-search-outline</v-icon>
+      <p style="font-size:14px; margin-top:10px">Sin resultados.</p>
+    </div>
   </div>
 </template>
 
@@ -55,6 +103,14 @@ const editorStore = useEditorStore()
 const busqueda = ref('')
 const filtroEstado = ref('TODOS')
 
+const filtros = [
+  { label:'Todos los estados', value:'TODOS' },
+  { label:'Enviado',     value:'ENVIADO' },
+  { label:'En revisión', value:'EN_REVISION' },
+  { label:'Aceptado',    value:'ACEPTADO' },
+  { label:'Rechazado',   value:'RECHAZADO' },
+]
+
 const manuscritosFiltrados = computed(() =>
   editorStore.manuscritos.filter(m => {
     const b = m.titulo.toLowerCase().includes(busqueda.value.toLowerCase())
@@ -63,14 +119,13 @@ const manuscritosFiltrados = computed(() =>
   })
 )
 
-const ESTADOS = {
-  ENVIADO: 'Enviado',
-  EN_REVISION: 'En revisión',
-  ACEPTADO: 'Aceptado',
-  RECHAZADO: 'Rechazado',
-}
+const ESTADOS = { ENVIADO:'Enviado', EN_REVISION:'En revisión', ACEPTADO:'Aceptado', RECHAZADO:'Rechazado' }
+const HEX     = { ENVIADO:'#546e7a', EN_REVISION:'#e65100', ACEPTADO:'#558b2f', RECHAZADO:'#c62828' }
+const CHIPS   = { ENVIADO:'info', EN_REVISION:'warning', ACEPTADO:'success', RECHAZADO:'error' }
 
 function estadoLabel(e) { return ESTADOS[e] ?? e }
+function hexEstado(e)   { return HEX[e]     ?? '#9e9e9e' }
+function chipEstado(e)  { return CHIPS[e]   ?? 'secondary' }
 
 function decidir(id, decision) {
   editorStore.tomarDecision(id, decision)

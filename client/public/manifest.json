@@ -1,60 +1,11 @@
 {
   "name": "Sistema de Revisión por Pares",
   "short_name": "Rev. Pares",
-  "description": "Plataforma PWA para gestión del proceso de revisión por pares en congresos y revistas científicas, asistida por inteligencia artificial.",
+  "description": "Plataforma para revisión por pares en congresos y revistas científicas.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "orientation": "any",
-  "theme_color": "#1e40af",
-  "background_color": "#ffffff",
-  "lang": "es",
-  "categories": ["productivity", "education"],
-  "icons": [
-    {
-      "src": "/icons/icon-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "/images/screenshot-desktop.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Dashboard del editor"
-    },
-    {
-      "src": "/images/screenshot-mobile.png",
-      "sizes": "390x844",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Vista del revisor en móvil"
-    }
-  ],
-  "shortcuts": [
-    {
-      "name": "Mis artículos",
-      "url": "/autor/articulos",
-      "description": "Ver el estado de tus artículos enviados"
-    },
-    {
-      "name": "Revisiones pendientes",
-      "url": "/revisor/asignados",
-      "description": "Artículos pendientes de revisión"
-    },
-    {
-      "name": "Panel del editor",
-      "url": "/editor/dashboard",
-      "description": "Dashboard editorial"
-    }
-  ]
+  "theme_color": "#5d4037",
+  "background_color": "#f5f0e8",
+  "lang": "es"
 }

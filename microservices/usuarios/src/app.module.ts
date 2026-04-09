@@ -1,24 +1,25 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AppController } from './app.controller';
 import { Usuario } from './entities/usuario.entity';
 import { Rol } from './entities/rol.entity';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
     TypeOrmModule.forRoot({
       type: 'mariadb',
-      host: 'mi_mariadb', // El nombre de tu base de datos en docker-compose
+      host: 'mariadb',        // Nombre del servicio en docker-compose
       port: 3306,
       username: 'root',
-      password: 'root', // Cambia esto si usaste otra contraseña en docker-compose
-      database: 'sistema_revision',
+      password: 'root_password', // La que dice tu archivo
+      database: 'mi_base_datos',  // La que dice tu archivo
       entities: [Usuario, Rol],
-      synchronize: true, // ¡Esto hace que las tablas se creen solas!
+      synchronize: true,
     }),
     TypeOrmModule.forFeature([Usuario, Rol]),
+    AuthModule,
   ],
-  controllers: [AppController],
+  controllers: [],
   providers: [],
 })
 export class AppModule {}

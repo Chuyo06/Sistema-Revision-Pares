@@ -1,10 +1,24 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Manuscrito } from './entities/manuscrito.entity';
+import { ManuscritosService } from './manuscritos.service';
+import { ManuscritosController } from './manuscritos.controller';
 
 @Module({
-  imports: [],
-  controllers: [AppController],
-  providers: [AppService],
+  imports: [
+    TypeOrmModule.forRoot({
+      type: 'mariadb',
+      host: 'mariadb',
+      port: 3306,
+      username: 'root',
+      password: 'root_password',
+      database: 'mi_base_datos',
+      entities: [Manuscrito],
+      synchronize: true,
+    }),
+    TypeOrmModule.forFeature([Manuscrito]),
+  ],
+  controllers: [ManuscritosController], // <-- ¡Solo nuestro controlador!
+  providers: [ManuscritosService],
 })
 export class AppModule {}

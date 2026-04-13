@@ -1,10 +1,17 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { MongooseModule } from '@nestjs/mongoose';
+import { Manuscrito, ManuscritoSchema } from './schemas/manuscrito.schema'; // 👈 Nueva importación
 
 @Module({
-  imports: [],
-  controllers: [AppController],
-  providers: [AppService],
+  imports: [
+    MongooseModule.forRoot('mongodb://admin:password@localhost:27017/mi_base_datos?authSource=admin'),
+    
+    // 2. Registramos nuestro esquema específico
+    MongooseModule.forFeature([
+      { name: Manuscrito.name, schema: ManuscritoSchema }
+    ]),
+  ],
+  controllers: [],
+  providers: [],
 })
 export class AppModule {}

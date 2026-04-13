@@ -1,6 +1,7 @@
-version: '3.8'
-
 services:
+  # ==========================================
+  # BASES DE DATOS 
+  # ==========================================
   mariadb:
     image: mariadb:latest
     container_name: mi_mariadb
@@ -23,6 +24,8 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: password
+    ports:
+      - "27017:27017"
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
       interval: 10s
@@ -41,6 +44,9 @@ services:
       timeout: 5s
       retries: 5
 
+  # ==========================================
+  # MICROSERVICIOS NESTJS
+  # ==========================================
   usuarios:
     build:
       context: ./microservices/usuarios
@@ -50,6 +56,7 @@ services:
       - "3001:3000"
     environment:
       - NODE_ENV=development
+      # Ejemplo de conexión: mysql://root:root_password@mariadb:3306/mi_base_datos
     depends_on:
       mariadb:
         condition: service_healthy
@@ -64,7 +71,7 @@ services:
     environment:
       - NODE_ENV=development
     depends_on:
-      mongodb:
+      mariadb:
         condition: service_healthy
 
   revision:
@@ -76,6 +83,7 @@ services:
       - "3003:3000"
     environment:
       - NODE_ENV=development
+      # Ejemplo de conexión: mongodb://admin:password@mongodb:27017
     depends_on:
       mongodb:
         condition: service_healthy
@@ -94,18 +102,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-
-
-  gateway:
-    image: nginx:alpine
-    container_name: api_gateway
-    restart: always
-    volumes:
-      - ./gateway/nginx.conf:/etc/nginx/nginx.conf:ro
-    ports:
-      - "3000:80"
-    depends_on:
-      - usuarios
 
   analisis-ia:
     build:

@@ -1,25 +1,40 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, JoinTable } from 'typeorm';
-import { Rol } from './rol.entity';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToOne } from 'typeorm';
+import { PerfilProfesional } from './perfil-profesional.entity';
 
-@Entity('usuarios')
+export enum RolUsuario {
+  AUTOR = 'AUTOR',
+  REVISOR = 'REVISOR',
+  EDITOR = 'EDITOR',
+  ADMIN = 'ADMIN',
+}
+
+export enum EstadoUsuario {
+  ACTIVO = 'ACTIVO',
+  INACTIVO = 'INACTIVO',
+  SUSPENDIDO = 'SUSPENDIDO',
+}
+
+@Entity('usuarios') 
 export class Usuario {
-  @PrimaryGeneratedColumn()
-  id!: number;
+  @PrimaryGeneratedColumn({ name: 'id_usuario' })
+  id_usuario!: number; 
 
-  @Column({ unique: true })
-  email!: string;
+  @Column({ type: 'varchar', length: 150, unique: true })
+  email!: string; 
 
-  @Column()
-  passwordHash!: string;
+  @Column({ type: 'varchar', length: 255, name: 'password_hash' })
+  password_hash!: string;
 
-  @Column()
-  nombre!: string;
+  @Column({ type: 'enum', enum: RolUsuario, default: RolUsuario.AUTOR })
+  rol!: RolUsuario;
 
-  @ManyToMany(() => Rol)
-  @JoinTable({
-    name: 'usuarios_roles',
-    joinColumn: { name: 'usuario_id', referencedColumnName: 'id' },
-    inverseJoinColumn: { name: 'rol_id', referencedColumnName: 'id' },
-  })
-  roles!: Rol[];
+  @Column({ type: 'enum', enum: EstadoUsuario, default: EstadoUsuario.ACTIVO })
+  estado!: EstadoUsuario;
+
+  @CreateDateColumn({ name: 'fecha_registro' })
+  fecha_registro!: Date;
+
+  // Relación 1 a 1 con el perfil
+  @OneToOne(() => PerfilProfesional, (perfil) => perfil.usuario)
+  perfil!: PerfilProfesional;
 }

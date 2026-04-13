@@ -1,20 +1,21 @@
 import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { Manuscrito, ManuscritoDocument } from './schemas/manuscrito.schema';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Manuscrito } from './entities/manuscrito.entity';
 
 @Injectable()
 export class ManuscritosService {
   constructor(
-    @InjectModel(Manuscrito.name) private manuscritoModel: Model<ManuscritoDocument>,
+    @InjectRepository(Manuscrito)
+    private manuscritoRepository: Repository<Manuscrito>,
   ) {}
 
   async crear(datos: Partial<Manuscrito>): Promise<Manuscrito> {
-    const nuevoManuscrito = new this.manuscritoModel(datos);
-    return await nuevoManuscrito.save();
+    const nuevo = this.manuscritoRepository.create(datos);
+    return await this.manuscritoRepository.save(nuevo);
   }
 
   async obtenerTodos(): Promise<Manuscrito[]> {
-    return await this.manuscritoModel.find().exec();
+    return await this.manuscritoRepository.find();
   }
 }

@@ -1,19 +1,23 @@
-import { Controller, Post, Get, Body, All, Req } from '@nestjs/common';
+import { Controller, Post, Get, Body, UseGuards } from '@nestjs/common';
 import { ManuscritosService } from './manuscritos.service';
 import { Manuscrito } from './schemas/manuscrito.schema';
+// La ruta tiene que pasar por 'common/decorators' porque así se llama tu carpeta raíz
+import { RolesGuard } from './common/decorators/guards/roles.guard';
+import { Roles } from './common/decorators/decorators/roles.decorator';
+// Si tu controlador está en src/ y la carpeta common está en src/common:
 
-@Controller() // Lo dejamos vacío para que el microservicio sea la base
+@Controller(['manuscritos']) // Esta es la ruta que Nginx busca
+@UseGuards(RolesGuard) 
 export class ManuscritosController {
   constructor(private readonly manuscritosService: ManuscritosService) {}
 
-  // Este endpoint responderá si la ruta es "/" o "/manuscritos" o "/api/manuscritos"
-  @Post(['/', 'manuscritos', 'api/manuscritos'])
+  @Post()
+  @Roles('admin') // Dejamos solo 'admin' para PROBAR que nos bloquee
   crear(@Body() datos: Partial<Manuscrito>) {
-    console.log('--- ¡Petición Recibida con éxito! ---');
     return this.manuscritosService.crear(datos);
   }
 
-  @Get(['/', 'manuscritos', 'api/manuscritos'])
+  @Get()
   obtenerTodos() {
     return this.manuscritosService.obtenerTodos();
   }

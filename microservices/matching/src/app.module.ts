@@ -4,7 +4,7 @@ import { Manuscrito, ManuscritoSchema } from './schemas/manuscrito.schema'; // ð
 
 @Module({
   imports: [
-    MongooseModule.forRoot('mongodb://admin:password@localhost:27017/mi_base_datos?authSource=admin'),
+    MongooseModule.forRoot('mongodb://admin:password@mongodb:27017/mi_base_datos?authSource=admin'),
     
     // 2. Registramos nuestro esquema especÃ­fico
     MongooseModule.forFeature([

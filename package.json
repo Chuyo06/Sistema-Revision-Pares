@@ -1,0 +1,24 @@
+{
+  "name": "sistema-revision-pares",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sistema de Revisión por Pares - Monorepo",
+  "scripts": {
+    "postinstall": "cd client && npm install",
+    "dev": "npm run docker:up && npm run dev:client",
+    "dev:fresh": "npm run docker:down:volumes && npm run dev",
+    "dev:client": "cd client && npm run dev",
+    "build": "cd client && npm run build",
+    "preview": "cd client && npm run preview",
+    "docker:up": "docker compose up -d --build",
+    "docker:down": "docker compose down",
+    "docker:down:volumes": "docker compose down -v",
+    "docker:logs": "docker compose logs -f",
+    "docker:ps": "docker compose ps",
+    "setup": "npm install && npm run dev",
+    "start": "npm run dev"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

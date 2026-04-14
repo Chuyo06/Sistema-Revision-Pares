@@ -70,11 +70,17 @@
 </template>
 
 <script setup>
+import { onMounted } from 'vue'
 import { useRevisorStore } from '@/store/revisor/index.js'
 
 const revisorStore = useRevisorStore()
 
+onMounted(() => {
+  revisorStore.cargarDashboard()
+})
+
 const ESTADOS = { PENDIENTE:'Pendiente', EN_PROGRESO:'En progreso', COMPLETADA:'Completada' }
+
 const HEX     = { PENDIENTE:'#e65100',  EN_PROGRESO:'#546e7a',     COMPLETADA:'#558b2f' }
 const CHIPS   = { PENDIENTE:'warning',  EN_PROGRESO:'info',         COMPLETADA:'success' }
 

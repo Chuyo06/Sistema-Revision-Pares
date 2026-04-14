@@ -58,6 +58,7 @@ const routes = [
       { path: '', redirect: '/administrador/dashboard' },
       { path: 'dashboard', name: 'admin-dashboard', component: () => import('@/pages/administrador/DashboardPage.vue') },
       { path: 'usuarios', name: 'admin-usuarios', component: () => import('@/pages/administrador/UsuariosPage.vue') },
+      { path: 'manuscritos', name: 'admin-manuscritos', component: () => import('@/pages/administrador/ManuscritosPage.vue') },
     ]
   },
 

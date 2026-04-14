@@ -67,6 +67,10 @@
             <span style="font-size:13px; color:#5d4037">{{ kpi.label }}</span>
             <span style="font-size:18px; font-weight:700; color:#3e2723">{{ kpi.valor }}</span>
           </div>
+          <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; border-top:1px solid #f0e9df; background: #fafafa">
+            <span style="font-size:13px; color:#5d4037">Total Manuscritos</span>
+            <span style="font-size:18px; font-weight:700; color:#7b1fa2">{{ adminStore.metricas.totalManuscritos }}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -74,10 +78,14 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useAdminStore } from '@/store/administrador/index.js'
 
 const adminStore = useAdminStore()
+
+onMounted(() => {
+  adminStore.cargarUsuarios()
+})
 
 const kpis = computed(() => [
   { label:'Total usuarios', valor: adminStore.metricas.totalUsuarios },

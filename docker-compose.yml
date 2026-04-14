@@ -9,6 +9,8 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root_password
       MYSQL_DATABASE: mi_base_datos
+    volumes:
+      - ./database/mariadb/init:/docker-entrypoint-initdb.d
     ports:
       - "3306:3306"
     healthcheck:
@@ -56,9 +58,10 @@ services:
       - "3001:3000"
     environment:
       - NODE_ENV=development
-      # Ejemplo de conexión: mysql://root:root_password@mariadb:3306/mi_base_datos
     depends_on:
       mariadb:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
   manuscritos:
@@ -83,9 +86,8 @@ services:
       - "3003:3000"
     environment:
       - NODE_ENV=development
-      # Ejemplo de conexión: mongodb://admin:password@mongodb:27017
     depends_on:
-      mongodb:
+      mariadb:
         condition: service_healthy
 
   matching:

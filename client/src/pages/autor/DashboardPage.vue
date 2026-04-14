@@ -132,12 +132,16 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useAuthStore } from '@/store/auth.js'
 import { useAutorStore } from '@/store/autor/index.js'
 
 const auth = useAuthStore()
 const autorStore = useAutorStore()
+
+onMounted(() => {
+  autorStore.cargarMisManuscritos()
+})
 
 const convocatoriasAbiertas = computed(() => autorStore.convocatorias.filter(c => c.estado === 'ABIERTA'))
 

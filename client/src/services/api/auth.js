@@ -1,25 +1,17 @@
 // ─────────────────────────────────────────────────────────────
 // Servicio de autenticación
 //
-// Actualmente usa datos MOCK. Cuando el backend esté listo,
-// reemplazar el cuerpo de `loginApi` por una llamada real:
-//
-//   const res = await fetch(`${API_BASE}/auth/login`, {
-//     method: 'POST',
-//     headers: { 'Content-Type': 'application/json' },
-//     body: JSON.stringify({ email, password }),
-//   })
-//   if (!res.ok) throw new Error('Credenciales incorrectas')
-//   return await res.json()
-//
-// El backend debe devolver un objeto con el formato:
-//   { id, nombre, email, avatar, roles: [...], rolActivo }
+// Intenta conectar al backend real (NestJS usuarios :3001).
+// Si el backend no está disponible, usa datos MOCK como fallback.
 // ─────────────────────────────────────────────────────────────
 
-// TODO: mover a variable de entorno (.env → VITE_API_URL)
-export const API_BASE = '/api'
+// Ruta proxy definida en vite.config.js → http://localhost:3001
+const AUTH_URL = '/api/auth'
 
-// Usuarios mock — cada uno puede tener varios roles
+// Mapeo de roles del backend a nombres de ruta del frontend
+const ROL_MAP = { admin: 'administrador' }
+
+// ── Usuarios mock (fallback cuando el backend no responde) ──
 const USUARIOS_MOCK = [
   {
     id: 1,
@@ -56,14 +48,70 @@ const USUARIOS_MOCK = [
 ]
 
 /**
- * Inicia sesión contra el backend.
- * @param {string} email
- * @param {string} password
- * @returns {Promise<{id, nombre, email, avatar, roles: string[], rolActivo: string}>}
+ * Inicia sesión. Prueba el backend real, si falla usa mock.
+ * @returns {Promise<{id, nombre, email, avatar, roles: string[], rolActivo: string, token?: string}>}
  */
-export function loginApi(email, password) {
+export async function loginApi(email, password) {
+  // ── Intentar backend real ──
+  try {
+    const res = await fetch(`${AUTH_URL}/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    })
+
+    if (res.ok) {
+      const data = await res.json()
+      // Normalizar respuesta del backend al formato que espera el store
+      const rolRaw = (data.rol || 'autor').toLowerCase()
+      const mapRol = (r) => ROL_MAP[r] || r
+      return {
+        id: data.id ?? data.id_usuario,
+        nombre: data.nombre ?? data.email,
+        email: data.email,
+        avatar: (data.nombre || data.email || '').substring(0, 2).toUpperCase(),
+        roles: data.roles
+          ? data.roles.map(r => mapRol(r.toLowerCase()))
+          : [mapRol(rolRaw)],
+        rolActivo: mapRol((data.rolActivo ?? rolRaw).toLowerCase()),
+        token: data.access_token ?? data.token ?? null,
+      }
+    }
+
+    // Si el servidor respondió pero con error (401, 403, etc.)
+    const errorData = await res.json().catch(() => ({}))
+    throw new Error(errorData.message || 'Credenciales incorrectas')
+  } catch (err) {
+    // Si el error viene del backend (credenciales inválidas, etc.), re-lanzar
+    if (err.message && !err.message.includes('fetch') && !err.message.includes('Failed') && !err.message.includes('NetworkError')) {
+      throw err
+    }
+
+    // ── Fallback a MOCK (backend no disponible) ──
+    console.warn('[Auth] Backend no disponible, usando datos mock:', err.message)
+    return loginMock(email, password)
+  }
+}
+
+/**
+ * Registro de usuario contra el backend real.
+ */
+export async function registerApi(datos) {
+  const res = await fetch(`${AUTH_URL}/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(datos),
+  })
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}))
+    throw new Error(errorData.message || 'Error al registrar')
+  }
+  return await res.json()
+}
+
+// ── Mock fallback ──────────────────────────────────────────
+function loginMock(email, password) {
   return new Promise((resolve, reject) => {
-    // ── MOCK ────────────────────────────────────────────────
     setTimeout(() => {
       const encontrado = USUARIOS_MOCK.find(u => u.email === email && u.password === password)
       if (!encontrado) {
@@ -72,19 +120,6 @@ export function loginApi(email, password) {
       }
       const { password: _pwd, ...usuario } = encontrado
       resolve({ ...usuario, rolActivo: usuario.roles[0] })
-    }, 500)
-
-    // ── REAL (descomentar cuando el backend esté listo) ─────
-    // fetch(`${API_BASE}/auth/login`, {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({ email, password }),
-    // })
-    //   .then(async res => {
-    //     if (!res.ok) throw new Error('Credenciales incorrectas')
-    //     const data = await res.json()
-    //     resolve({ ...data, rolActivo: data.rolActivo ?? data.roles[0] })
-    //   })
-    //   .catch(reject)
+    }, 400)
   })
 }

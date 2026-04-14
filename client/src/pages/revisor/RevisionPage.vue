@@ -114,7 +114,7 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useRevisorStore } from '@/store/revisor/index.js'
 
@@ -123,11 +123,18 @@ const router = useRouter()
 const revisorStore = useRevisorStore()
 
 const articuloId = Number(route.params.id)
-const articulo = revisorStore.articulosAsignados.find(a => a.id === articuloId)
+const articulo = computed(() => revisorStore.articulosAsignados.find(a => a.id === articuloId))
+
+onMounted(() => {
+  if (revisorStore.articulosAsignados.length === 0) {
+    revisorStore.cargarDashboard()
+  }
+})
 
 const valido = ref(false)
 const enviando = ref(false)
 const dialogoConfirmacion = ref(false)
+
 
 const revision = reactive({
   originalidad: 0, metodologia: 0, claridad: 0, relevancia: 0,
@@ -150,8 +157,23 @@ const recomendaciones = [
 
 async function enviarRevision() {
   enviando.value = true
-  await new Promise(r => setTimeout(r, 800))
-  revisorStore.enviarRevision(articuloId, { ...revision })
+  
+  // Calcular puntuación media (1-5)
+  const puntuacion = Math.round(
+    (revision.originalidad + revision.metodologia + revision.claridad + revision.relevancia) / 4
+  )
+
+  // Consolidar comentarios
+  const comentarios = `PARA EL AUTOR: ${revision.comentariosAutor}\n\nPARA EL EDITOR: ${revision.comentariosEditor}`
+
+  const dataParaBackend = {
+    puntuacion,
+    comentarios,
+    recomendacion: revision.recomendacion
+  }
+
+  await revisorStore.enviarRevision(articuloId, dataParaBackend)
+  
   enviando.value = false
   dialogoConfirmacion.value = true
 }

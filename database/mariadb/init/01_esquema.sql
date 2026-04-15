@@ -11,6 +11,23 @@ CREATE TABLE usuarios (
     fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Tabla de manuscritos
+CREATE TABLE manuscritos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    titulo VARCHAR(255) NOT NULL,
+    resumen TEXT,
+    contenido TEXT,
+    autorId INT NOT NULL,
+    autores VARCHAR(255),
+    estado VARCHAR(50) DEFAULT 'BORRADOR',
+    convocatoria VARCHAR(255),
+    referencia VARCHAR(255),
+    revisoresAsignados INT DEFAULT 0,
+    revisionesCompletadas INT DEFAULT 0,
+    fechaEnvio DATE,
+    fechaSubida TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Tabla de información pública/académica (Separada por seguridad y normalización)
 CREATE TABLE perfiles_profesionales (
     id_perfil INT AUTO_INCREMENT PRIMARY KEY,
@@ -34,6 +51,8 @@ CREATE TABLE asignaciones_revision (
     estado ENUM('INVITADO', 'ACEPTADO', 'DECLINADO', 'COMPLETADA', 'EXPIRADA') DEFAULT 'INVITADO',
     fecha_invitacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     fecha_limite DATE NOT NULL,
+    puntuacion INT NULL,
+    comentarios TEXT NULL,
     fecha_completada TIMESTAMP NULL,
     FOREIGN KEY (id_revisor) REFERENCES usuarios(id_usuario) ON DELETE RESTRICT
 );

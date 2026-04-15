@@ -86,37 +86,29 @@ const isUploading = ref(false);
 const uploadSuccess = ref(false);
 const referenceNumber = ref('');
 
-// Límite de 50MB en bytes
-const MAX_FILE_SIZE = 50 * 1024 * 1024; 
+const MAX_FILE_SIZE = 50 * 1024 * 1024;
 
-// Propiedad computada para habilitar/deshabilitar el botón de subida
 const isValidForUpload = computed(() => {
   const file = getFileToProcess();
   return file && !errorMessage.value;
 });
 
-// Función auxiliar para manejar v-model que puede ser File o Array de Files en Vuetify 3
 const getFileToProcess = () => {
   if (!selectedFile.value) return null;
   return Array.isArray(selectedFile.value) ? selectedFile.value[0] : selectedFile.value;
 };
 
-// 1. Validar que el archivo sea PDF y no supere 50MB (Tarea #2403)
 const validateFile = () => {
   errorMessage.value = '';
   const file = getFileToProcess();
 
-  if (!file) {
-    return false;
-  }
+  if (!file) return false;
 
-  // Validar formato PDF
   if (file.type !== 'application/pdf') {
     errorMessage.value = 'Error: El archivo debe ser un documento en formato PDF.';
     return false;
   }
 
-  // Validar tamaño máximo (50MB) 
   if (file.size > MAX_FILE_SIZE) {
     const sizeInMB = (file.size / 1024 / 1024).toFixed(2);
     errorMessage.value = `Error: El archivo supera el tamaño máximo de 50MB (Actual: ${sizeInMB}MB).`;
@@ -126,42 +118,38 @@ const validateFile = () => {
   return true;
 };
 
-// 2. Generar número de referencia único al subir (Tarea #2406)
-// Nota:  En un entorno real, la API/Backend suele generar este número.
-// Aquí se presenta el algoritmo simulado que podría usar o devolver el backend.
-const generateUniqueReference = () => {
-  const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-  const uniqueId = Math.random().toString(36).substring(2, 8).toUpperCase();
-  // Formato: DOC-AAAAMMDD-XXXXXX
-  return `DOC-${dateStr}-${uniqueId}`;
-};
-
 const emit = defineEmits(['uploaded', 'reset']);
 
 const uploadFile = async () => {
   if (!validateFile()) return;
-  
-  isUploading.value = true;
-  
-  try {
-    // Simulamos la latencia de la red (2 segundos)
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Obtenemos el número generado
-    const refNum = generateUniqueReference();
-    referenceNumber.value = refNum;
-    
-    // 3. Mostrar confirmación con el número de referencia al finalizar (Tarea #2408)
-    uploadSuccess.value = true;
 
-    // Notificar al padre
-    emit('uploaded', {
-      file: getFileToProcess(),
-      reference: refNum
+  isUploading.value = true;
+
+  try {
+    const file = getFileToProcess();
+    const formData = new FormData();
+    formData.append('archivo', file);
+
+    const res = await fetch('/api/manuscritos/upload', {
+      method: 'POST',
+      body: formData,
     });
 
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Error al subir el archivo');
+    }
+
+    const data = await res.json();
+    referenceNumber.value = data.referencia;
+    uploadSuccess.value = true;
+
+    emit('uploaded', {
+      file,
+      reference: data.referencia,
+    });
   } catch (error) {
-    errorMessage.value = 'Ocurrió un error de red o de servidor al subir el archivo.';
+    errorMessage.value = error.message || 'Ocurrió un error de red o de servidor al subir el archivo.';
     console.error('Error al subir:', error);
   } finally {
     isUploading.value = false;

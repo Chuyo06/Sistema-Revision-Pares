@@ -25,8 +25,7 @@ export class AuthService {
     // 3. Guardar en MariaDB
     const nuevoUsuario = this.usuarioRepository.create({
       email,
-      passwordHash,
-      nombre,
+      password_hash: passwordHash,
     });
     await this.usuarioRepository.save(nuevoUsuario);
     
@@ -39,13 +38,18 @@ export class AuthService {
     if (!user) throw new UnauthorizedException('Credenciales inválidas');
 
     // 2. Comparar la contraseña ingresada con la encriptada
-    const isPasswordValid = await bcrypt.compare(passwordPlain, user.passwordHash);
+    const isPasswordValid = await bcrypt.compare(passwordPlain, user.password_hash);
     if (!isPasswordValid) throw new UnauthorizedException('Credenciales inválidas');
 
     // 3. Generar el Token JWT
-    const payload = { sub: user.id, email: user.email };
+    const payload = { sub: user.id_usuario, email: user.email, rol: user.rol };
     const token = this.jwtService.sign(payload);
 
-    return { access_token: token };
+    return {
+      access_token: token,
+      id: user.id_usuario,
+      email: user.email,
+      rol: user.rol,
+    };
   }
 }

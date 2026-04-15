@@ -14,7 +14,7 @@ import { ManuscritosController } from './manuscritos.controller';
       password: 'root_password',
       database: 'mi_base_datos',
       entities: [Manuscrito],
-      synchronize: true,
+      synchronize: false,
     }),
     TypeOrmModule.forFeature([Manuscrito]),
   ],

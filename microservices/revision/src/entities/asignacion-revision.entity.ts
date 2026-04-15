@@ -1,29 +1,31 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
 
-export enum EstadoRevision {
-  PENDIENTE = 'PENDIENTE',
-  ACEPTADA = 'ACEPTADA',
-  RECHAZADA = 'RECHAZADA',
-  COMPLETADA = 'COMPLETADA',
-}
-
 @Entity('asignaciones_revision')
 export class AsignacionRevision {
   @PrimaryGeneratedColumn({ name: 'id_asignacion' })
-  id_asignacion!: number;
+  id_asignacion: number;
 
   @Column({ type: 'int' })
-  id_revisor!: number; // Se conecta lógicamente con el id_usuario del otro microservicio
+  id_revisor: number;
 
-  @Column({ type: 'varchar', length: 100 })
-  id_manuscrito_mongo!: string; // El puente hacia MongoDB
+  @Column({ name: 'id_manuscrito_mongo', length: 100 })
+  id_manuscrito_mongo: string;
 
-  @Column({ type: 'enum', enum: EstadoRevision, default: EstadoRevision.PENDIENTE })
-  estado!: EstadoRevision;
+  @Column({ type: 'enum', enum: ['INVITADO', 'ACEPTADO', 'DECLINADO', 'COMPLETADA', 'EXPIRADA'], default: 'INVITADO' })
+  estado: string;
 
-  @CreateDateColumn({ name: 'fecha_asignacion' })
-  fecha_asignacion!: Date;
+  @CreateDateColumn({ name: 'fecha_invitacion' })
+  fecha_invitacion: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
-  fecha_respuesta!: Date;
+  @Column({ type: 'date', name: 'fecha_limite' })
+  fecha_limite: Date;
+
+  @Column({ type: 'int', nullable: true })
+  puntuacion: number;
+
+  @Column({ type: 'text', nullable: true })
+  comentarios: string;
+
+  @Column({ type: 'timestamp', name: 'fecha_completada', nullable: true })
+  fecha_completada: Date;
 }

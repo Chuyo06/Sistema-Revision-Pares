@@ -121,12 +121,16 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useAuthStore } from '@/store/auth.js'
 import { useRevisorStore } from '@/store/revisor/index.js'
 
 const auth = useAuthStore()
 const revisorStore = useRevisorStore()
+
+onMounted(() => {
+  revisorStore.cargarDashboard()
+})
 
 const pendientes      = computed(() => revisorStore.articulosAsignados.filter(a => a.estado !== 'COMPLETADA').length)
 const pendientesLista = computed(() => revisorStore.articulosAsignados.filter(a => a.estado === 'PENDIENTE'))

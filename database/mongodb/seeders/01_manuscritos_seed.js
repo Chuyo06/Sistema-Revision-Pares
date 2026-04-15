@@ -2,41 +2,72 @@ db = db.getSiblingDB('mi_base_datos');
 
 db.manuscritos.insertMany([
   {
+    "_id": ObjectId("60d5ecb8b392d70000000001"),
     "numero_referencia": "REF-2026-001",
-    "titulo": "Implementación de LLMs en PWA Offline-First",
-    "resumen": "Este artículo describe la arquitectura necesaria para...",
-    "palabras_clave": ["pwa", "llm", "offline", "service-workers"],
-    "id_autor_principal": 1, // Referencia al ID en MariaDB
-    
-    // Estado del ciclo de vida del documento
-    "estado_actual": "EN_REVISION", // Opciones: BORRADOR, PENDIENTE, EN_REVISION, APROBADO, RECHAZADO
+    "titulo": "Aplicación de Redes Neuronales en Diagnóstico Médico",
+    "resumen": "Este trabajo propone una arquitectura CNN para la clasificación de imágenes histológicas con una precisión del 94.3%.",
+    "autores_texto": "García, A. et al.",
+    "convocatoria": "CIIA 2026",
+    "palabras_clave": ["pwa", "llm", "offline", "service-workers", "cnn", "medicina"],
+    "id_autor_principal": 1,
+    "estado_actual": "EN_REVISION",
     "archivo_minio_url": "http://localhost:9000/articulos-revision/ref-2026-001.pdf",
     "fecha_subida": new Date(),
-
-    // Datos del microservicio de Análisis IA
     "analisis_ia": {
       "score_calidad_inicial": 8.5,
       "alertas_eticas": false,
-      "sugerencia_revisores_ids": [3, 4, 7] // IDs de MariaDB devueltos por el motor de Matching
+      "sugerencia_revisores_ids": [2]
     },
-
-    // Subdocumentos: Historial completo sin necesidad de hacer JOINs
-    "historial_revisiones": [
-      {
-        "id_revisor": 3,
-        "fase_revision": 1,
-        "fecha_asignacion": new Date("2026-04-01T10:00:00Z"),
-        "estado": "COMPLETADA",
-        "veredicto": "APROBADO_CON_CAMBIOS_MENORES",
-        "comentarios_al_autor": "Excelente metodología, pero sugiero ampliar la sección de Service Workers.",
-        "comentarios_privados_editor": "El artículo es sólido, el autor conoce del tema."
-      }
-    ],
-
-    // Control para la PWA (Sincronización Offline)
+    "historial_revisiones": [],
     "meta_sincronizacion": {
       "ultima_actualizacion": new Date(),
-      "version_documento": 2
+      "version_documento": 1
+    }
+  },
+  {
+    "_id": ObjectId("60d5ecb8b392d70000000002"),
+    "numero_referencia": "REF-2026-002",
+    "titulo": "Transformers para Análisis de Sentimientos en Redes Sociales",
+    "resumen": "Evaluamos el rendimiento de BERT, RoBERTa y XLNet en datasets de Twitter y Reddit en español.",
+    "autores_texto": "Rodríguez, M. et al.",
+    "convocatoria": "CIIA 2026",
+    "palabras_clave": ["nlp", "transformers", "sentiment-analysis"],
+    "id_autor_principal": 1,
+    "estado_actual": "EN_REVISION",
+    "archivo_minio_url": "http://localhost:9000/articulos-revision/ref-2026-002.pdf",
+    "fecha_subida": new Date(),
+    "analisis_ia": {
+      "score_calidad_inicial": 9.0,
+      "alertas_eticas": false,
+      "sugerencia_revisores_ids": [2]
+    },
+    "historial_revisiones": [],
+    "meta_sincronizacion": {
+      "ultima_actualizacion": new Date(),
+      "version_documento": 1
+    }
+  },
+  {
+    "_id": ObjectId("60d5ecb8b392d70000000003"),
+    "numero_referencia": "REF-2026-003",
+    "titulo": "Compresión de Modelos de IA para Dispositivos Móviles",
+    "resumen": "Técnicas de pruning y quantization para desplegar modelos YOLO en dispositivos con menos de 2GB RAM.",
+    "autores_texto": "Fernández, J. et al.",
+    "convocatoria": "IoTSec 2026",
+    "palabras_clave": ["iot", "mobile", "yolo", "compression"],
+    "id_autor_principal": 1,
+    "estado_actual": "APROBADO",
+    "archivo_minio_url": "http://localhost:9000/articulos-revision/ref-2026-003.pdf",
+    "fecha_subida": new Date(),
+    "analisis_ia": {
+      "score_calidad_inicial": 8.0,
+      "alertas_eticas": false,
+      "sugerencia_revisores_ids": [2]
+    },
+    "historial_revisiones": [],
+    "meta_sincronizacion": {
+      "ultima_actualizacion": new Date(),
+      "version_documento": 1
     }
   }
 ]);

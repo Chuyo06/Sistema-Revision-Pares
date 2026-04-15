@@ -78,7 +78,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useAdminStore } from '@/store/administrador/index.js'
 
 const adminStore = useAdminStore()
@@ -90,6 +90,10 @@ const snackbar = ref(false)
 const mensajeSnackbar = ref('')
 
 const nuevoUsuario = ref({ nombre: '', email: '', rol: '' })
+
+onMounted(() => {
+  adminStore.cargarUsuarios()
+})
 
 const usuariosFiltrados = computed(() =>
   adminStore.usuarios.filter(u =>
@@ -108,11 +112,11 @@ const headers = [
   { title: '', key: 'acciones', sortable: false, align: 'end' },
 ]
 
-function crearUsuario() {
-  adminStore.agregarUsuario({ ...nuevoUsuario.value })
+async function crearUsuario() {
+  await adminStore.agregarUsuario({ ...nuevoUsuario.value })
   dialogoNuevo.value = false
   nuevoUsuario.value = { nombre: '', email: '', rol: '' }
-  mensajeSnackbar.value = 'Usuario creado correctamente'
+  mensajeSnackbar.value = 'Usuario creado/actualizado correctamente'
   snackbar.value = true
 }
 </script>

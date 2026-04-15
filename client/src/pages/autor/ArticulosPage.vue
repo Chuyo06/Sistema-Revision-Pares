@@ -78,10 +78,14 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useAutorStore } from '@/store/autor/index.js'
 
 const autorStore = useAutorStore()
+
+onMounted(() => {
+  autorStore.cargarMisManuscritos()
+})
 const busqueda = ref('')
 const filtroEstado = ref('TODOS')
 

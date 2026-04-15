@@ -94,12 +94,16 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useAuthStore } from '@/store/auth.js'
 import { useEditorStore } from '@/store/editor/index.js'
 
 const auth = useAuthStore()
 const editorStore = useEditorStore()
+
+onMounted(() => {
+  editorStore.cargarDashboardEditor()
+})
 
 const stats = computed(() => [
   { label:'Total',          valor: editorStore.metricas.totalManuscritos },

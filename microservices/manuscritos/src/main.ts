@@ -1,12 +1,21 @@
 import { NestFactory } from '@nestjs/core';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   
-  // Esto hace que el microservicio ignore cualquier sub-ruta extra que mande Nginx
   app.setGlobalPrefix(''); 
-  
+
+  const config = new DocumentBuilder()
+    .setTitle('API de Manuscritos')
+    .setDescription('Gestión de artículos científicos, archivos y metadatos del proyecto RPP')
+    .setVersion('1.0')
+    .addTag('manuscritos')
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('docs', app, document);
+
   await app.listen(3000);
 }
 bootstrap();

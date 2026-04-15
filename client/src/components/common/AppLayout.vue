@@ -81,8 +81,8 @@
         <span style="font-size:16px; font-weight:700; color:#3e2723">{{ titulo }}</span>
       </div>
 
-      <!-- Página -->
-      <router-view />
+      <!-- Página con key para forzar re-render -->
+      <router-view :key="$route.fullPath" />
     </v-main>
   </v-layout>
 </template>
@@ -115,8 +115,9 @@ const NAV_CONFIG = {
     { icon: 'mdi-file-document-multiple-outline', label: 'Manuscritos', to: '/editor/manuscritos' },
   ],
   administrador: [
-    { icon: 'mdi-home-outline',           label: 'Inicio',    to: '/administrador/dashboard' },
-    { icon: 'mdi-account-group-outline',  label: 'Usuarios',  to: '/administrador/usuarios' },
+    { icon: 'mdi-home-outline',           label: 'Inicio',      to: '/administrador/dashboard' },
+    { icon: 'mdi-account-group-outline',  label: 'Usuarios',    to: '/administrador/usuarios' },
+    { icon: 'mdi-file-document-outline',  label: 'Manuscritos', to: '/administrador/manuscritos' },
   ],
 }
 
@@ -142,6 +143,7 @@ const TITULOS = {
   'editor-asignacion':  'Asignación',
   'admin-dashboard':    'Administración',
   'admin-usuarios':     'Usuarios',
+  'admin-manuscritos':  'Manuscritos Globales',
 }
 const titulo = computed(() => TITULOS[route.name] ?? 'Rev. por Pares')
 

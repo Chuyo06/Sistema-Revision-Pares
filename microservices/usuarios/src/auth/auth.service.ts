@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Usuario } from '../entities/usuario.entity';
+import { PerfilProfesional } from '../entities/perfil-profesional.entity';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 
@@ -10,6 +11,8 @@ export class AuthService {
   constructor(
     @InjectRepository(Usuario)
     private usuarioRepository: Repository<Usuario>,
+    @InjectRepository(PerfilProfesional)
+    private perfilRepository: Repository<PerfilProfesional>,
     private jwtService: JwtService,
   ) {}
 
@@ -22,19 +25,29 @@ export class AuthService {
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(passwordPlain, salt);
 
-    // 3. Guardar en MariaDB
+    // 3. Guardar usuario en MariaDB
     const nuevoUsuario = this.usuarioRepository.create({
       email,
       password_hash: passwordHash,
     });
-    await this.usuarioRepository.save(nuevoUsuario);
+    const guardado = await this.usuarioRepository.save(nuevoUsuario);
+
+    // 4. Crear perfil profesional con el nombre
+    const perfil = this.perfilRepository.create({
+      usuario: guardado,
+      nombre_completo: nombre || email.split('@')[0],
+    });
+    await this.perfilRepository.save(perfil);
     
     return { message: 'Usuario registrado exitosamente' };
   }
 
   async login(email: string, passwordPlain: string) {
-    // 1. Buscar al usuario
-    const user = await this.usuarioRepository.findOne({ where: { email } });
+    // 1. Buscar al usuario con su perfil
+    const user = await this.usuarioRepository.findOne({
+      where: { email },
+      relations: ['perfil'],
+    });
     if (!user) throw new UnauthorizedException('Credenciales inválidas');
 
     // 2. Comparar la contraseña ingresada con la encriptada
@@ -48,6 +61,7 @@ export class AuthService {
     return {
       access_token: token,
       id: user.id_usuario,
+      nombre: user.perfil?.nombre_completo || user.email.split('@')[0],
       email: user.email,
       rol: user.rol,
     };

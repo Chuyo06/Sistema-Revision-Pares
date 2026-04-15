@@ -3,11 +3,12 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Usuario } from '../entities/usuario.entity';
+import { PerfilProfesional } from '../entities/perfil-profesional.entity';
 import { JwtModule } from '@nestjs/jwt';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Usuario]),
+    TypeOrmModule.forFeature([Usuario, PerfilProfesional]),
     JwtModule.register({
       secret: 'MI_SUPER_SECRETO_TEMPORAL', // En producción, esto se guarda en el archivo .env
       signOptions: { expiresIn: '2h' }, // El token dura 2 horas

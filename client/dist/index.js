@@ -1,4 +1,4 @@
-const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["DashboardPage.js","index2.js","ArticulosPage.js","NuevoArticuloPage.js","DashboardPage2.js","index3.js","AsignadosPage.js","RevisionPage.js","DashboardPage3.js","index4.js","ManuscritosPage.js","AsignacionPage.js","DashboardPage4.js","index5.js","UsuariosPage.js"])))=>i.map(i=>d[i]);
+const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=["AppLayout.js","AppLayout.css","DashboardPage.js","index2.js","manuscritos.js","ArticulosPage.js","NuevoArticuloPage.js","NuevoArticuloPage.css","DashboardPage2.js","index3.js","revision.js","AsignadosPage.js","RevisionPage.js","DashboardPage3.js","index4.js","usuarios.js","ManuscritosPage.js","ManuscritosPage.css","AsignacionPage.js","AsignacionPage.css","DashboardPage4.js","index5.js","UsuariosPage.js","ManuscritosPage2.js"])))=>i.map(i=>d[i]);
 var _a;
 (function polyfill() {
   const relList = document.createElement("link").relList;
@@ -3445,6 +3445,23 @@ function renderList(source, renderItem, cache, index) {
     ret = [];
   }
   return ret;
+}
+function createSlots(slots, dynamicSlots) {
+  for (let i = 0; i < dynamicSlots.length; i++) {
+    const slot = dynamicSlots[i];
+    if (isArray$1(slot)) {
+      for (let j = 0; j < slot.length; j++) {
+        slots[slot[j].name] = slot[j].fn;
+      }
+    } else if (slot) {
+      slots[slot.name] = slot.key ? (...args) => {
+        const res = slot.fn(...args);
+        if (res) res.key = slot.key;
+        return res;
+      } : slot.fn;
+    }
+  }
+  return slots;
 }
 const getPublicInstance = (i) => {
   if (!i) return null;
@@ -8097,18 +8114,119 @@ const _export_sfc = (sfc, props) => {
   }
   return target;
 };
-const _sfc_main = {};
-function _sfc_render(_ctx, _cache) {
-  const _component_router_view = resolveComponent("router-view");
-  const _component_v_app = resolveComponent("v-app");
-  return openBlock(), createBlock(_component_v_app, null, {
-    default: withCtx(() => [
-      createVNode(_component_router_view)
-    ]),
-    _: 1
-  });
-}
-const App = /* @__PURE__ */ _export_sfc(_sfc_main, [["render", _sfc_render]]);
+const _hoisted_1 = { class: "d-flex align-center py-1" };
+const _sfc_main$1 = {
+  __name: "PwaInstallBanner",
+  setup(__props) {
+    const show = /* @__PURE__ */ ref(false);
+    const deferredPrompt = /* @__PURE__ */ ref(null);
+    const onBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      deferredPrompt.value = e;
+      show.value = true;
+      console.log("[PWA Banner] Evento beforeinstallprompt capturado");
+    };
+    const installPwa = async () => {
+      if (!deferredPrompt.value) return;
+      show.value = false;
+      deferredPrompt.value.prompt();
+      const { outcome } = await deferredPrompt.value.userChoice;
+      console.log(`[PWA Banner] El usuario eligió: ${outcome}`);
+      deferredPrompt.value = null;
+    };
+    onMounted(() => {
+      window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+      window.addEventListener("appinstalled", () => {
+        console.log("[PWA Banner] La aplicación ha sido instalada exitosamente");
+        show.value = false;
+        deferredPrompt.value = null;
+      });
+    });
+    onUnmounted(() => {
+      window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+    });
+    return (_ctx, _cache) => {
+      const _component_v_icon = resolveComponent("v-icon");
+      const _component_v_btn = resolveComponent("v-btn");
+      const _component_v_snackbar = resolveComponent("v-snackbar");
+      return openBlock(), createBlock(_component_v_snackbar, {
+        modelValue: show.value,
+        "onUpdate:modelValue": _cache[1] || (_cache[1] = ($event) => show.value = $event),
+        timeout: -1,
+        color: "primary",
+        elevation: "24",
+        location: "bottom right",
+        class: "mb-4 mr-4",
+        rounded: "lg"
+      }, {
+        actions: withCtx(() => [
+          createVNode(_component_v_btn, {
+            variant: "text",
+            onClick: _cache[0] || (_cache[0] = ($event) => show.value = false),
+            class: "text-none"
+          }, {
+            default: withCtx(() => [..._cache[3] || (_cache[3] = [
+              createTextVNode(" Quizás luego ", -1)
+            ])]),
+            _: 1
+          }),
+          createVNode(_component_v_btn, {
+            color: "white",
+            theme: "light",
+            onClick: installPwa,
+            class: "text-none ml-2 px-4",
+            elevation: "2"
+          }, {
+            default: withCtx(() => [
+              createVNode(_component_v_icon, {
+                left: "",
+                class: "mr-2"
+              }, {
+                default: withCtx(() => [..._cache[4] || (_cache[4] = [
+                  createTextVNode("mdi-download", -1)
+                ])]),
+                _: 1
+              }),
+              _cache[5] || (_cache[5] = createTextVNode(" Instalar ahora ", -1))
+            ]),
+            _: 1
+          })
+        ]),
+        default: withCtx(() => [
+          createBaseVNode("div", _hoisted_1, [
+            createVNode(_component_v_icon, {
+              icon: "mdi-cellphone-arrow-down",
+              class: "mr-3",
+              size: "32"
+            }),
+            _cache[2] || (_cache[2] = createBaseVNode("div", null, [
+              createBaseVNode("div", { class: "text-subtitle-1 font-weight-bold" }, "Instalar App"),
+              createBaseVNode("div", { class: "text-body-2" }, "Accede más rápido y trabaja sin conexión.")
+            ], -1))
+          ])
+        ]),
+        _: 1
+      }, 8, ["modelValue"]);
+    };
+  }
+};
+const PwaInstallBanner = /* @__PURE__ */ _export_sfc(_sfc_main$1, [["__scopeId", "data-v-040ba378"]]);
+const _sfc_main = {
+  __name: "App",
+  setup(__props) {
+    return (_ctx, _cache) => {
+      const _component_router_view = resolveComponent("router-view");
+      const _component_v_app = resolveComponent("v-app");
+      return openBlock(), createBlock(_component_v_app, null, {
+        default: withCtx(() => [
+          createVNode(_component_router_view),
+          createVNode(PwaInstallBanner)
+        ]),
+        _: 1
+      });
+    };
+  }
+};
 const scriptRel = "modulepreload";
 const assetsURL = function(dep) {
   return "/" + dep;
@@ -9727,45 +9845,153 @@ function useRouter$1() {
 function useRoute$1(_name) {
   return inject$1(routeLocationKey);
 }
+const AUTH_URL = "/api/auth";
+const ROL_MAP = { admin: "administrador" };
 const USUARIOS_MOCK = [
-  { id: 1, nombre: "Ana García", email: "autor@demo.com", password: "1234", rol: "autor", avatar: "AG" },
-  { id: 2, nombre: "Carlos López", email: "revisor@demo.com", password: "1234", rol: "revisor", avatar: "CL" },
-  { id: 3, nombre: "Dr. Martínez", email: "editor@demo.com", password: "1234", rol: "editor", avatar: "DM" },
-  { id: 4, nombre: "Admin Sistema", email: "admin@demo.com", password: "1234", rol: "administrador", avatar: "AS" }
+  {
+    id: 1,
+    nombre: "Ana García",
+    email: "autor@demo.com",
+    password: "1234",
+    avatar: "AG",
+    roles: ["autor"]
+  },
+  {
+    id: 2,
+    nombre: "Carlos López",
+    email: "revisor@demo.com",
+    password: "1234",
+    avatar: "CL",
+    roles: ["revisor", "autor"]
+  },
+  {
+    id: 3,
+    nombre: "Dr. Martínez",
+    email: "editor@demo.com",
+    password: "1234",
+    avatar: "DM",
+    roles: ["editor", "revisor"]
+  },
+  {
+    id: 4,
+    nombre: "Admin Sistema",
+    email: "admin@demo.com",
+    password: "1234",
+    avatar: "AS",
+    roles: ["administrador"]
+  }
 ];
+async function loginApi(email, password) {
+  try {
+    const res = await fetch(`${AUTH_URL}/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const rolRaw = (data.rol || "autor").toLowerCase();
+      const mapRol = (r) => ROL_MAP[r] || r;
+      return {
+        id: data.id ?? data.id_usuario,
+        nombre: data.nombre ?? data.email,
+        email: data.email,
+        avatar: (data.nombre || data.email || "").substring(0, 2).toUpperCase(),
+        roles: data.roles ? data.roles.map((r) => mapRol(r.toLowerCase())) : [mapRol(rolRaw)],
+        rolActivo: mapRol((data.rolActivo ?? rolRaw).toLowerCase()),
+        token: data.access_token ?? data.token ?? null
+      };
+    }
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || "Credenciales incorrectas");
+  } catch (err) {
+    if (err.message && !err.message.includes("fetch") && !err.message.includes("Failed") && !err.message.includes("NetworkError")) {
+      throw err;
+    }
+    console.warn("[Auth] Backend no disponible, usando datos mock:", err.message);
+    return loginMock(email, password);
+  }
+}
+function loginMock(email, password) {
+  return new Promise((resolve2, reject) => {
+    setTimeout(() => {
+      const encontrado = USUARIOS_MOCK.find((u) => u.email === email && u.password === password);
+      if (!encontrado) {
+        reject(new Error("Credenciales incorrectas"));
+        return;
+      }
+      const { password: _pwd, ...usuario } = encontrado;
+      resolve2({ ...usuario, rolActivo: usuario.roles[0] });
+    }, 400);
+  });
+}
+function cargarUsuarioPersistido() {
+  const raw = JSON.parse(localStorage.getItem("rpp_usuario") || "null");
+  if (!raw) return null;
+  if (!raw.roles || !raw.rolActivo) {
+    if (raw.rol) {
+      return { ...raw, roles: [raw.rol], rolActivo: raw.rol };
+    }
+    localStorage.removeItem("rpp_usuario");
+    return null;
+  }
+  return raw;
+}
 const useAuthStore = /* @__PURE__ */ defineStore("auth", () => {
-  const usuario = /* @__PURE__ */ ref(JSON.parse(localStorage.getItem("rpp_usuario") || "null"));
+  const usuario = /* @__PURE__ */ ref(cargarUsuarioPersistido());
   const cargando = /* @__PURE__ */ ref(false);
   const error = /* @__PURE__ */ ref(null);
   const estaAutenticado = computed(() => !!usuario.value);
-  const rol = computed(() => {
+  const roles = computed(() => {
     var _a2;
-    return ((_a2 = usuario.value) == null ? void 0 : _a2.rol) ?? null;
+    return ((_a2 = usuario.value) == null ? void 0 : _a2.roles) ?? [];
   });
-  function login(email, password) {
+  const rolActivo = computed(() => {
+    var _a2;
+    return ((_a2 = usuario.value) == null ? void 0 : _a2.rolActivo) ?? null;
+  });
+  const rol = computed(() => rolActivo.value);
+  const tieneMultiplesRoles = computed(() => roles.value.length > 1);
+  async function login(email, password) {
     cargando.value = true;
     error.value = null;
-    return new Promise((resolve2, reject) => {
-      setTimeout(() => {
-        const encontrado = USUARIOS_MOCK.find((u) => u.email === email && u.password === password);
-        if (encontrado) {
-          usuario.value = encontrado;
-          localStorage.setItem("rpp_usuario", JSON.stringify(encontrado));
-          cargando.value = false;
-          resolve2(encontrado);
-        } else {
-          error.value = "Credenciales incorrectas";
-          cargando.value = false;
-          reject(new Error("Credenciales incorrectas"));
-        }
-      }, 600);
-    });
+    try {
+      const data = await loginApi(email, password);
+      persistir(data);
+      return data;
+    } catch (e) {
+      error.value = e.message || "Error al iniciar sesión";
+      throw e;
+    } finally {
+      cargando.value = false;
+    }
+  }
+  function cambiarRol(nuevoRol) {
+    if (!usuario.value) return;
+    if (!usuario.value.roles.includes(nuevoRol)) return;
+    persistir({ ...usuario.value, rolActivo: nuevoRol });
   }
   function logout() {
     usuario.value = null;
     localStorage.removeItem("rpp_usuario");
   }
-  return { usuario, cargando, error, estaAutenticado, rol, login, logout };
+  function persistir(data) {
+    usuario.value = data;
+    localStorage.setItem("rpp_usuario", JSON.stringify(data));
+  }
+  return {
+    usuario,
+    cargando,
+    error,
+    estaAutenticado,
+    roles,
+    rolActivo,
+    rol,
+    tieneMultiplesRoles,
+    login,
+    logout,
+    cambiarRol
+  };
 });
 const routes = [
   { path: "/", redirect: "/login" },
@@ -9778,48 +10004,49 @@ const routes = [
   // ── AUTOR ──────────────────────────────────────────────────────
   {
     path: "/autor",
-    component: () => __vitePreload(() => import("./AppLayout.js"), true ? [] : void 0),
+    component: () => __vitePreload(() => import("./AppLayout.js"), true ? __vite__mapDeps([0,1]) : void 0),
     meta: { rol: "autor" },
     children: [
       { path: "", redirect: "/autor/dashboard" },
-      { path: "dashboard", name: "autor-dashboard", component: () => __vitePreload(() => import("./DashboardPage.js"), true ? __vite__mapDeps([0,1]) : void 0) },
-      { path: "articulos", name: "autor-articulos", component: () => __vitePreload(() => import("./ArticulosPage.js"), true ? __vite__mapDeps([2,1]) : void 0) },
-      { path: "nuevo", name: "autor-nuevo", component: () => __vitePreload(() => import("./NuevoArticuloPage.js"), true ? __vite__mapDeps([3,1]) : void 0) }
+      { path: "dashboard", name: "autor-dashboard", component: () => __vitePreload(() => import("./DashboardPage.js"), true ? __vite__mapDeps([2,3,4]) : void 0) },
+      { path: "articulos", name: "autor-articulos", component: () => __vitePreload(() => import("./ArticulosPage.js"), true ? __vite__mapDeps([5,3,4]) : void 0) },
+      { path: "nuevo", name: "autor-nuevo", component: () => __vitePreload(() => import("./NuevoArticuloPage.js"), true ? __vite__mapDeps([6,3,4,7]) : void 0) }
     ]
   },
   // ── REVISOR ────────────────────────────────────────────────────
   {
     path: "/revisor",
-    component: () => __vitePreload(() => import("./AppLayout.js"), true ? [] : void 0),
+    component: () => __vitePreload(() => import("./AppLayout.js"), true ? __vite__mapDeps([0,1]) : void 0),
     meta: { rol: "revisor" },
     children: [
       { path: "", redirect: "/revisor/dashboard" },
-      { path: "dashboard", name: "revisor-dashboard", component: () => __vitePreload(() => import("./DashboardPage2.js"), true ? __vite__mapDeps([4,5]) : void 0) },
-      { path: "asignados", name: "revisor-asignados", component: () => __vitePreload(() => import("./AsignadosPage.js"), true ? __vite__mapDeps([6,5]) : void 0) },
-      { path: "revision/:id", name: "revisor-revision", component: () => __vitePreload(() => import("./RevisionPage.js"), true ? __vite__mapDeps([7,5]) : void 0) }
+      { path: "dashboard", name: "revisor-dashboard", component: () => __vitePreload(() => import("./DashboardPage2.js"), true ? __vite__mapDeps([8,9,10,4]) : void 0) },
+      { path: "asignados", name: "revisor-asignados", component: () => __vitePreload(() => import("./AsignadosPage.js"), true ? __vite__mapDeps([11,9,10,4]) : void 0) },
+      { path: "revision/:id", name: "revisor-revision", component: () => __vitePreload(() => import("./RevisionPage.js"), true ? __vite__mapDeps([12,9,10,4]) : void 0) }
     ]
   },
   // ── EDITOR ─────────────────────────────────────────────────────
   {
     path: "/editor",
-    component: () => __vitePreload(() => import("./AppLayout.js"), true ? [] : void 0),
+    component: () => __vitePreload(() => import("./AppLayout.js"), true ? __vite__mapDeps([0,1]) : void 0),
     meta: { rol: "editor" },
     children: [
       { path: "", redirect: "/editor/dashboard" },
-      { path: "dashboard", name: "editor-dashboard", component: () => __vitePreload(() => import("./DashboardPage3.js"), true ? __vite__mapDeps([8,9]) : void 0) },
-      { path: "manuscritos", name: "editor-manuscritos", component: () => __vitePreload(() => import("./ManuscritosPage.js"), true ? __vite__mapDeps([10,9]) : void 0) },
-      { path: "asignacion/:id", name: "editor-asignacion", component: () => __vitePreload(() => import("./AsignacionPage.js"), true ? __vite__mapDeps([11,9]) : void 0) }
+      { path: "dashboard", name: "editor-dashboard", component: () => __vitePreload(() => import("./DashboardPage3.js"), true ? __vite__mapDeps([13,14,4,15,10]) : void 0) },
+      { path: "manuscritos", name: "editor-manuscritos", component: () => __vitePreload(() => import("./ManuscritosPage.js"), true ? __vite__mapDeps([16,14,4,15,10,17]) : void 0) },
+      { path: "asignacion/:id", name: "editor-asignacion", component: () => __vitePreload(() => import("./AsignacionPage.js"), true ? __vite__mapDeps([18,14,4,15,10,19]) : void 0) }
     ]
   },
   // ── ADMINISTRADOR ──────────────────────────────────────────────
   {
     path: "/administrador",
-    component: () => __vitePreload(() => import("./AppLayout.js"), true ? [] : void 0),
+    component: () => __vitePreload(() => import("./AppLayout.js"), true ? __vite__mapDeps([0,1]) : void 0),
     meta: { rol: "administrador" },
     children: [
       { path: "", redirect: "/administrador/dashboard" },
-      { path: "dashboard", name: "admin-dashboard", component: () => __vitePreload(() => import("./DashboardPage4.js"), true ? __vite__mapDeps([12,13]) : void 0) },
-      { path: "usuarios", name: "admin-usuarios", component: () => __vitePreload(() => import("./UsuariosPage.js"), true ? __vite__mapDeps([14,13]) : void 0) }
+      { path: "dashboard", name: "admin-dashboard", component: () => __vitePreload(() => import("./DashboardPage4.js"), true ? __vite__mapDeps([20,21,15,4]) : void 0) },
+      { path: "usuarios", name: "admin-usuarios", component: () => __vitePreload(() => import("./UsuariosPage.js"), true ? __vite__mapDeps([22,21,15,4]) : void 0) },
+      { path: "manuscritos", name: "admin-manuscritos", component: () => __vitePreload(() => import("./ManuscritosPage2.js"), true ? __vite__mapDeps([23,21,15,4]) : void 0) }
     ]
   },
   { path: "/:pathMatch(.*)*", redirect: "/login" }
@@ -45633,70 +45860,65 @@ const vuetify = createVuetify({
   components,
   directives,
   theme: {
-    defaultTheme: "light",
+    defaultTheme: "papelAntiguo",
     themes: {
-      light: {
+      papelAntiguo: {
         colors: {
-          primary: "#1e40af",
-          secondary: "#3b82f6",
-          accent: "#6366f1",
-          success: "#22c55e",
-          warning: "#f59e0b",
-          error: "#ef4444",
-          info: "#0ea5e9",
-          surface: "#ffffff",
-          background: "#f8fafc",
-          "on-primary": "#ffffff"
-        }
-      },
-      dark: {
-        colors: {
-          primary: "#3b82f6",
-          secondary: "#6366f1",
-          accent: "#818cf8",
-          success: "#4ade80",
-          warning: "#fbbf24",
-          error: "#f87171",
-          info: "#38bdf8",
-          surface: "#1e293b",
-          background: "#0f172a"
+          primary: "#5d4037",
+          secondary: "#8d6e63",
+          accent: "#795548",
+          success: "#558b2f",
+          warning: "#e65100",
+          error: "#c62828",
+          info: "#546e7a",
+          surface: "#fdfbf5",
+          background: "#f5f0e8",
+          "on-primary": "#ffffff",
+          "on-surface": "#3e2723"
         }
       }
     }
   },
   defaults: {
     VBtn: { rounded: "lg" },
-    VCard: { rounded: "xl" },
-    VTextField: { variant: "outlined", density: "comfortable" },
-    VSelect: { variant: "outlined", density: "comfortable" },
-    VTextarea: { variant: "outlined", density: "comfortable" }
+    VCard: { rounded: "lg", elevation: 1 },
+    VTextField: { variant: "outlined", density: "comfortable", color: "primary" },
+    VSelect: { variant: "outlined", density: "comfortable", color: "primary" },
+    VTextarea: { variant: "outlined", density: "comfortable", color: "primary" }
   }
 });
-const app = createApp(App);
+const app = createApp(_sfc_main);
 app.use(createPinia());
 app.use(router);
 app.use(vuetify);
 app.mount("#app");
 export {
   Fragment as F,
-  useRouter$1 as a,
+  _export_sfc as _,
+  createBaseVNode as a,
   createVNode as b,
-  createBlock as c,
-  createTextVNode as d,
-  unref as e,
-  createCommentVNode as f,
-  withModifiers as g,
-  createBaseVNode as h,
-  createElementBlock as i,
-  renderList as j,
-  ref as k,
-  useRoute$1 as l,
-  computed as m,
-  defineStore as n,
+  createElementBlock as c,
+  unref as d,
+  createCommentVNode as e,
+  withModifiers as f,
+  resolveComponent as g,
+  ref as h,
+  useRouter$1 as i,
+  createTextVNode as j,
+  createBlock as k,
+  createSlots as l,
+  mergeProps as m,
+  normalizeStyle as n,
   openBlock as o,
-  reactive as p,
-  resolveComponent as r,
+  computed as p,
+  useDisplay as q,
+  renderList as r,
+  useRoute$1 as s,
   toDisplayString as t,
   useAuthStore as u,
-  withCtx as w
+  onMounted as v,
+  withCtx as w,
+  defineStore as x,
+  reactive as y,
+  normalizeClass as z
 };

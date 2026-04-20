@@ -1,5 +1,7 @@
-import { i as createElementBlock, b as createVNode, w as withCtx, r as resolveComponent, k as ref, o as openBlock, h as createBaseVNode, d as createTextVNode, e as unref, t as toDisplayString, g as withModifiers, m as computed } from "./index.js";
+import { v as onMounted, c as createElementBlock, b as createVNode, w as withCtx, g as resolveComponent, h as ref, o as openBlock, a as createBaseVNode, j as createTextVNode, d as unref, t as toDisplayString, f as withModifiers, p as computed } from "./index.js";
 import { u as useAdminStore } from "./index5.js";
+import "./usuarios.js";
+import "./manuscritos.js";
 const _sfc_main = {
   __name: "UsuariosPage",
   setup(__props) {
@@ -11,6 +13,9 @@ const _sfc_main = {
     const snackbar = ref(false);
     const mensajeSnackbar = ref("");
     const nuevoUsuario = ref({ nombre: "", email: "", rol: "" });
+    onMounted(() => {
+      adminStore.cargarUsuarios();
+    });
     const usuariosFiltrados = computed(
       () => adminStore.usuarios.filter(
         (u) => (filtroRol.value === "TODOS" || u.rol === filtroRol.value) && (u.nombre.toLowerCase().includes(busqueda.value.toLowerCase()) || u.email.toLowerCase().includes(busqueda.value.toLowerCase()))
@@ -24,11 +29,11 @@ const _sfc_main = {
       { title: "Estado", key: "estado", sortable: true },
       { title: "", key: "acciones", sortable: false, align: "end" }
     ];
-    function crearUsuario() {
-      adminStore.agregarUsuario({ ...nuevoUsuario.value });
+    async function crearUsuario() {
+      await adminStore.agregarUsuario({ ...nuevoUsuario.value });
       dialogoNuevo.value = false;
       nuevoUsuario.value = { nombre: "", email: "", rol: "" };
-      mensajeSnackbar.value = "Usuario creado correctamente";
+      mensajeSnackbar.value = "Usuario creado/actualizado correctamente";
       snackbar.value = true;
     }
     return (_ctx, _cache) => {

@@ -31,17 +31,21 @@ export class RolesGuard implements CanActivate {
     console.log('Roles requeridos:', requiredRoles);
     console.log('Usuario en request:', user);
 
-    // 4. VALIDACIÓN CRÍTICA: Si no hay usuario o no tiene rol, bloqueamos
-    if (!user || !user.role) {
-      console.log('Acceso Denegado: No se encontró usuario o rol en la petición');
+    // 4. VALIDACIÓN CRÍTICA: Si no hay usuario o no tiene roles, bloqueamos
+    if (!user || (!user.roles && !user.rol && !user.role)) {
+      console.log('Acceso Denegado: No se encontró usuario o roles en la petición');
       throw new ForbiddenException('No tienes permisos para acceder a este recurso (Usuario no identificado)');
     }
 
-    // 5. Comprobar si el rol del usuario coincide con los requeridos
-    const hasRole = requiredRoles.some((role) => user.role.includes(role));
+    // Compatibilidad para admitir un array (via user.roles) o un single role (via user.rol/role)
+    const userRolesRaw = user.roles || user.rol || user.role;
+    const rolesArray = Array.isArray(userRolesRaw) ? userRolesRaw : String(userRolesRaw).split(',');
+
+    // 5. Comprobar si al menos uno de los roles del usuario coincide con los requeridos
+    const hasRole = requiredRoles.some((requiredRole) => rolesArray.includes(requiredRole));
 
     if (!hasRole) {
-      console.log(`Acceso Denegado: El rol '${user.role}' no es suficiente`);
+      console.log(`Acceso Denegado: Los roles '${rolesArray.join(',')}' no son suficientes`);
       throw new ForbiddenException(`Se requiere uno de los siguientes roles: ${requiredRoles.join(', ')}`);
     }
 

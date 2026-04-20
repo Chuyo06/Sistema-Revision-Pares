@@ -6,7 +6,7 @@ CREATE TABLE usuarios (
     id_usuario INT AUTO_INCREMENT PRIMARY KEY,
     email VARCHAR(150) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
-    rol ENUM('AUTOR', 'REVISOR', 'EDITOR', 'ADMIN') DEFAULT 'AUTOR',
+    roles VARCHAR(255) DEFAULT 'AUTOR',
     estado ENUM('ACTIVO', 'INACTIVO', 'SUSPENDIDO') DEFAULT 'ACTIVO',
     fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -36,6 +36,7 @@ CREATE TABLE perfiles_profesionales (
     institucion VARCHAR(200),
     orcid VARCHAR(50) UNIQUE, -- Identificador estándar para investigadores
     especialidad_academica VARCHAR(200),
+    avatar LONGTEXT NULL,
     FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario) ON DELETE CASCADE
 );
 

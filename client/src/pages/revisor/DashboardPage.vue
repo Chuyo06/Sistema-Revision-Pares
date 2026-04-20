@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div>
     <!-- Banner -->
     <div
@@ -35,14 +35,14 @@
       <!-- Feed izquierdo -->
       <div>
         <!-- Pendientes -->
-        <div style="font-size:13px; font-weight:700; color:#8d6e63; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:10px">
+        <div style="font-size:13px; font-weight:700; color:#8B5A2B; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:10px">
           Pendientes de revisión
         </div>
 
         <div
           v-for="a in pendientesLista"
           :key="a.id"
-          style="background:#fdfbf5; border:1px solid #e8ddd0; border-radius:12px; margin-bottom:10px; overflow:hidden; cursor:pointer"
+          style="background:#FFFFFF; border:1px solid #D3E0D7; border-radius:12px; margin-bottom:10px; overflow:hidden; cursor:pointer"
           @click="$router.push(`/revisor/revision/${a.id}`)"
         >
           <div style="height:5px; background:#e65100" />
@@ -51,10 +51,10 @@
               <v-icon color="#e65100" size="18">mdi-clock-outline</v-icon>
             </div>
             <div style="flex:1; min-width:0">
-              <div style="font-size:14px; font-weight:600; color:#3e2723; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">
+              <div style="font-size:14px; font-weight:600; color:#1B4332; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">
                 {{ a.titulo }}
               </div>
-              <div style="font-size:12px; color:#8d6e63; margin-top:2px">{{ a.convocatoria }}</div>
+              <div style="font-size:12px; color:#8B5A2B; margin-top:2px">{{ a.convocatoria }}</div>
               <div style="font-size:11px; color:#c62828; margin-top:2px">
                 <v-icon size="11">mdi-calendar-clock</v-icon> Deadline: {{ a.deadline }}
               </div>
@@ -65,20 +65,20 @@
           </div>
         </div>
 
-        <div v-if="pendientesLista.length === 0" style="background:#fdfbf5; border:1px solid #e8ddd0; border-radius:12px; padding:20px 16px; text-align:center; margin-bottom:14px">
+        <div v-if="pendientesLista.length === 0" style="background:#FFFFFF; border:1px solid #D3E0D7; border-radius:12px; padding:20px 16px; text-align:center; margin-bottom:14px">
           <v-icon color="success" size="28">mdi-check-circle</v-icon>
           <p style="font-size:13px; color:#558b2f; margin-top:6px">Sin revisiones pendientes</p>
         </div>
 
         <!-- Completadas -->
-        <div style="font-size:13px; font-weight:700; color:#8d6e63; text-transform:uppercase; letter-spacing:0.05em; margin:16px 0 10px">
+        <div style="font-size:13px; font-weight:700; color:#8B5A2B; text-transform:uppercase; letter-spacing:0.05em; margin:16px 0 10px">
           Revisiones completadas
         </div>
 
         <div
           v-for="a in completadas"
           :key="a.id"
-          style="background:#fdfbf5; border:1px solid #e8ddd0; border-radius:12px; margin-bottom:10px; overflow:hidden"
+          style="background:#FFFFFF; border:1px solid #D3E0D7; border-radius:12px; margin-bottom:10px; overflow:hidden"
         >
           <div style="height:5px; background:#558b2f" />
           <div style="padding:12px 16px; display:flex; align-items:center; gap:12px">
@@ -86,23 +86,23 @@
               <v-icon color="#558b2f" size="16">mdi-check</v-icon>
             </div>
             <div style="flex:1; min-width:0">
-              <div style="font-size:13px; font-weight:600; color:#3e2723; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">
+              <div style="font-size:13px; font-weight:600; color:#1B4332; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">
                 {{ a.titulo }}
               </div>
-              <div style="font-size:12px; color:#8d6e63">{{ a.convocatoria }}</div>
+              <div style="font-size:12px; color:#8B5A2B">{{ a.convocatoria }}</div>
             </div>
             <v-chip color="success" label size="x-small">Enviada</v-chip>
           </div>
         </div>
 
-        <div v-if="completadas.length === 0" style="font-size:13px; color:#8d6e63; padding:8px 0">
+        <div v-if="completadas.length === 0" style="font-size:13px; color:#8B5A2B; padding:8px 0">
           Ninguna completada aún.
         </div>
       </div>
 
       <!-- Panel derecho -->
       <div>
-        <div style="background:#fdfbf5; border:1px solid #e8ddd0; border-radius:12px; overflow:hidden">
+        <div style="background:#FFFFFF; border:1px solid #D3E0D7; border-radius:12px; overflow:hidden">
           <div style="background:#558b2f; padding:10px 14px">
             <span style="font-size:13px; font-weight:600; color:#fff">Mis estadísticas</span>
           </div>
@@ -111,8 +111,8 @@
             :key="stat.label"
             style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; border-top:1px solid #f0e9df"
           >
-            <span style="font-size:13px; color:#5d4037">{{ stat.label }}</span>
-            <span style="font-size:18px; font-weight:700; color:#3e2723">{{ stat.valor }}</span>
+            <span style="font-size:13px; color:#4CAF50">{{ stat.label }}</span>
+            <span style="font-size:18px; font-weight:700; color:#1B4332">{{ stat.valor }}</span>
           </div>
         </div>
       </div>

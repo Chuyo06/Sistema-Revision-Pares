@@ -10,7 +10,7 @@ DELETE FROM usuarios;
 
 -- 1. USUARIOS (Password universal: 1234)
 -- Hashes generados previamente para '1234'
-INSERT INTO usuarios (id_usuario, email, password_hash, rol, estado) VALUES
+INSERT INTO usuarios (id_usuario, email, password_hash, roles, estado) VALUES
 (1, 'autor@demo.com',      '$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'AUTOR', 'ACTIVO'),
 (2, 'revisor@demo.com',    '$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'REVISOR', 'ACTIVO'),
 (3, 'editor@demo.com',     '$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'EDITOR', 'ACTIVO'),
@@ -22,7 +22,8 @@ INSERT INTO usuarios (id_usuario, email, password_hash, rol, estado) VALUES
 (9, 'l.martinez@unam.mx',  '$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'AUTOR', 'ACTIVO'),
 (10, 'h.mueller@tu-berlin.de','$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'REVISOR', 'ACTIVO'),
 (11, 'j.doe@oxford.ac.uk',  '$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'EDITOR', 'ACTIVO'),
-(12, 'm.patel@iit.ac.in',   '$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'REVISOR', 'ACTIVO');
+(12, 'm.patel@iit.ac.in',   '$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'REVISOR', 'ACTIVO'),
+(13, 'super@demo.com',      '$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'AUTOR,REVISOR,EDITOR,ADMIN', 'ACTIVO');
 
 -- 2. PERFILES PROFESIONALES
 INSERT INTO perfiles_profesionales (id_usuario, nombre_completo, institucion, orcid, especialidad_academica) VALUES
@@ -37,7 +38,8 @@ INSERT INTO perfiles_profesionales (id_usuario, nombre_completo, institucion, or
 (9,  'Lucía Martínez',          'UNAM / IIMAS',              '0000-0009-9999-9999', 'Sistemas Distribuidos y Tolerancia a Fallos'),
 (10, 'Hans Müller',             'TU Berlin',                 '0000-0010-1010-1010', 'Ciberseguridad y Privacidad'),
 (11, 'John Doe',                'University of Oxford',      '0000-0011-1111-1111', 'Lógica Computacional y Ética'),
-(12, 'Meera Patel',             'IIT Bombay',                '0000-0012-1212-1212', 'Visión por Computadora y Deep Learning');
+(12, 'Meera Patel',             'IIT Bombay',                '0000-0012-1212-1212', 'Visión por Computadora y Deep Learning'),
+(13, 'Super Usuario Multi-Rol', 'Universidad Global',        NULL,                  'Todas las Áreas');
 
 -- 3. MANUSCRITOS
 INSERT INTO manuscritos (id, titulo, resumen, autorId, autores, estado, convocatoria, referencia, fechaEnvio) VALUES

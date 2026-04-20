@@ -1,4 +1,4 @@
-import 'vuetify/styles'
+﻿import 'vuetify/styles'
 import '@mdi/font/css/materialdesignicons.css'
 import { createVuetify } from 'vuetify'
 import * as components from 'vuetify/components'
@@ -12,17 +12,17 @@ export default createVuetify({
     themes: {
       papelAntiguo: {
         colors: {
-          primary:    '#5d4037',
-          secondary:  '#8d6e63',
-          accent:     '#795548',
+          primary:    '#4CAF50',
+          secondary:  '#8B5A2B',
+          accent:     '#5C4033',
           success:    '#558b2f',
           warning:    '#e65100',
           error:      '#c62828',
           info:       '#546e7a',
-          surface:    '#fdfbf5',
-          background: '#f5f0e8',
+          surface:    '#FFFFFF',
+          background: '#F6F8F6',
           'on-primary': '#ffffff',
-          'on-surface': '#3e2723',
+          'on-surface': '#1B4332',
         }
       }
     }

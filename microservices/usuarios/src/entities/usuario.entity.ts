@@ -25,8 +25,8 @@ export class Usuario {
   @Column({ type: 'varchar', length: 255, name: 'password_hash' })
   password_hash!: string;
 
-  @Column({ type: 'enum', enum: RolUsuario, default: RolUsuario.AUTOR })
-  rol!: RolUsuario;
+  @Column({ type: 'simple-array', default: [RolUsuario.AUTOR] })
+  roles!: RolUsuario[];
 
   @Column({ type: 'enum', enum: EstadoUsuario, default: EstadoUsuario.ACTIVO })
   estado!: EstadoUsuario;

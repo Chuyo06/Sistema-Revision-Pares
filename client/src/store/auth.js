@@ -54,6 +54,11 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('rpp_usuario')
   }
 
+  function actualizarPerfil(nuevosDatos) {
+    if (!usuario.value) return
+    persistir({ ...usuario.value, ...nuevosDatos })
+  }
+
   function persistir(data) {
     usuario.value = data
     localStorage.setItem('rpp_usuario', JSON.stringify(data))
@@ -62,6 +67,6 @@ export const useAuthStore = defineStore('auth', () => {
   return {
     usuario, cargando, error,
     estaAutenticado, roles, rolActivo, rol, tieneMultiplesRoles,
-    login, logout, cambiarRol,
+    login, logout, cambiarRol, actualizarPerfil
   }
 })

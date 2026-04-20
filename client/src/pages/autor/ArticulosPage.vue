@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div style="max-width:800px; padding:20px">
 
     <!-- Barra de acciones -->
@@ -30,14 +30,14 @@
     <div
       v-for="m in manuscritosFiltrados"
       :key="m.id"
-      style="background:#fdfbf5; border:1px solid #e8ddd0; border-radius:12px; margin-bottom:10px; overflow:hidden"
+      style="background:#FFFFFF; border:1px solid #D3E0D7; border-radius:12px; margin-bottom:10px; overflow:hidden"
     >
       <div :style="`height:5px; background:${hexEstado(m.estado)}`" />
       <div style="padding:16px">
         <!-- Fila 1: Título + chip (no se enciman) -->
         <div style="display:flex; align-items:flex-start; gap:10px; margin-bottom:6px">
           <div style="flex:1; min-width:0">
-            <div style="font-size:15px; font-weight:600; color:#3e2723; word-break:break-word">
+            <div style="font-size:15px; font-weight:600; color:#1B4332; word-break:break-word">
               {{ m.titulo }}
             </div>
           </div>
@@ -53,16 +53,16 @@
 
         <!-- Fila 2: Subtítulo -->
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap">
-          <span style="font-size:12px; color:#8d6e63">{{ m.convocatoria }}</span>
-          <span v-if="m.fechaEnvio" style="font-size:12px; color:#bda89a">·</span>
-          <span v-if="m.fechaEnvio" style="font-size:12px; color:#8d6e63">{{ m.fechaEnvio }}</span>
+          <span style="font-size:12px; color:#8B5A2B">{{ m.convocatoria }}</span>
+          <span v-if="m.fechaEnvio" style="font-size:12px; color:#bda89a">Â·</span>
+          <span v-if="m.fechaEnvio" style="font-size:12px; color:#8B5A2B">{{ m.fechaEnvio }}</span>
           <v-chip v-if="m.referencia" size="x-small" variant="tonal" color="secondary">
             REF: {{ m.referencia }}
           </v-chip>
         </div>
 
         <!-- Fila 3: Resumen -->
-        <p style="font-size:13px; color:#5d4037; margin-top:8px; margin-bottom:0;
+        <p style="font-size:13px; color:#4CAF50; margin-top:8px; margin-bottom:0;
                   display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden">
           {{ m.resumen }}
         </p>
@@ -70,7 +70,7 @@
     </div>
 
     <!-- Vacío -->
-    <div v-if="manuscritosFiltrados.length === 0" style="text-align:center; padding:48px 0; color:#8d6e63">
+    <div v-if="manuscritosFiltrados.length === 0" style="text-align:center; padding:48px 0; color:#8B5A2B">
       <v-icon size="44" color="secondary">mdi-file-search-outline</v-icon>
       <p style="font-size:14px; margin-top:10px">No se encontraron artículos.</p>
     </div>

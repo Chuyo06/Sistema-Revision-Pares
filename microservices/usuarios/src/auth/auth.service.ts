@@ -55,15 +55,30 @@ export class AuthService {
     if (!isPasswordValid) throw new UnauthorizedException('Credenciales inválidas');
 
     // 3. Generar el Token JWT
-    const payload = { sub: user.id_usuario, email: user.email, rol: user.rol };
+    const payload = { sub: user.id_usuario, email: user.email, roles: user.roles };
     const token = this.jwtService.sign(payload);
 
     return {
       access_token: token,
       id: user.id_usuario,
       nombre: user.perfil?.nombre_completo || user.email.split('@')[0],
+      avatar: user.perfil?.avatar || null,
       email: user.email,
-      rol: user.rol,
+      roles: user.roles,
     };
+  }
+
+  async updateAvatar(id_usuario: number, base64Image: string) {
+    const perfil = await this.perfilRepository.findOne({ 
+      where: { usuario: { id_usuario } } 
+    });
+    
+    if (!perfil) {
+      throw new BadRequestException('Perfil no encontrado para este usuario');
+    }
+    
+    perfil.avatar = base64Image;
+    await this.perfilRepository.save(perfil);
+    return { success: true, message: 'Avatar actualizado exitosamente' };
   }
 }

@@ -1,5 +1,5 @@
-<template>
-  <v-container fluid style="background:#f5f0e8; min-height: 100%; padding: 24px">
+﻿<template>
+  <v-container fluid style="background:#F6F8F6; min-height: 100%; padding: 24px">
     <!-- Botón Volver -->
     <v-btn variant="text" to="/editor/manuscritos" prepend-icon="mdi-arrow-left" class="mb-6 text-none">
       Volver a Manuscritos
@@ -18,7 +18,7 @@
         <v-col cols="12" md="8">
           <!-- Cabecera del Manuscrito -->
           <v-card class="mb-6 overflow-hidden" elevation="3" rounded="xl" border>
-            <div style="height:8px; background: linear-gradient(90deg, #5d4037, #8d6e63)"></div>
+            <div style="height:8px; background: linear-gradient(90deg, #4CAF50, #8B5A2B)"></div>
             <v-card-item class="pa-6">
               <div class="d-flex justify-space-between align-start">
                 <div>
@@ -32,7 +32,7 @@
             </v-card-item>
           </v-card>
 
-          <!-- SECCIÓN: REVISORES ASIGNADOS -->
+          <!-- SECCIÃ“N: REVISORES ASIGNADOS -->
           <v-card class="mb-6" elevation="2" rounded="lg" border>
             <v-card-title class="pa-4 d-flex align-center">
               <v-icon color="brown" class="mr-2">mdi-account-check</v-icon>
@@ -62,7 +62,7 @@
                       <v-rating :model-value="asig.puntuacion" color="amber" density="compact" size="small" readonly></v-rating>
                       <span class="ml-2 font-weight-bold text-brown">{{ asig.puntuacion }}/5</span>
                     </div>
-                    <div v-if="asig.comentarios" class="bg-brown-lighten-5 pa-3 rounded-lg border text-italic mt-2" style="white-space: normal; color: #3e2723">
+                    <div v-if="asig.comentarios" class="bg-brown-lighten-5 pa-3 rounded-lg border text-italic mt-2" style="white-space: normal; color: #1B4332">
                        "{{ asig.comentarios }}"
                     </div>
                     <div v-else-if="asig.estado !== 'COMPLETADA'" class="text-caption text-grey">Esperando respuesta del revisor...</div>
@@ -76,7 +76,7 @@
             </v-card-text>
           </v-card>
 
-          <!-- SECCIÓN: DECISIÓN EDITORIAL FINAL -->
+          <!-- SECCIÃ“N: DECISIÃ“N EDITORIAL FINAL -->
           <v-card 
             v-if="asignacionesCompletadas.length > 0" 
             class="mb-6 elevation-10" 
@@ -218,7 +218,7 @@ function chipColor(e) {
   border-bottom: 1px solid #efefef;
 }
 .revisor-card:hover {
-  border-color: #5d4037 !important;
+  border-color: #4CAF50 !important;
   box-shadow: 0 4px 8px rgba(0,0,0,0.05);
 }
 .sticky-card {

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div>
     <!-- Banner -->
     <div
@@ -39,14 +39,14 @@
 
       <!-- Feed -->
       <div>
-        <div style="font-size:13px; font-weight:700; color:#8d6e63; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:10px">
+        <div style="font-size:13px; font-weight:700; color:#8B5A2B; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:10px">
           Manuscritos recientes
         </div>
 
         <div
           v-for="m in editorStore.manuscritos.slice(0, 6)"
           :key="m.id"
-          style="background:#fdfbf5; border:1px solid #e8ddd0; border-radius:12px; margin-bottom:10px; overflow:hidden"
+          style="background:#FFFFFF; border:1px solid #D3E0D7; border-radius:12px; margin-bottom:10px; overflow:hidden"
         >
           <div :style="`height:5px; background:${colorEstado(m.estado)}`" />
           <div style="padding:14px 16px; display:flex; align-items:flex-start; gap:12px">
@@ -56,11 +56,11 @@
               <v-icon :color="colorEstado(m.estado)" size="18">mdi-file-document-outline</v-icon>
             </div>
             <div style="flex:1; min-width:0">
-              <div style="font-size:14px; font-weight:600; color:#3e2723; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">
+              <div style="font-size:14px; font-weight:600; color:#1B4332; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">
                 {{ m.titulo }}
               </div>
-              <div style="font-size:12px; color:#8d6e63; margin-top:2px">
-                {{ m.convocatoria }} · {{ m.revisionesCompletadas }}/{{ m.revisoresAsignados }} revisiones
+              <div style="font-size:12px; color:#8B5A2B; margin-top:2px">
+                {{ m.convocatoria }} Â· {{ m.revisionesCompletadas }}/{{ m.revisoresAsignados }} revisiones
               </div>
             </div>
             <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0">
@@ -75,7 +75,7 @@
 
       <!-- Panel derecho -->
       <div>
-        <div style="background:#fdfbf5; border:1px solid #e8ddd0; border-radius:12px; overflow:hidden">
+        <div style="background:#FFFFFF; border:1px solid #D3E0D7; border-radius:12px; overflow:hidden">
           <div style="background:#e65100; padding:10px 14px">
             <span style="font-size:13px; font-weight:600; color:#fff">Resumen editorial</span>
           </div>
@@ -84,8 +84,8 @@
             :key="stat.label"
             style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; border-top:1px solid #f0e9df"
           >
-            <span style="font-size:13px; color:#5d4037">{{ stat.label }}</span>
-            <span style="font-size:18px; font-weight:700; color:#3e2723">{{ stat.valor }}</span>
+            <span style="font-size:13px; color:#4CAF50">{{ stat.label }}</span>
+            <span style="font-size:18px; font-weight:700; color:#1B4332">{{ stat.valor }}</span>
           </div>
         </div>
       </div>

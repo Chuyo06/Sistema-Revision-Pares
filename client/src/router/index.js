@@ -62,6 +62,15 @@ const routes = [
     ]
   },
 
+  // ── PERFIL GLOBAL ──────────────────────────────────────────────
+  {
+    path: '/perfil',
+    component: () => import('@/components/common/AppLayout.vue'),
+    children: [
+      { path: '', name: 'perfil', component: () => import('@/pages/perfil/PerfilPage.vue') },
+    ]
+  },
+
   { path: '/:pathMatch(.*)*', redirect: '/login' }
 ]
 
@@ -76,8 +85,15 @@ router.beforeEach((to, from, next) => {
   if (to.meta.publico) return next()
   if (!auth.estaAutenticado) return next('/login')
 
-  if (to.meta.rol && auth.rol !== to.meta.rol) {
-    return next(`/${auth.rol}/dashboard`)
+  if (to.meta.rol) {
+    // Si el usuario no tiene este rol en su lista de acceso, lo devolvemos
+    if (!auth.roles.includes(to.meta.rol)) {
+      return next(`/${auth.rol}/dashboard`)
+    }
+    // Si tiene el rol pero no es el activo actualmente, lo auto-cambiamos
+    if (auth.rol !== to.meta.rol) {
+      auth.cambiarRol(to.meta.rol)
+    }
   }
 
   next()

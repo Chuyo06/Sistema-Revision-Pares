@@ -23,7 +23,7 @@ export class UsuariosService {
       id: u.id_usuario,
       nombre: u.perfil?.nombre_completo || u.email.split('@')[0],
       email: u.email,
-      rol: u.rol.toLowerCase(),
+      roles: u.roles.map(r => r.toLowerCase()),
       estado: u.estado.toLowerCase(),
       fechaRegistro: u.fecha_registro,
       institucion: u.perfil?.institucion || null,
@@ -40,7 +40,7 @@ export class UsuariosService {
       id: u.id_usuario,
       nombre: u.perfil?.nombre_completo || u.email.split('@')[0],
       email: u.email,
-      rol: u.rol.toLowerCase(),
+      roles: u.roles.map(r => r.toLowerCase()),
       estado: u.estado.toLowerCase(),
       fechaRegistro: u.fecha_registro,
       institucion: u.perfil?.institucion || null,
@@ -53,19 +53,24 @@ export class UsuariosService {
     return this.obtenerPorId(id);
   }
 
-  async actualizarRol(id: number, rol: string) {
-    await this.usuarioRepo.update(id, { rol: rol.toUpperCase() as any });
+  async actualizarRol(id: number, rol: string | string[]) {
+    const rolesArray = Array.isArray(rol) ? rol : [rol];
+    await this.usuarioRepo.update(id, { roles: rolesArray.map(r => r.toUpperCase()) as any });
     return this.obtenerPorId(id);
   }
 
-  async crearUsuario(datos: { email: string; password: string; nombre: string; rol?: string }) {
+  async crearUsuario(datos: { email: string; password: string; nombre: string; rol?: string; roles?: string[] }) {
     const salt = await bcrypt.genSalt(10);
     const hash = await bcrypt.hash(datos.password, salt);
+
+    const rolesToSave = datos.roles 
+      ? datos.roles.map(r => r.toUpperCase() as any) 
+      : [(datos.rol?.toUpperCase() || 'AUTOR') as any];
 
     const nuevo = this.usuarioRepo.create({
       email: datos.email,
       password_hash: hash,
-      rol: (datos.rol?.toUpperCase() || 'AUTOR') as any,
+      roles: rolesToSave,
     });
     const guardado = await this.usuarioRepo.save(nuevo);
 

@@ -1,13 +1,13 @@
-<template>
+﻿<template>
   <!-- Fondo crema con patrón sutil -->
-  <div style="min-height:100vh; background:#f5f0e8; display:flex; align-items:center; justify-content:center; padding:24px">
+  <div style="min-height:100vh; background:#F6F8F6; display:flex; align-items:center; justify-content:center; padding:24px">
 
-    <!-- Layout de dos columnas (Classroom style) — colapsa en mobile -->
-    <div style="display:flex; width:100%; max-width:860px; background:#fdfbf5; border-radius:16px; overflow:hidden; box-shadow:0 4px 24px rgba(93,64,55,0.12); border:1px solid #e8ddd0">
+    <!-- Layout de dos columnas (Classroom style) â€” colapsa en mobile -->
+    <div style="display:flex; width:100%; max-width:860px; background:#FFFFFF; border-radius:16px; overflow:hidden; box-shadow:0 4px 24px rgba(93,64,55,0.12); border:1px solid #D3E0D7">
 
       <!-- Panel izquierdo (decorativo, como banner de Classroom) -->
       <div
-        style="flex:1; min-width:0; background:linear-gradient(160deg,#5d4037 0%,#8d6e63 100%); padding:48px 40px; display:flex; flex-direction:column; justify-content:center; position:relative; overflow:hidden"
+        style="flex:1; min-width:0; background:linear-gradient(160deg,#4CAF50 0%,#8B5A2B 100%); padding:48px 40px; display:flex; flex-direction:column; justify-content:center; position:relative; overflow:hidden"
         class="d-none d-md-flex"
       >
         <v-icon size="200" style="position:absolute; right:-40px; bottom:-30px; color:rgba(255,255,255,0.06)">
@@ -43,11 +43,11 @@
         <!-- Logo mobile -->
         <div class="d-flex d-md-none align-center justify-center mb-6">
           <v-icon color="primary" size="32">mdi-book-open-page-variant</v-icon>
-          <span style="font-size:17px; font-weight:700; color:#3e2723; margin-left:8px">Rev. por Pares</span>
+          <span style="font-size:17px; font-weight:700; color:#1B4332; margin-left:8px">Rev. por Pares</span>
         </div>
 
-        <div style="font-size:22px; font-weight:700; color:#3e2723; margin-bottom:4px">Iniciar sesión</div>
-        <div style="font-size:13px; color:#8d6e63; margin-bottom:24px">Ingresa tus credenciales</div>
+        <div style="font-size:22px; font-weight:700; color:#1B4332; margin-bottom:4px">Iniciar sesión</div>
+        <div style="font-size:13px; color:#8B5A2B; margin-bottom:24px">Ingresa tus credenciales</div>
 
         <!-- Error -->
         <div
@@ -64,7 +64,7 @@
         <!-- Formulario -->
         <form @submit.prevent="iniciarSesion">
           <div style="margin-bottom:14px">
-            <label style="font-size:13px; font-weight:600; color:#5d4037; display:block; margin-bottom:6px">
+            <label style="font-size:13px; font-weight:600; color:#4CAF50; display:block; margin-bottom:6px">
               Correo electrónico
             </label>
             <v-text-field
@@ -80,13 +80,13 @@
           </div>
 
           <div style="margin-bottom:20px">
-            <label style="font-size:13px; font-weight:600; color:#5d4037; display:block; margin-bottom:6px">
+            <label style="font-size:13px; font-weight:600; color:#4CAF50; display:block; margin-bottom:6px">
               Contraseña
             </label>
             <v-text-field
               v-model="password"
               :type="mostrarPass ? 'text' : 'password'"
-              placeholder="••••••••"
+              placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
               prepend-inner-icon="mdi-lock-outline"
               :append-inner-icon="mostrarPass ? 'mdi-eye-off' : 'mdi-eye'"
               density="compact"
@@ -112,9 +112,9 @@
 
         <!-- Divisor -->
         <div style="display:flex; align-items:center; gap:10px; margin:20px 0">
-          <div style="flex:1; height:1px; background:#e8ddd0" />
+          <div style="flex:1; height:1px; background:#D3E0D7" />
           <span style="font-size:12px; color:#bda89a">Accesos demo</span>
-          <div style="flex:1; height:1px; background:#e8ddd0" />
+          <div style="flex:1; height:1px; background:#D3E0D7" />
         </div>
 
         <!-- Botones demo 2x2 -->
@@ -125,12 +125,12 @@
             type="button"
             :disabled="auth.cargando"
             @click="loginRapido(demo)"
-            style="border:1px solid #d7ccc8; background:#fdfbf5; border-radius:8px; padding:8px 10px; cursor:pointer; display:flex; align-items:center; gap:8px; transition:background 0.15s"
+            style="border:1px solid #d7ccc8; background:#FFFFFF; border-radius:8px; padding:8px 10px; cursor:pointer; display:flex; align-items:center; gap:8px; transition:background 0.15s"
             @mouseenter="e => e.currentTarget.style.background='#f0e9df'"
-            @mouseleave="e => e.currentTarget.style.background='#fdfbf5'"
+            @mouseleave="e => e.currentTarget.style.background='#FFFFFF'"
           >
             <v-icon :color="demo.color" size="16">{{ demo.icon }}</v-icon>
-            <span style="font-size:13px; font-weight:500; color:#3e2723">{{ demo.rol }}</span>
+            <span style="font-size:13px; font-weight:500; color:#1B4332">{{ demo.rol }}</span>
           </button>
         </div>
       </div>

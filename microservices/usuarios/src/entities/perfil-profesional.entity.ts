@@ -18,6 +18,9 @@ export class PerfilProfesional {
   @Column({ type: 'varchar', length: 200, name: 'especialidad_academica', nullable: true })
   especialidad_academica!: string;
 
+  @Column({ type: 'longtext', nullable: true })
+  avatar!: string;
+
   @OneToOne(() => Usuario, (usuario) => usuario.perfil, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'id_usuario' }) 
   usuario!: Usuario;

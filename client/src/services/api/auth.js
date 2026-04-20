@@ -109,6 +109,22 @@ export async function registerApi(datos) {
   return await res.json()
 }
 
+/**
+ * Actualiza el avatar del usuario en el backend.
+ */
+export async function updateAvatarApi(userId, avatarBase64) {
+  const res = await fetch(`${AUTH_URL}/avatar/${userId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ avatar: avatarBase64 }),
+  })
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}))
+    throw new Error(errorData.message || 'Error al actualizar el avatar')
+  }
+  return await res.json()
+}
+
 // ── Mock fallback ──────────────────────────────────────────
 function loginMock(email, password) {
   return new Promise((resolve, reject) => {

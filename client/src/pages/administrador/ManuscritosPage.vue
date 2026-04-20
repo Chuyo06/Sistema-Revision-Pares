@@ -1,6 +1,6 @@
-<template>
+﻿<template>
   <div style="max-width:1000px; padding:20px">
-    <div style="font-size:13px; font-weight:700; color:#8d6e63; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:14px">
+    <div style="font-size:13px; font-weight:700; color:#8B5A2B; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:14px">
       Control Global de Manuscritos
     </div>
 
@@ -27,7 +27,7 @@
     <v-card border elevation="0" rounded="lg">
       <v-table density="comfortable">
         <thead>
-          <tr style="background:#fdfbf5">
+          <tr style="background:#FFFFFF">
             <th class="text-left font-weight-bold">ID</th>
             <th class="text-left font-weight-bold">Título</th>
             <th class="text-left font-weight-bold">Estado</th>

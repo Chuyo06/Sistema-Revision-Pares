@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <v-container style="max-width:900px; padding:20px">
     <v-row align="center" class="mb-6">
       <v-col>
@@ -50,7 +50,7 @@
             border 
             elevation="1" 
             class="mb-3 hover-elevation"
-            style="background:#fdfbf5; border-radius:12px; overflow:hidden;"
+            style="background:#FFFFFF; border-radius:12px; overflow:hidden;"
           >
             <div :style="`height:6px; background:${hexEstado(m.estado)}`" />
             <v-card-item class="pa-4">
@@ -60,7 +60,7 @@
                     {{ m.titulo || 'Sin título' }}
                   </div>
                   <div class="text-caption text-medium-emphasis mt-1">
-                    {{ m.autores || 'Autor desconocido' }} · {{ m.convocatoria || 'Sin convocatoria' }}
+                    {{ m.autores || 'Autor desconocido' }} Â· {{ m.convocatoria || 'Sin convocatoria' }}
                   </div>
                 </div>
                 <v-chip :color="chipEstado(m.estado)" label size="small" class="font-weight-bold">

@@ -1,25 +1,25 @@
-<template>
+﻿<template>
   <v-layout>
-    <!-- ── Sidebar estilo X ─────────────────────────────────── -->
+    <!-- â”€â”€ Sidebar estilo X â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
     <v-navigation-drawer
       v-model="drawer"
       :permanent="smAndUp"
       width="260"
-      color="#fdfbf5"
+      color="#FFFFFF"
       border="end"
       elevation="0"
     >
       <!-- Logo -->
       <div class="pa-5 pb-3">
         <div style="display:flex; align-items:center; gap:12px">
-          <div style="background:#5d4037; border-radius:50%; width:38px; height:38px; display:flex; align-items:center; justify-content:center; flex-shrink:0">
+          <div style="background:#4CAF50; border-radius:50%; width:38px; height:38px; display:flex; align-items:center; justify-content:center; flex-shrink:0">
             <v-icon color="white" size="20">mdi-book-open-page-variant</v-icon>
           </div>
           <div>
-            <div style="font-size:15px; font-weight:700; color:#3e2723; line-height:1.2">
+            <div style="font-size:15px; font-weight:700; color:#1B4332; line-height:1.2">
               Rev. por Pares
             </div>
-            <div style="font-size:11px; color:#8d6e63">Sistema académico</div>
+            <div style="font-size:11px; color:#8B5A2B">Sistema académico</div>
           </div>
         </div>
       </div>
@@ -50,35 +50,22 @@
       <template #append>
         <v-divider class="mx-3 mb-2" />
         <div class="pa-4" style="display:flex; align-items:center; gap:10px">
-          <div
-            :style="`background:${rolMeta.color}; border-radius:50%; width:38px; height:38px; display:flex; align-items:center; justify-content:center; flex-shrink:0`"
-          >
-            <v-icon color="white" size="18">{{ rolMeta.icon }}</v-icon>
-          </div>
-          <div style="flex:1; min-width:0">
-            <div style="font-size:14px; font-weight:600; color:#3e2723; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">
-              {{ auth.usuario?.nombre }}
-            </div>
-            <div style="font-size:12px; color:#8d6e63">{{ rolMeta.label }}</div>
-          </div>
-          <v-btn icon variant="text" size="small" @click="cerrarSesion" title="Cerrar sesión">
-            <v-icon size="18" color="#c62828">mdi-logout</v-icon>
-          </v-btn>
+          <RoleSwitcher />
         </div>
       </template>
     </v-navigation-drawer>
 
-    <!-- ── Contenido principal ─────────────────────────────── -->
-    <v-main style="background:#f5f0e8">
+    <!-- â”€â”€ Contenido principal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+    <v-main style="background:#F6F8F6">
       <!-- Barra mobile -->
       <div
         v-if="!smAndUp"
-        style="background:#fdfbf5; border-bottom:1px solid #e8ddd0; display:flex; align-items:center; padding:10px 14px; gap:10px"
+        style="background:#FFFFFF; border-bottom:1px solid #D3E0D7; display:flex; align-items:center; padding:10px 14px; gap:10px"
       >
         <v-btn icon variant="text" size="small" @click="drawer = !drawer">
           <v-icon>mdi-menu</v-icon>
         </v-btn>
-        <span style="font-size:16px; font-weight:700; color:#3e2723">{{ titulo }}</span>
+        <span style="font-size:16px; font-weight:700; color:#1B4332">{{ titulo }}</span>
       </div>
 
       <!-- Página con key para forzar re-render -->
@@ -92,6 +79,7 @@ import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDisplay } from 'vuetify'
 import { useAuthStore } from '@/store/auth.js'
+import RoleSwitcher from './RoleSwitcher.vue'
 
 const auth   = useAuthStore()
 const router = useRouter()
@@ -121,17 +109,10 @@ const NAV_CONFIG = {
   ],
 }
 
-const ROL_META = {
-  autor:         { label:'Autor',         icon:'mdi-account-edit-outline',    color:'#546e7a' },
-  revisor:       { label:'Revisor',       icon:'mdi-clipboard-check-outline', color:'#558b2f' },
-  editor:        { label:'Editor',        icon:'mdi-pencil-ruler',            color:'#e65100' },
-  administrador: { label:'Administrador', icon:'mdi-shield-account-outline',  color:'#c62828' },
-}
-
 const navItems = computed(() => NAV_CONFIG[auth.rol] || [])
-const rolMeta  = computed(() => ROL_META[auth.rol]  || { label: auth.rol, icon:'mdi-account', color:'#8d6e63' })
 
 const TITULOS = {
+  'perfil':             'Mi Perfil',
   'autor-dashboard':    'Inicio',
   'autor-articulos':    'Mis Artículos',
   'autor-nuevo':        'Enviar Artículo',
@@ -146,11 +127,6 @@ const TITULOS = {
   'admin-manuscritos':  'Manuscritos Globales',
 }
 const titulo = computed(() => TITULOS[route.name] ?? 'Rev. por Pares')
-
-function cerrarSesion() {
-  auth.logout()
-  router.push('/login')
-}
 </script>
 
 <style scoped>

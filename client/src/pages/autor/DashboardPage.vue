@@ -1,8 +1,8 @@
-<template>
+﻿<template>
   <div>
-    <!-- ── Banner estilo Classroom ──────────────────────────── -->
+    <!-- â”€â”€ Banner estilo Classroom â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
     <div
-      style="background:linear-gradient(135deg,#5d4037 0%,#8d6e63 100%); padding:32px 28px 24px; position:relative; overflow:hidden"
+      style="background:linear-gradient(135deg,#4CAF50 0%,#8B5A2B 100%); padding:32px 28px 24px; position:relative; overflow:hidden"
     >
       <v-icon
         size="120"
@@ -23,7 +23,7 @@
       <v-btn
         color="white"
         class="mt-4"
-        style="color:#5d4037"
+        style="color:#4CAF50"
         prepend-icon="mdi-plus"
         rounded="xl"
         elevation="0"
@@ -33,17 +33,17 @@
       </v-btn>
     </div>
 
-    <!-- ── Cuerpo: feed + panel derecho ─────────────────────── -->
+    <!-- â”€â”€ Cuerpo: feed + panel derecho â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
     <div style="display:grid; grid-template-columns:1fr 300px; gap:20px; padding:20px 20px; max-width:1100px">
 
       <!-- Columna principal (feed) -->
       <div>
-        <!-- Barra de "compose" estilo X → artículos recientes -->
+        <!-- Barra de "compose" estilo X â†’ artículos recientes -->
         <div
-          style="background:#fdfbf5; border:1px solid #e8ddd0; border-radius:12px; padding:14px 16px; margin-bottom:14px; display:flex; align-items:center; gap:12px"
+          style="background:#FFFFFF; border:1px solid #D3E0D7; border-radius:12px; padding:14px 16px; margin-bottom:14px; display:flex; align-items:center; gap:12px"
         >
           <v-icon color="secondary" size="20">mdi-file-document-outline</v-icon>
-          <span style="font-size:14px; color:#8d6e63; flex:1">Artículos recientes</span>
+          <span style="font-size:14px; color:#8B5A2B; flex:1">Artículos recientes</span>
           <v-btn size="small" variant="text" color="primary" to="/autor/articulos">Ver todos</v-btn>
         </div>
 
@@ -51,7 +51,7 @@
         <div
           v-for="m in autorStore.manuscritos.slice(0, 5)"
           :key="m.id"
-          style="background:#fdfbf5; border:1px solid #e8ddd0; border-radius:12px; margin-bottom:10px; overflow:hidden"
+          style="background:#FFFFFF; border:1px solid #D3E0D7; border-radius:12px; margin-bottom:10px; overflow:hidden"
         >
           <!-- Franja de color (Classroom) -->
           <div :style="`height:5px; background:${colorEstado(m.estado)}`" />
@@ -64,11 +64,11 @@
             </div>
             <!-- Contenido -->
             <div style="flex:1; min-width:0">
-              <div style="font-size:14px; font-weight:600; color:#3e2723; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">
+              <div style="font-size:14px; font-weight:600; color:#1B4332; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">
                 {{ m.titulo }}
               </div>
-              <div style="font-size:12px; color:#8d6e63; margin-top:2px">
-                {{ m.convocatoria }}<span v-if="m.fechaEnvio"> · {{ m.fechaEnvio }}</span>
+              <div style="font-size:12px; color:#8B5A2B; margin-top:2px">
+                {{ m.convocatoria }}<span v-if="m.fechaEnvio"> Â· {{ m.fechaEnvio }}</span>
               </div>
             </div>
             <!-- Chip estado -->
@@ -83,7 +83,7 @@
           </div>
         </div>
 
-        <div v-if="autorStore.manuscritos.length === 0" style="text-align:center; padding:40px 0; color:#8d6e63">
+        <div v-if="autorStore.manuscritos.length === 0" style="text-align:center; padding:40px 0; color:#8B5A2B">
           <v-icon size="40" color="secondary">mdi-file-outline</v-icon>
           <p style="font-size:14px; margin-top:8px">Aún no has enviado ningún artículo.</p>
           <v-btn color="primary" to="/autor/nuevo" class="mt-2">Enviar primer artículo</v-btn>
@@ -93,8 +93,8 @@
       <!-- Panel derecho (estilo X "What's happening") -->
       <div>
         <!-- Stats -->
-        <div style="background:#fdfbf5; border:1px solid #e8ddd0; border-radius:12px; overflow:hidden; margin-bottom:14px">
-          <div style="background:#5d4037; padding:10px 14px">
+        <div style="background:#FFFFFF; border:1px solid #D3E0D7; border-radius:12px; overflow:hidden; margin-bottom:14px">
+          <div style="background:#4CAF50; padding:10px 14px">
             <span style="font-size:13px; font-weight:600; color:#fff">Mis estadísticas</span>
           </div>
           <div
@@ -102,14 +102,14 @@
             :key="stat.label"
             style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; border-top:1px solid #f0e9df"
           >
-            <span style="font-size:13px; color:#5d4037">{{ stat.label }}</span>
-            <span style="font-size:18px; font-weight:700; color:#3e2723">{{ stat.valor }}</span>
+            <span style="font-size:13px; color:#4CAF50">{{ stat.label }}</span>
+            <span style="font-size:18px; font-weight:700; color:#1B4332">{{ stat.valor }}</span>
           </div>
         </div>
 
         <!-- Convocatorias abiertas -->
-        <div style="background:#fdfbf5; border:1px solid #e8ddd0; border-radius:12px; overflow:hidden">
-          <div style="background:#8d6e63; padding:10px 14px">
+        <div style="background:#FFFFFF; border:1px solid #D3E0D7; border-radius:12px; overflow:hidden">
+          <div style="background:#8B5A2B; padding:10px 14px">
             <span style="font-size:13px; font-weight:600; color:#fff">Convocatorias abiertas</span>
           </div>
           <div
@@ -117,12 +117,12 @@
             :key="c.id"
             style="padding:10px 14px; border-top:1px solid #f0e9df"
           >
-            <div style="font-size:13px; font-weight:600; color:#3e2723">{{ c.nombre }}</div>
+            <div style="font-size:13px; font-weight:600; color:#1B4332">{{ c.nombre }}</div>
             <div style="font-size:11px; color:#c62828; margin-top:2px">
               <v-icon size="11">mdi-calendar-clock</v-icon> {{ c.deadline }}
             </div>
           </div>
-          <div v-if="convocatoriasAbiertas.length === 0" style="padding:12px 14px; font-size:13px; color:#8d6e63">
+          <div v-if="convocatoriasAbiertas.length === 0" style="padding:12px 14px; font-size:13px; color:#8B5A2B">
             Sin convocatorias abiertas
           </div>
         </div>

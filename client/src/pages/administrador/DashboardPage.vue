@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div>
     <!-- Banner -->
     <div
@@ -28,14 +28,14 @@
 
       <!-- Feed -->
       <div>
-        <div style="font-size:13px; font-weight:700; color:#8d6e63; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:10px">
+        <div style="font-size:13px; font-weight:700; color:#8B5A2B; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:10px">
           Distribución de roles
         </div>
 
         <div
           v-for="rol in rolesDistribucion"
           :key="rol.nombre"
-          style="background:#fdfbf5; border:1px solid #e8ddd0; border-radius:12px; margin-bottom:10px; overflow:hidden"
+          style="background:#FFFFFF; border:1px solid #D3E0D7; border-radius:12px; margin-bottom:10px; overflow:hidden"
         >
           <div :style="`height:5px; background:${rol.hex}`" />
           <div style="padding:14px 16px; display:flex; align-items:center; gap:12px">
@@ -45,17 +45,17 @@
               <v-icon :color="rol.hex" size="18">{{ rol.icon }}</v-icon>
             </div>
             <div style="flex:1; min-width:0">
-              <div style="font-size:14px; font-weight:600; color:#3e2723">{{ rol.nombre }}</div>
-              <div style="font-size:12px; color:#8d6e63">{{ rol.cantidad }} usuario(s) registrado(s)</div>
+              <div style="font-size:14px; font-weight:600; color:#1B4332">{{ rol.nombre }}</div>
+              <div style="font-size:12px; color:#8B5A2B">{{ rol.cantidad }} usuario(s) registrado(s)</div>
             </div>
-            <span style="font-size:24px; font-weight:700; color:#3e2723">{{ rol.cantidad }}</span>
+            <span style="font-size:24px; font-weight:700; color:#1B4332">{{ rol.cantidad }}</span>
           </div>
         </div>
       </div>
 
       <!-- Panel derecho -->
       <div>
-        <div style="background:#fdfbf5; border:1px solid #e8ddd0; border-radius:12px; overflow:hidden">
+        <div style="background:#FFFFFF; border:1px solid #D3E0D7; border-radius:12px; overflow:hidden">
           <div style="background:#7b1fa2; padding:10px 14px">
             <span style="font-size:13px; font-weight:600; color:#fff">Usuarios del sistema</span>
           </div>
@@ -64,11 +64,11 @@
             :key="kpi.label"
             style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; border-top:1px solid #f0e9df"
           >
-            <span style="font-size:13px; color:#5d4037">{{ kpi.label }}</span>
-            <span style="font-size:18px; font-weight:700; color:#3e2723">{{ kpi.valor }}</span>
+            <span style="font-size:13px; color:#4CAF50">{{ kpi.label }}</span>
+            <span style="font-size:18px; font-weight:700; color:#1B4332">{{ kpi.valor }}</span>
           </div>
           <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; border-top:1px solid #f0e9df; background: #fafafa">
-            <span style="font-size:13px; color:#5d4037">Total Manuscritos</span>
+            <span style="font-size:13px; color:#4CAF50">Total Manuscritos</span>
             <span style="font-size:18px; font-weight:700; color:#7b1fa2">{{ adminStore.metricas.totalManuscritos }}</span>
           </div>
         </div>

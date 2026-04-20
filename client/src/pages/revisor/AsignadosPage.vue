@@ -1,7 +1,7 @@
-<template>
+﻿<template>
   <div style="max-width:800px; padding:20px">
 
-    <div style="font-size:13px; font-weight:700; color:#8d6e63; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:14px">
+    <div style="font-size:13px; font-weight:700; color:#8B5A2B; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:14px">
       Artículos asignados para revisión
     </div>
 
@@ -9,7 +9,7 @@
     <div
       v-for="a in revisorStore.articulosAsignados"
       :key="a.id"
-      style="background:#fdfbf5; border:1px solid #e8ddd0; border-radius:12px; margin-bottom:12px; overflow:hidden"
+      style="background:#FFFFFF; border:1px solid #D3E0D7; border-radius:12px; margin-bottom:12px; overflow:hidden"
     >
       <!-- Franja de color -->
       <div :style="`height:6px; background:${hexEstado(a.estado)}`" />
@@ -18,7 +18,7 @@
         <!-- Fila 1: Título + chip (sin encimarse) -->
         <div style="display:flex; align-items:flex-start; gap:10px; margin-bottom:8px">
           <div style="flex:1; min-width:0">
-            <div style="font-size:15px; font-weight:600; color:#3e2723; word-break:break-word">
+            <div style="font-size:15px; font-weight:600; color:#1B4332; word-break:break-word">
               {{ a.titulo }}
             </div>
           </div>
@@ -29,10 +29,10 @@
 
         <!-- Fila 2: Meta -->
         <div style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:10px">
-          <span style="font-size:12px; color:#8d6e63; display:flex; align-items:center; gap:4px">
+          <span style="font-size:12px; color:#8B5A2B; display:flex; align-items:center; gap:4px">
             <v-icon size="13">mdi-account-outline</v-icon>{{ a.autores }}
           </span>
-          <span style="font-size:12px; color:#5d4037; display:flex; align-items:center; gap:4px">
+          <span style="font-size:12px; color:#4CAF50; display:flex; align-items:center; gap:4px">
             <v-icon size="13">mdi-tag-outline</v-icon>{{ a.convocatoria }}
           </span>
           <span style="font-size:12px; color:#c62828; display:flex; align-items:center; gap:4px">
@@ -62,7 +62,7 @@
     </div>
 
     <!-- Vacío -->
-    <div v-if="revisorStore.articulosAsignados.length === 0" style="text-align:center; padding:48px 0; color:#8d6e63">
+    <div v-if="revisorStore.articulosAsignados.length === 0" style="text-align:center; padding:48px 0; color:#8B5A2B">
       <v-icon size="44" color="secondary">mdi-clipboard-text-off-outline</v-icon>
       <p style="font-size:14px; margin-top:10px">No tienes artículos asignados.</p>
     </div>

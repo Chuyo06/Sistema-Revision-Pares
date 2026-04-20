@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div>
     <v-btn variant="text" color="primary" prepend-icon="mdi-arrow-left" to="/revisor/asignados" class="mb-4">
       Volver a asignados
@@ -9,18 +9,18 @@
       <v-card class="mb-4" color="surface" border>
         <div style="background:#546e7a; height:6px; border-radius:8px 8px 0 0" />
         <v-card-text class="pa-4">
-          <div class="text-h6 font-weight-bold mb-1" style="color:#3e2723">{{ articulo.titulo }}</div>
-          <div class="text-caption mb-3" style="color:#8d6e63">
-            {{ articulo.autores }} · {{ articulo.convocatoria }}
+          <div class="text-h6 font-weight-bold mb-1" style="color:#1B4332">{{ articulo.titulo }}</div>
+          <div class="text-caption mb-3" style="color:#8B5A2B">
+            {{ articulo.autores }} Â· {{ articulo.convocatoria }}
           </div>
-          <p class="text-body-2" style="color:#5d4037">{{ articulo.resumen }}</p>
+          <p class="text-body-2" style="color:#4CAF50">{{ articulo.resumen }}</p>
         </v-card-text>
       </v-card>
 
       <!-- Formulario de revisión -->
       <v-card color="surface" border>
-        <div style="background:#5d4037; height:6px; border-radius:8px 8px 0 0" />
-        <v-card-title class="pa-4 pb-2" style="color:#3e2723">
+        <div style="background:#4CAF50; height:6px; border-radius:8px 8px 0 0" />
+        <v-card-title class="pa-4 pb-2" style="color:#1B4332">
           <v-icon start color="primary">mdi-clipboard-edit-outline</v-icon>
           Formulario de revisión
         </v-card-title>
@@ -30,12 +30,12 @@
           <v-form ref="form" v-model="valido" @submit.prevent="enviarRevision">
 
             <!-- Evaluación -->
-            <p class="text-caption font-weight-bold mb-3" style="color:#8d6e63; text-transform:uppercase; letter-spacing:0.05em">
+            <p class="text-caption font-weight-bold mb-3" style="color:#8B5A2B; text-transform:uppercase; letter-spacing:0.05em">
               Evaluación general
             </p>
             <v-row class="mb-3">
               <v-col v-for="dim in dimensiones" :key="dim.campo" cols="12" sm="6">
-                <div class="text-body-2 mb-1" style="color:#3e2723">{{ dim.label }}</div>
+                <div class="text-body-2 mb-1" style="color:#1B4332">{{ dim.label }}</div>
                 <v-rating
                   v-model="revision[dim.campo]"
                   :length="5"
@@ -48,7 +48,7 @@
 
             <v-divider class="my-4" />
 
-            <p class="text-caption font-weight-bold mb-3" style="color:#8d6e63; text-transform:uppercase; letter-spacing:0.05em">
+            <p class="text-caption font-weight-bold mb-3" style="color:#8B5A2B; text-transform:uppercase; letter-spacing:0.05em">
               Dictamen
             </p>
 
@@ -99,8 +99,8 @@
           <div style="background:#558b2f; height:6px; border-radius:8px 8px 0 0" />
           <v-card-text class="pa-5 text-center">
             <v-icon size="40" color="success" class="mb-2">mdi-check-circle</v-icon>
-            <div class="text-h6" style="color:#3e2723">Revisión enviada</div>
-            <p class="text-body-2 mt-1" style="color:#8d6e63">Tu revisión fue registrada correctamente.</p>
+            <div class="text-h6" style="color:#1B4332">Revisión enviada</div>
+            <p class="text-body-2 mt-1" style="color:#8B5A2B">Tu revisión fue registrada correctamente.</p>
           </v-card-text>
           <v-card-actions class="justify-center pb-4">
             <v-btn color="primary" @click="irAsignados">Ver mis artículos</v-btn>
@@ -109,7 +109,7 @@
       </v-dialog>
     </div>
 
-    <p v-else class="text-body-2" style="color:#8d6e63">Artículo no encontrado.</p>
+    <p v-else class="text-body-2" style="color:#8B5A2B">Artículo no encontrado.</p>
   </div>
 </template>
 

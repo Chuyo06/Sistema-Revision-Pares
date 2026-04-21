@@ -1,18 +1,42 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Usuario } from '../entities/usuario.entity';
+import { Usuario, RolUsuario } from '../entities/usuario.entity';
 import { PerfilProfesional } from '../entities/perfil-profesional.entity';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
-export class UsuariosService {
+export class UsuariosService implements OnModuleInit {
   constructor(
     @InjectRepository(Usuario)
     private usuarioRepo: Repository<Usuario>,
     @InjectRepository(PerfilProfesional)
     private perfilRepo: Repository<PerfilProfesional>,
   ) {}
+
+  async onModuleInit() {
+    await this.seedSuperUser();
+  }
+
+  private async asyncSeed(email: string, nombre: string, roles: RolUsuario[]) {
+    const exists = await this.usuarioRepo.findOne({ where: { email } });
+    if (!exists) {
+      console.log(`[Seed] Creando usuario: ${email}`);
+      await this.crearUsuario({
+        email,
+        password: '1234',
+        nombre,
+        roles
+      });
+    }
+  }
+
+  private async seedSuperUser() {
+    await this.asyncSeed('admin@demo.com', 'Admin Sistema', [RolUsuario.ADMIN, RolUsuario.EDITOR, RolUsuario.REVISOR, RolUsuario.AUTOR]);
+    await this.asyncSeed('editor@demo.com', 'Dr. Martínez (Editor)', [RolUsuario.EDITOR, RolUsuario.REVISOR]);
+    await this.asyncSeed('revisor@demo.com', 'Carlos López (Revisor)', [RolUsuario.REVISOR, RolUsuario.AUTOR]);
+    await this.asyncSeed('autor@demo.com', 'Ana García (Autor)', [RolUsuario.AUTOR]);
+  }
 
   async obtenerTodos() {
     const usuarios = await this.usuarioRepo.find({

@@ -63,17 +63,21 @@ export async function loginApi(email, password) {
     if (res.ok) {
       const data = await res.json()
       // Normalizar respuesta del backend al formato que espera el store
-      const rolRaw = (data.rol || 'autor').toLowerCase()
       const mapRol = (r) => ROL_MAP[r] || r
+      
+      const rolesProcesados = data.roles 
+        ? data.roles.map(r => mapRol(r.toLowerCase()))
+        : [mapRol((data.rol || 'autor').toLowerCase())]
+
       return {
         id: data.id ?? data.id_usuario,
         nombre: data.nombre ?? data.email,
         email: data.email,
         avatar: (data.nombre || data.email || '').substring(0, 2).toUpperCase(),
-        roles: data.roles
-          ? data.roles.map(r => mapRol(r.toLowerCase()))
-          : [mapRol(rolRaw)],
-        rolActivo: mapRol((data.rolActivo ?? rolRaw).toLowerCase()),
+        roles: rolesProcesados,
+        rolActivo: data.rolActivo 
+          ? mapRol(data.rolActivo.toLowerCase()) 
+          : rolesProcesados[0],
         token: data.access_token ?? data.token ?? null,
       }
     }

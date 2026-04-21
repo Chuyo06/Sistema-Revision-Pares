@@ -37,6 +37,19 @@
         :search="busqueda"
         :items-per-page="8"
       >
+        <template #item.rol="{ item }">
+          <div class="d-flex flex-wrap gap-1">
+            <v-chip
+              v-for="rol in item.roles"
+              :key="rol"
+              size="x-small"
+              variant="tonal"
+              class="text-capitalize"
+            >
+              {{ rol }}
+            </v-chip>
+          </div>
+        </template>
         <template #item.acciones="{ item }">
           <v-btn
             size="small"
@@ -97,7 +110,7 @@ onMounted(() => {
 
 const usuariosFiltrados = computed(() =>
   adminStore.usuarios.filter(u =>
-    (filtroRol.value === 'TODOS' || u.rol === filtroRol.value) &&
+    (filtroRol.value === 'TODOS' || u.roles?.includes(filtroRol.value)) &&
     (u.nombre.toLowerCase().includes(busqueda.value.toLowerCase()) ||
      u.email.toLowerCase().includes(busqueda.value.toLowerCase()))
   )

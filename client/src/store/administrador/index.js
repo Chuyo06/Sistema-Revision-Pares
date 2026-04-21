@@ -19,9 +19,9 @@ export const useAdminStore = defineStore('administrador', () => {
 
   const metricas = computed(() => ({
     totalUsuarios: usuarios.value.length,
-    autores: usuarios.value.filter(u => u.rol === 'autor').length,
-    revisores: usuarios.value.filter(u => u.rol === 'revisor').length,
-    editores: usuarios.value.filter(u => u.rol === 'editor').length,
+    autores: usuarios.value.filter(u => u.roles?.includes('autor')).length,
+    revisores: usuarios.value.filter(u => u.roles?.includes('revisor')).length,
+    editores: usuarios.value.filter(u => u.roles?.includes('editor')).length,
     activos: usuarios.value.filter(u => u.estado === 'activo').length,
     inactivos: usuarios.value.filter(u => u.estado === 'inactivo').length,
     totalManuscritos: manuscritos.value.length,

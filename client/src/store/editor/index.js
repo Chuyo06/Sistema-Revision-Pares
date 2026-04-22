@@ -48,7 +48,7 @@ export const useEditorStore = defineStore('editor', () => {
 
       if (listUsuarios && Array.isArray(listUsuarios)) {
         revisoresDisponibles.value = listUsuarios
-          .filter(u => u.rol?.toLowerCase() === 'revisor')
+          .filter(u => u.roles?.includes('revisor'))
           .map(u => ({
             ...u,
             disponible: true, // Por ahora todos están disponibles

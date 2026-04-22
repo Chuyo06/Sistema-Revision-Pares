@@ -88,7 +88,12 @@ router.beforeEach((to, from, next) => {
   if (to.meta.rol) {
     // Si el usuario no tiene este rol en su lista de acceso, lo devolvemos
     if (!auth.roles.includes(to.meta.rol)) {
-      return next(`/${auth.rol}/dashboard`)
+      const rolSeguro = auth.roles.includes(auth.rol) ? auth.rol : auth.roles[0]
+      if (!rolSeguro || to.meta.rol === rolSeguro) {
+        auth.logout()
+        return next('/login')
+      }
+      return next(`/${rolSeguro}/dashboard`)
     }
     // Si tiene el rol pero no es el activo actualmente, lo auto-cambiamos
     if (auth.rol !== to.meta.rol) {

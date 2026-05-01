@@ -47,7 +47,7 @@ export class UsuariosService implements OnModuleInit {
       id: u.id_usuario,
       nombre: u.perfil?.nombre_completo || u.email.split('@')[0],
       email: u.email,
-      roles: u.roles.map(r => r.toLowerCase()),
+      roles: u.roles?.map(r => r.nombre.toLowerCase()) || [],
       estado: u.estado.toLowerCase(),
       fechaRegistro: u.fecha_registro,
       institucion: u.perfil?.institucion || null,
@@ -121,4 +121,14 @@ export class UsuariosService implements OnModuleInit {
     }
     return this.obtenerPorId(id);
   }
+
+// Agrega esto en usuarios.service.ts
+  async buscarPorEmailParaLogin(email: string) {
+    return await this.usuarioRepo.findOne({
+      where: { email },
+      select: ['id_usuario', 'email', 'password_hash', 'roles', 'estado'] // Obligamos a traer el password para poder compararlo
+    });
+  }
+
+
 }

@@ -5,19 +5,19 @@ import { Document } from 'mongoose';
 // Esto une nuestra clase con las funciones de documento de MongoDB
 export type ManuscritoDocument = Manuscrito & Document;
 
-@Schema({ timestamps: true }) // Esto crea automáticamente 'createdAt' y 'updatedAt'
+@Schema({ timestamps: true })
 export class Manuscrito {
   @Prop({ required: true })
-  titulo: string;
+  titulo!: string;
 
   @Prop({ required: true })
-  contenido: string;
+  contenido!: string;
 
   @Prop({ required: true })
-  autorId: number;
+  autorId!: number;
 
   @Prop({ default: 'pendiente' })
-  estado: string;
+  estado!: string;
 }
 
 export const ManuscritoSchema = SchemaFactory.createForClass(Manuscrito);

@@ -43,10 +43,10 @@ export class AuthService {
   }
 
   async login(email: string, passwordPlain: string) {
-    // 1. Buscar al usuario con su perfil
+    // 1. Buscar al usuario con su perfil Y SUS ROLES (Cambio clave aquí)
     const user = await this.usuarioRepository.findOne({
       where: { email },
-      relations: ['perfil'],
+      relations: ['perfil', 'roles'], 
     });
     if (!user) throw new UnauthorizedException('Credenciales inválidas');
 
@@ -54,8 +54,11 @@ export class AuthService {
     const isPasswordValid = await bcrypt.compare(passwordPlain, user.password_hash);
     if (!isPasswordValid) throw new UnauthorizedException('Credenciales inválidas');
 
-    // 3. Generar el Token JWT
-    const payload = { sub: user.id_usuario, email: user.email, roles: user.roles };
+    // Extraemos solo el nombre de los roles (ej: ['ADMIN', 'AUTOR'])
+    const rolesPlanos = user.roles?.map(r => r.nombre) || [];
+
+    // 3. Generar el Token JWT usando los roles planos
+    const payload = { sub: user.id_usuario, email: user.email, roles: rolesPlanos };
     const token = this.jwtService.sign(payload);
 
     return {
@@ -64,7 +67,7 @@ export class AuthService {
       nombre: user.perfil?.nombre_completo || user.email.split('@')[0],
       avatar: user.perfil?.avatar || null,
       email: user.email,
-      roles: user.roles,
+      roles: rolesPlanos, // Devolvemos el arreglo limpio al frontend
     };
   }
 

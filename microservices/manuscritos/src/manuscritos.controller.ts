@@ -1,9 +1,11 @@
 import { Controller, Post, Get, Patch, Param, Body, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ManuscritosService } from './manuscritos.service';
-import { Manuscrito } from './entities/manuscrito.entity';
+// 1. Apuntamos al Schema de MongoDB, no a la entidad de MariaDB
+import { Manuscrito } from './schemas/manuscrito.schema';
+import { CreateManuscritoDto } from './dto/create-manuscrito.dto';
 
-@Controller('manuscritos')
+@Controller('manuscripts') // 2. Cumplimos el nombre exacto de la Tarea 4
 export class ManuscritosController {
   constructor(private readonly manuscritosService: ManuscritosService) {}
 
@@ -25,8 +27,9 @@ export class ManuscritosController {
     return this.manuscritosService.guardarArchivo(archivo);
   }
 
+  // 🔥 ESTE ES EL ENDPOINT DE TU TAREA 4 🔥
   @Post()
-  crear(@Body() datos: Partial<Manuscrito>) {
+  crear(@Body() datos: CreateManuscritoDto) {
     return this.manuscritosService.crear(datos);
   }
 
@@ -37,6 +40,7 @@ export class ManuscritosController {
 
   @Get('autor/:autorId')
   obtenerPorAutor(@Param('autorId') autorId: string) {
+    // Aquí SÍ convertimos a número porque el autorId es el ID del Usuario de MariaDB
     const numId = +autorId;
     if (isNaN(numId)) return [];
     return this.manuscritosService.obtenerPorAutor(numId);
@@ -44,15 +48,13 @@ export class ManuscritosController {
 
   @Get(':id')
   obtenerPorId(@Param('id') id: string) {
-    const numId = +id;
-    if (isNaN(numId)) return null;
-    return this.manuscritosService.obtenerPorId(numId);
+    // 3. Quitamos la conversión a número. El ID de MongoDB se pasa como string
+    return this.manuscritosService.obtenerPorId(id);
   }
 
   @Patch(':id')
   actualizar(@Param('id') id: string, @Body() datos: Partial<Manuscrito>) {
-    const numId = +id;
-    if (isNaN(numId)) return null;
-    return this.manuscritosService.actualizar(numId, datos);
+    // Igual aquí, el ID de MongoDB se pasa intacto
+    return this.manuscritosService.actualizar(id, datos);
   }
 }

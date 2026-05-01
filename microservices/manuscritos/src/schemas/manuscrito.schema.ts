@@ -1,5 +1,4 @@
-// @ts-nocheck
-// TODO: Este archivo se usará cuando manuscritos migre a MongoDB
+
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 

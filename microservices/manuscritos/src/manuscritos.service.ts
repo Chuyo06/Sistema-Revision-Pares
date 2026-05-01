@@ -1,17 +1,18 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Manuscrito } from './entities/manuscrito.entity';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { Manuscrito, ManuscritoDocument } from './schemas/manuscrito.schema';
 
 @Injectable()
 export class ManuscritosService {
   constructor(
-    @InjectRepository(Manuscrito)
-    private manuscritoRepository: Repository<Manuscrito>,
+    @InjectModel(Manuscrito.name)
+    private manuscritoModel: Model<ManuscritoDocument>,
   ) {}
 
   async guardarArchivo(archivo: { originalname: string; size: number }) {
-    const count = await this.manuscritoRepository.count();
+    // En Mongoose se usa countDocuments()
+    const count = await this.manuscritoModel.countDocuments();
     const referencia = `RPP-${new Date().getFullYear()}-${String(count + 1).padStart(4, '0')}`;
 
     return {
@@ -22,38 +23,35 @@ export class ManuscritosService {
     };
   }
 
-  async crear(datos: Partial<Manuscrito>): Promise<Manuscrito> {
-    const count = await this.manuscritoRepository.count();
+  async crear(datos: Partial<Manuscrito> & { referencia?: string; fechaEnvio?: Date }): Promise<Manuscrito> {
+    const count = await this.manuscritoModel.countDocuments();
     const ref = datos.referencia || `RPP-${new Date().getFullYear()}-${String(count + 1).padStart(4, '0')}`;
 
-    const nuevo = this.manuscritoRepository.create({
+    // En Mongoose instanciamos el modelo y luego usamos .save()
+    const nuevo = new this.manuscritoModel({
       ...datos,
       referencia: ref,
-      estado: datos.estado || 'ENVIADO',
-      fechaEnvio: datos.fechaEnvio || new Date(),
+      estado: datos.estado || 'pendiente', // Usamos 'pendiente' como acordó tu equipo
     });
-    return await this.manuscritoRepository.save(nuevo);
+    return await nuevo.save();
   }
 
   async obtenerTodos(): Promise<Manuscrito[]> {
-    return await this.manuscritoRepository.find({
-      order: { fechaSubida: 'DESC' },
-    });
+    // Usamos createdAt porque SchemaFactory({ timestamps: true }) lo crea en automático
+    return await this.manuscritoModel.find().sort({ createdAt: -1 }).exec();
   }
 
   async obtenerPorAutor(autorId: number): Promise<Manuscrito[]> {
-    return await this.manuscritoRepository.find({
-      where: { autorId },
-      order: { fechaSubida: 'DESC' },
-    });
+    return await this.manuscritoModel.find({ autorId }).sort({ createdAt: -1 }).exec();
   }
 
-  async obtenerPorId(id: number): Promise<Manuscrito | null> {
-    return await this.manuscritoRepository.findOne({ where: { id } });
+  // ATENCIÓN: El ID en MongoDB es string (ObjectID)
+  async obtenerPorId(id: string): Promise<Manuscrito | null> {
+    return await this.manuscritoModel.findById(id).exec();
   }
 
-  async actualizar(id: number, datos: Partial<Manuscrito>): Promise<Manuscrito | null> {
-    await this.manuscritoRepository.update(id, datos);
-    return this.obtenerPorId(id);
+  async actualizar(id: string, datos: Partial<Manuscrito>): Promise<Manuscrito | null> {
+    // { new: true } le dice a Mongoose que nos devuelva el objeto YA modificado
+    return await this.manuscritoModel.findByIdAndUpdate(id, datos, { new: true }).exec();
   }
 }

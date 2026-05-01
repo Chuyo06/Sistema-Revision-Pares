@@ -2,11 +2,33 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+    
+    <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#5d4037" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Rev. Pares" />
+    
+    <!-- Description and SEO -->
+    <meta name="description" content="Sistema de Revisión por Pares - Plataforma para gestión de manuscritos y evaluaciones académicas" />
+    <meta name="keywords" content="revisión, peer review, académico, manuscritos, evaluación" />
+    <meta name="author" content="Sistema de Revisión por Pares" />
+    <meta name="color-scheme" content="light dark" />
+    
+    <!-- Icons -->
     <link rel="manifest" href="/manifest.json" />
-    <link rel="icon" href="data:," />
-    <title>Rev. por Pares</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.svg" />
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.svg" />
+    
+    <!-- Windows tiles -->
+    <meta name="msapplication-TileColor" content="#5d4037" />
+    <meta name="msapplication-config" content="/browserconfig.xml" />
+    
+    <title>Sistema de Revisión por Pares</title>
   </head>
   <body>
     <div id="app"></div>

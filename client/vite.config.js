@@ -1,9 +1,57 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
+import { VitePWA } from 'vite-plugin-pwa'
 import { fileURLToPath, URL } from 'node:url'
 
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [
+    vue(),
+    VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'src/sw',
+      filename: 'sw.js',
+      manifestFilename: 'manifest.json',
+      injectRegister: false,
+      registerType: 'autoUpdate',
+      includeAssets: ['favicon.ico', 'robots.txt', 'icons/**/*'],
+      manifest: {
+        name: 'Sistema de Revisión por Pares',
+        short_name: 'Rev. Pares',
+        description: 'Plataforma para revisión por pares en congresos y revistas científicas.',
+        start_url: '/',
+        scope: '/',
+        display: 'standalone',
+        orientation: 'portrait-primary',
+        theme_color: '#5d4037',
+        background_color: '#f5f0e8',
+        lang: 'es',
+        dir: 'ltr',
+        categories: ['productivity', 'utilities'],
+        screenshots: [
+          {
+            src: '/icons/screenshot-1.png',
+            sizes: '540x720',
+            form_factor: 'narrow',
+            type: 'image/png'
+          }
+        ],
+        icons: [
+          {
+            src: '/icons/icon-192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'any maskable'
+          },
+          {
+            src: '/icons/icon-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any maskable'
+          }
+        ]
+      }
+    })
+  ],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))

@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <!-- Background -->
+  <rect width="192" height="192" fill="#5d4037" rx="40"/>
+  
+  <!-- Rounded corners for maskable icon -->
+  <defs>
+    <mask id="mask" x="0" y="0" width="192" height="192">
+      <rect width="192" height="192" fill="white" rx="40"/>
+    </mask>
+  </defs>
+  
+  <!-- Document/Paper icon -->
+  <rect x="48" y="36" width="96" height="120" fill="#f5f0e8" rx="8"/>
+  <rect x="52" y="40" width="88" height="112" fill="none" stroke="#5d4037" stroke-width="2" rx="4"/>
+  
+  <!-- Lines representing text (reviewers) -->
+  <line x1="64" y1="60" x2="128" y2="60" stroke="#5d4037" stroke-width="2" stroke-linecap="round"/>
+  <line x1="64" y1="76" x2="128" y2="76" stroke="#5d4037" stroke-width="2" stroke-linecap="round"/>
+  <line x1="64" y1="92" x2="100" y2="92" stroke="#5d4037" stroke-width="2" stroke-linecap="round"/>
+  
+  <!-- Checkmark for approval -->
+  <g transform="translate(120, 110)">
+    <circle cx="0" cy="0" r="14" fill="#4CAF50"/>
+    <path d="M -6 0 L -2 4 L 6 -5" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  
+  <!-- Stars for rating -->
+  <g transform="translate(72, 132)">
+    <polygon points="0,-6 2,-1 7,-1 3,2 5,7 0,4 -5,7 -3,2 -7,-1 -2,-1" fill="#FFB300" opacity="0.8"/>
+  </g>
+  <g transform="translate(92, 132)">
+    <polygon points="0,-6 2,-1 7,-1 3,2 5,7 0,4 -5,7 -3,2 -7,-1 -2,-1" fill="#FFB300" opacity="0.8"/>
+  </g>
+</svg>

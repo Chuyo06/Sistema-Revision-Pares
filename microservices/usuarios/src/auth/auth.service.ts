@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Usuario } from '../entities/usuario.entity';
 import { PerfilProfesional } from '../entities/perfil-profesional.entity';
+import { Rol } from '../entities/rol.entity';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 
@@ -13,6 +14,8 @@ export class AuthService {
     private usuarioRepository: Repository<Usuario>,
     @InjectRepository(PerfilProfesional)
     private perfilRepository: Repository<PerfilProfesional>,
+    @InjectRepository(Rol)
+    private rolRepository: Repository<Rol>,
     private jwtService: JwtService,
   ) {}
 
@@ -25,14 +28,18 @@ export class AuthService {
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(passwordPlain, salt);
 
-    // 3. Guardar usuario en MariaDB
+    // 3. Buscar el rol AUTOR por defecto
+    const autorRol = await this.rolRepository.findOne({ where: { nombre: 'AUTOR' } });
+
+    // 4. Guardar usuario en MariaDB
     const nuevoUsuario = this.usuarioRepository.create({
       email,
       password_hash: passwordHash,
+      roles: autorRol ? [autorRol] : [],
     });
     const guardado = await this.usuarioRepository.save(nuevoUsuario);
 
-    // 4. Crear perfil profesional con el nombre
+    // 5. Crear perfil profesional con el nombre
     const perfil = this.perfilRepository.create({
       usuario: guardado,
       nombre_completo: nombre || email.split('@')[0],
@@ -43,7 +50,7 @@ export class AuthService {
   }
 
   async login(email: string, passwordPlain: string) {
-    // 1. Buscar al usuario con su perfil Y SUS ROLES (Cambio clave aquí)
+    // 1. Buscar al usuario con su perfil Y SUS ROLES
     const user = await this.usuarioRepository.findOne({
       where: { email },
       relations: ['perfil', 'roles'], 
@@ -67,7 +74,7 @@ export class AuthService {
       nombre: user.perfil?.nombre_completo || user.email.split('@')[0],
       avatar: user.perfil?.avatar || null,
       email: user.email,
-      roles: rolesPlanos, // Devolvemos el arreglo limpio al frontend
+      roles: rolesPlanos, 
     };
   }
 

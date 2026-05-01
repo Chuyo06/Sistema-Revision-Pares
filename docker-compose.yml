@@ -56,8 +56,13 @@ services:
     container_name: ms_usuarios
     ports:
       - "3001:3000"
+    volumes:
+      - ./microservices/usuarios:/app
+      - /app/node_modules
     environment:
       - NODE_ENV=development
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-2h}
     depends_on:
       mariadb:
         condition: service_healthy
@@ -71,10 +76,13 @@ services:
     container_name: ms_manuscritos
     ports:
       - "3002:3000"
+    volumes:
+      - ./microservices/manuscritos:/app
+      - /app/node_modules
     environment:
       - NODE_ENV=development
     depends_on:
-      mariadb:
+      mongodb:
         condition: service_healthy
 
   revision:
@@ -84,6 +92,9 @@ services:
     container_name: ms_revision
     ports:
       - "3003:3000"
+    volumes:
+      - ./microservices/revision:/app
+      - /app/node_modules
     environment:
       - NODE_ENV=development
     depends_on:
@@ -97,6 +108,9 @@ services:
     container_name: ms_matching
     ports:
       - "3004:3000"
+    volumes:
+      - ./microservices/matching:/app
+      - /app/node_modules
     environment:
       - NODE_ENV=development
     depends_on:
@@ -112,6 +126,9 @@ services:
     container_name: ms_analisis_ia
     ports:
       - "3005:3000"
+    volumes:
+      - ./microservices/analisis-ia:/app
+      - /app/node_modules
     environment:
       - NODE_ENV=development
     depends_on:

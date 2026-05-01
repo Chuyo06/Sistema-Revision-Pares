@@ -1,24 +1,19 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { Manuscrito } from './entities/manuscrito.entity';
+import { MongooseModule } from '@nestjs/mongoose';
+import { Manuscrito, ManuscritoSchema } from './schemas/manuscrito.schema';
 import { ManuscritosService } from './manuscritos.service';
 import { ManuscritosController } from './manuscritos.controller';
 
 @Module({
   imports: [
-    TypeOrmModule.forRoot({
-      type: 'mariadb',
-      host: 'mariadb',
-      port: 3306,
-      username: 'root',
-      password: 'root_password',
-      database: 'mi_base_datos',
-      entities: [Manuscrito],
-      synchronize: false,
-    }),
-    TypeOrmModule.forFeature([Manuscrito]),
+    MongooseModule.forRoot(
+      'mongodb://admin:password@mongodb:27017/rpp_manuscritos?authSource=admin',
+    ),
+    MongooseModule.forFeature([
+      { name: Manuscrito.name, schema: ManuscritoSchema },
+    ]),
   ],
-  controllers: [ManuscritosController], // <-- ¡Solo nuestro controlador!
+  controllers: [ManuscritosController],
   providers: [ManuscritosService],
 })
 export class AppModule {}

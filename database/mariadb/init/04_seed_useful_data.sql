@@ -2,35 +2,70 @@
 -- SEED DE DATOS VARIADOS Y RICOS PARA DEMOSTRACIÓN FINAL
 -- ==========================================================
 
--- Limpiar datos previos
+-- Limpiar datos previos (orden importante por FKs)
 DELETE FROM asignaciones_revision;
 DELETE FROM perfiles_profesionales;
-DELETE FROM manuscritos;
+DELETE FROM usuarios_roles;
+DELETE FROM roles;
 DELETE FROM usuarios;
 
--- 1. USUARIOS (Password universal: 1234)
--- Hashes generados previamente para '1234'
-INSERT INTO usuarios (id_usuario, email, password_hash, roles, estado) VALUES
-(1, 'autor@demo.com',      '$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'AUTOR', 'ACTIVO'),
-(2, 'revisor@demo.com',    '$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'REVISOR', 'ACTIVO'),
-(3, 'editor@demo.com',     '$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'EDITOR', 'ACTIVO'),
-(4, 'admin@demo.com',      '$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'ADMIN', 'ACTIVO'),
-(5, 'carlos.r@mit.edu',    '$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'REVISOR', 'ACTIVO'),
-(6, 'elena.v@stanford.edu','$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'AUTOR', 'ACTIVO'),
-(7, 'chen.wei@tsinghua.cn','$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'REVISOR', 'ACTIVO'),
-(8, 's.kawasaki@u-tokyo.jp','$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'REVISOR', 'ACTIVO'),
-(9, 'l.martinez@unam.mx',  '$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'AUTOR', 'ACTIVO'),
-(10, 'h.mueller@tu-berlin.de','$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'REVISOR', 'ACTIVO'),
-(11, 'j.doe@oxford.ac.uk',  '$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'EDITOR', 'ACTIVO'),
-(12, 'm.patel@iit.ac.in',   '$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'REVISOR', 'ACTIVO'),
-(13, 'super@demo.com',      '$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'AUTOR,REVISOR,EDITOR,ADMIN', 'ACTIVO');
+-- ==========================================================
+-- 1. CATÁLOGO DE ROLES
+-- ==========================================================
+INSERT INTO roles (id, nombre) VALUES
+(1, 'AUTOR'),
+(2, 'REVISOR'),
+(3, 'EDITOR'),
+(4, 'ADMIN');
 
--- 2. PERFILES PROFESIONALES
+-- ==========================================================
+-- 2. USUARIOS (Password universal: 1234)
+-- Hashes generados con bcrypt salt 10
+-- ==========================================================
+INSERT INTO usuarios (id_usuario, email, password_hash, estado) VALUES
+(1,  'autor@demo.com',           '$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'ACTIVO'),
+(2,  'revisor@demo.com',         '$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'ACTIVO'),
+(3,  'editor@demo.com',          '$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'ACTIVO'),
+(4,  'admin@demo.com',           '$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'ACTIVO'),
+(5,  'carlos.r@mit.edu',         '$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'ACTIVO'),
+(6,  'elena.v@stanford.edu',     '$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'ACTIVO'),
+(7,  'chen.wei@tsinghua.cn',     '$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'ACTIVO'),
+(8,  's.kawasaki@u-tokyo.jp',    '$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'ACTIVO'),
+(9,  'l.martinez@unam.mx',       '$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'ACTIVO'),
+(10, 'h.mueller@tu-berlin.de',   '$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'ACTIVO'),
+(11, 'j.doe@oxford.ac.uk',       '$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'ACTIVO'),
+(12, 'm.patel@iit.ac.in',        '$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'ACTIVO'),
+(13, 'super@demo.com',           '$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'ACTIVO');
+
+-- ==========================================================
+-- 3. ASIGNACIÓN DE ROLES (relación N:M)
+-- IDs de rol: 1=AUTOR, 2=REVISOR, 3=EDITOR, 4=ADMIN
+-- ==========================================================
+INSERT INTO usuarios_roles (usuario_id, rol_id) VALUES
+-- Demo principales
+(1,  1),                   -- autor@demo.com  → AUTOR
+(2,  1), (2,  2),          -- revisor@demo.com → AUTOR + REVISOR
+(3,  2), (3,  3),          -- editor@demo.com  → REVISOR + EDITOR
+(4,  1), (4,  2), (4, 3), (4, 4),  -- admin@demo.com  → todos
+-- Usuarios extendidos
+(5,  2),                   -- carlos.r        → REVISOR
+(6,  1),                   -- elena.v         → AUTOR
+(7,  2),                   -- chen.wei        → REVISOR
+(8,  2),                   -- s.kawasaki      → REVISOR
+(9,  1),                   -- l.martinez      → AUTOR
+(10, 2),                   -- h.mueller       → REVISOR
+(11, 3),                   -- j.doe           → EDITOR
+(12, 2),                   -- m.patel         → REVISOR
+(13, 1), (13, 2), (13, 3), (13, 4);  -- super@demo.com → todos
+
+-- ==========================================================
+-- 4. PERFILES PROFESIONALES
+-- ==========================================================
 INSERT INTO perfiles_profesionales (id_usuario, nombre_completo, institucion, orcid, especialidad_academica) VALUES
 (1,  'Dra. Ana García',         'Universidad Nacional',      '0000-0001-1111-1111', 'Redes Neuronales y Procesamiento de Imágenes'),
 (2,  'Dr. Roberto Mendoza',     'Instituto de IA',           '0000-0002-2222-2222', 'Procesamiento de Lenguaje Natural (NLP)'),
 (3,  'Dr. Sergio Martínez',     'Revista Innovación Tech',   '0000-0003-3333-3333', 'Gestión Editorial y Ciencia Abierta'),
-(4,  'Lic. Admin Sistema',      'Soporte Central',           NULL,                 'Administración de Sistemas'),
+(4,  'Lic. Admin Sistema',      'Soporte Central',           NULL,                  'Administración de Sistemas'),
 (5,  'Carlos Rodríguez',        'MIT Media Lab',             '0000-0005-5555-5555', 'Interacción Humano-Computadora (HCI)'),
 (6,  'Elena Vasquez',           'Stanford University',       '0000-0006-6666-6666', 'Bioinformática y Genómica'),
 (7,  'Chen Wei',                'Tsinghua University',       '0000-0007-7777-7777', 'Computación Cuántica y Criptografía'),
@@ -41,29 +76,21 @@ INSERT INTO perfiles_profesionales (id_usuario, nombre_completo, institucion, or
 (12, 'Meera Patel',             'IIT Bombay',                '0000-0012-1212-1212', 'Visión por Computadora y Deep Learning'),
 (13, 'Super Usuario Multi-Rol', 'Universidad Global',        NULL,                  'Todas las Áreas');
 
--- 3. MANUSCRITOS
-INSERT INTO manuscritos (id, titulo, resumen, autorId, autores, estado, convocatoria, referencia, fechaEnvio) VALUES
-(201, 'Detección Temprana de Alzheimer usando Transformers', 'Uso de modelos de atención para el análisis de resonancias magnéticas estructurales.', 1, 'García, A., Roberts, J.', 'EN_REVISION', 'HealthAI 2026', 'RPP-2026-0201', '2026-03-01'),
-(202, 'Privacy-Preserving Deep Learning in Cloud', 'Protocolos criptográficos para el entrenamiento de modelos sin acceder a datos en bruto.', 9, 'Martínez, L., Schmidt, H.', 'EN_REVISION', 'SecConf 2026', 'RPP-2026-0202', '2026-03-05'),
-(203, 'Aceleración de Algoritmos Genéticos con GPU', 'Optimización de procesos de selección natural mediante núcleos CUDA.', 6, 'Vasquez, E.', 'ACEPTADO', 'BioInf 2026', 'RPP-2026-0203', '2026-02-15'),
-(204, 'Análisis de Sesgos en Modelos de Lenguaje Grandes', 'Estudio sobre la discriminación algorítmica en GPT-4 para el español regional.', 1, 'García, A.', 'RECHAZADO', 'EthicAI 2026', 'RPP-2026-0204', '2026-02-20'),
-(205, 'Navegación Autónoma en Entornos Interiores Densos', 'Algoritmos de SLAM para drones de bajo coste en almacenes logísticos.', 9, 'Martínez, L., Kawasaki, S.', 'ENVIADO', 'RoboNet 2026', 'RPP-2026-0205', '2026-03-10');
-
--- 4. ASIGNACIONES DE REVISIÓN (Capa de cruce)
--- MS 201: Revisor 2 y 12
--- MS 202: Revisor 7 y 10
+-- ==========================================================
+-- 5. ASIGNACIONES DE REVISIÓN
+-- NOTA: id_manuscrito_mongo apunta a documentos de MongoDB.
+-- Aquí se usan placeholders ('201', '202') que pueden enlazarse a los _id reales
+-- una vez creados los manuscritos vía POST /manuscripts.
+-- ==========================================================
 INSERT INTO asignaciones_revision (id_revisor, id_manuscrito_mongo, estado, fecha_limite) VALUES
 (2,  '201', 'ACEPTADO',   '2026-04-15'),
 (12, '201', 'INVITADO',   '2026-04-20'),
 (10, '202', 'COMPLETADA', '2026-03-25'),
 (7,  '202', 'ACEPTADO',   '2026-04-10');
 
--- 5. REVISIONES COMPLETADAS (Simular una revisión ya hecha en el MS 202)
-UPDATE asignaciones_revision 
-SET puntuacion = 4, comentarios = 'Excelente propuesta de seguridad, aunque faltan pruebas de latencia.', fecha_completada = '2026-03-25 10:00:00'
+-- 6. Detalles de la revisión completada
+UPDATE asignaciones_revision
+SET puntuacion = 4,
+    comentarios = 'Excelente propuesta de seguridad, aunque faltan pruebas de latencia.',
+    fecha_completada = '2026-03-25 10:00:00'
 WHERE id_revisor = 10 AND id_manuscrito_mongo = '202';
-
--- 6. ACTUALIZAR CONTADORES DE MANUSCRITOS
-UPDATE manuscritos SET revisoresAsignados = 2, revisionesCompletadas = 0 WHERE id = 201;
-UPDATE manuscritos SET revisoresAsignados = 2, revisionesCompletadas = 1 WHERE id = 202;
-UPDATE manuscritos SET revisoresAsignados = 1, revisionesCompletadas = 1 WHERE id = 203; -- Ya aceptado

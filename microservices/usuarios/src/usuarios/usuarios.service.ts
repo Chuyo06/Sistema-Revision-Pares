@@ -1,8 +1,9 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { Usuario, RolUsuario } from '../entities/usuario.entity';
 import { PerfilProfesional } from '../entities/perfil-profesional.entity';
+import { Rol } from '../entities/rol.entity';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -12,15 +13,30 @@ export class UsuariosService implements OnModuleInit {
     private usuarioRepo: Repository<Usuario>,
     @InjectRepository(PerfilProfesional)
     private perfilRepo: Repository<PerfilProfesional>,
+    @InjectRepository(Rol)
+    private rolRepo: Repository<Rol>,
   ) {}
 
   async onModuleInit() {
+    await this.ensureRolesExist();
     await this.seedSuperUser();
   }
 
+  private async ensureRolesExist() {
+    const roles = Object.values(RolUsuario);
+    for (const r of roles) {
+      const exists = await this.rolRepo.findOne({ where: { nombre: r } });
+      if (!exists) {
+        console.log(`[Seed] Creando rol: ${r}`);
+        await this.rolRepo.save({ nombre: r });
+      }
+    }
+  }
+
   private async asyncSeed(email: string, nombre: string, roles: RolUsuario[]) {
-    const exists = await this.usuarioRepo.findOne({ where: { email } });
-    if (!exists) {
+    const user = await this.usuarioRepo.findOne({ where: { email }, relations: ['roles'] });
+    
+    if (!user) {
       console.log(`[Seed] Creando usuario: ${email}`);
       await this.crearUsuario({
         email,
@@ -28,6 +44,16 @@ export class UsuariosService implements OnModuleInit {
         nombre,
         roles
       });
+    } else {
+      // Si el usuario existe pero no tiene roles, se los asignamos
+      if (!user.roles || user.roles.length === 0) {
+        console.log(`[Seed] Actualizando roles para: ${email}`);
+        const rolesEntities = await this.rolRepo.find({
+          where: { nombre: In(roles) }
+        });
+        user.roles = rolesEntities;
+        await this.usuarioRepo.save(user);
+      }
     }
   }
 
@@ -40,7 +66,7 @@ export class UsuariosService implements OnModuleInit {
 
   async obtenerTodos() {
     const usuarios = await this.usuarioRepo.find({
-      relations: ['perfil'],
+      relations: ['perfil', 'roles'],
       order: { fecha_registro: 'DESC' },
     });
     return usuarios.map((u) => ({
@@ -57,14 +83,14 @@ export class UsuariosService implements OnModuleInit {
   async obtenerPorId(id: number) {
     const u = await this.usuarioRepo.findOne({
       where: { id_usuario: id },
-      relations: ['perfil'],
+      relations: ['perfil', 'roles'],
     });
     if (!u) return null;
     return {
       id: u.id_usuario,
       nombre: u.perfil?.nombre_completo || u.email.split('@')[0],
       email: u.email,
-      roles: u.roles.map(r => r.toLowerCase()),
+      roles: u.roles?.map(r => r.nombre.toLowerCase()) || [],
       estado: u.estado.toLowerCase(),
       fechaRegistro: u.fecha_registro,
       institucion: u.perfil?.institucion || null,
@@ -78,8 +104,18 @@ export class UsuariosService implements OnModuleInit {
   }
 
   async actualizarRol(id: number, rol: string | string[]) {
-    const rolesArray = Array.isArray(rol) ? rol : [rol];
-    await this.usuarioRepo.update(id, { roles: rolesArray.map(r => r.toUpperCase()) as any });
+    const rolesArray = Array.isArray(rol) ? rol.map(r => r.toUpperCase()) : [rol.toUpperCase()];
+    
+    const rolesEntities = await this.rolRepo.find({
+      where: { nombre: In(rolesArray) }
+    });
+
+    const usuario = await this.usuarioRepo.findOne({ where: { id_usuario: id }, relations: ['roles'] });
+    if (usuario) {
+      usuario.roles = rolesEntities;
+      await this.usuarioRepo.save(usuario);
+    }
+    
     return this.obtenerPorId(id);
   }
 
@@ -87,18 +123,21 @@ export class UsuariosService implements OnModuleInit {
     const salt = await bcrypt.genSalt(10);
     const hash = await bcrypt.hash(datos.password, salt);
 
-    const rolesToSave = datos.roles 
-      ? datos.roles.map(r => r.toUpperCase() as any) 
-      : [(datos.rol?.toUpperCase() || 'AUTOR') as any];
+    const rolesPlanos = datos.roles 
+      ? datos.roles.map(r => r.toUpperCase()) 
+      : [(datos.rol?.toUpperCase() || 'AUTOR')];
+
+    const rolesEntities = await this.rolRepo.find({
+      where: { nombre: In(rolesPlanos) }
+    });
 
     const nuevo = this.usuarioRepo.create({
       email: datos.email,
       password_hash: hash,
-      roles: rolesToSave,
+      roles: rolesEntities,
     });
     const guardado = await this.usuarioRepo.save(nuevo);
 
-    // Crear perfil
     const perfil = this.perfilRepo.create({
       usuario: guardado,
       nombre_completo: datos.nombre,
@@ -108,10 +147,6 @@ export class UsuariosService implements OnModuleInit {
     return this.obtenerPorId(guardado.id_usuario);
   }
 
-
-
-
-// Agrega esto casi al final de tu usuarios.service.ts
   async actualizarUsuario(id: number, datosActualizados: any) {
     if (datosActualizados.estado) {
       await this.actualizarEstado(id, datosActualizados.estado);
@@ -122,13 +157,10 @@ export class UsuariosService implements OnModuleInit {
     return this.obtenerPorId(id);
   }
 
-// Agrega esto en usuarios.service.ts
   async buscarPorEmailParaLogin(email: string) {
     return await this.usuarioRepo.findOne({
       where: { email },
-      select: ['id_usuario', 'email', 'password_hash', 'roles', 'estado'] // Obligamos a traer el password para poder compararlo
+      relations: ['roles', 'perfil'], 
     });
   }
-
-
 }

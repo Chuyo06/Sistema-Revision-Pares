@@ -1,6 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToOne, ManyToMany, JoinTable } from 'typeorm';
 import { PerfilProfesional } from './perfil-profesional.entity';
+import { Rol } from './rol.entity'; // <-- Importamos tu nueva entidad
 
+// Mantenemos los Enums por si los usas en servicios o controladores
 export enum RolUsuario {
   AUTOR = 'AUTOR',
   REVISOR = 'REVISOR',
@@ -25,8 +27,14 @@ export class Usuario {
   @Column({ type: 'varchar', length: 255, name: 'password_hash' })
   password_hash!: string;
 
-  @Column({ type: 'simple-array', default: [RolUsuario.AUTOR] })
-  roles!: RolUsuario[];
+  // 🔥 AQUÍ ESTÁ LA NUEVA RELACIÓN MANYTOMANY 🔥
+  @ManyToMany(() => Rol, (rol) => rol.usuarios)
+  @JoinTable({
+    name: 'usuarios_roles', // Así se llamará la tabla intermedia en MariaDB
+    joinColumn: { name: 'usuario_id', referencedColumnName: 'id_usuario' },
+    inverseJoinColumn: { name: 'rol_id', referencedColumnName: 'id' }
+  })
+  roles!: Rol[];
 
   @Column({ type: 'enum', enum: EstadoUsuario, default: EstadoUsuario.ACTIVO })
   estado!: EstadoUsuario;

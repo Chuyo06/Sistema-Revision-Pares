@@ -49,7 +49,7 @@ registerRoute(
 
 // Manuscritos (PDFs y metadatos) → Stale While Revalidate
 registerRoute(
-  ({ url }) => url.pathname.startsWith('/api/manuscritos') ||
+  ({ url }) => url.pathname.startsWith('/api/manuscripts') ||
                url.pathname.endsWith('.pdf'),
   staleWhileRevalidateStrategy
 )

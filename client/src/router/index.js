@@ -9,6 +9,12 @@ const routes = [
     component: () => import('@/pages/auth/LoginPage.vue'),
     meta: { publico: true }
   },
+  {
+    path: '/register',
+    name: 'register',
+    component: () => import('@/pages/auth/RegisterPage.vue'),
+    meta: { publico: true }
+  },
 
   // ── AUTOR ──────────────────────────────────────────────────────
   {

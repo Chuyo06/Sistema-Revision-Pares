@@ -130,7 +130,7 @@ const uploadFile = async () => {
     const formData = new FormData();
     formData.append('archivo', file);
 
-    const res = await fetch('/api/manuscritos/upload', {
+    const res = await fetch('/api/manuscripts/upload', {
       method: 'POST',
       body: formData,
     });

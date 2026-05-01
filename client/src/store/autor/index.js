@@ -44,12 +44,13 @@ export const useAutorStore = defineStore('autor', () => {
     const userId = authStore.usuario?.id || authStore.usuario?.id_usuario || 1
 
     const payload = {
-      ...datos,
       autorId: userId,
       autores: authStore.usuario?.nombre || 'Autor Demo',
-      referencia: 'PENDIENTE',
-      estado: 'ENVIADO'
+      estado: 'ENVIADO',
+      ...datos,
     }
+    // El campo `contenido` es requerido por el backend; usar resumen como fallback
+    if (!payload.contenido) payload.contenido = payload.resumen || ''
 
     const nuevo = await crearManuscrito(payload)
     if (nuevo) {

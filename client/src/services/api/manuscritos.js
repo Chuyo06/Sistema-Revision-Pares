@@ -5,7 +5,7 @@
 // Fallback: no modifica los datos mock de los stores Pinia.
 // ─────────────────────────────────────────────────────────────
 
-const BASE_URL = '/api/manuscritos'
+const BASE_URL = '/api/manuscripts'
 
 /**
  * Obtiene el token JWT guardado (si existe).

@@ -36,6 +36,13 @@ export async function toggleEstadoUsuarioApi(id, estadoActual) {
 }
 
 export async function crearUsuarioApi(datos) {
+  // Soporta tanto `rol` (string) como `roles` (array). El backend espera un array.
+  const roles = Array.isArray(datos.roles)
+    ? datos.roles
+    : datos.rol
+      ? [datos.rol]
+      : ['autor']
+
   try {
     const res = await fetch(`${BASE_URL}`, {
       method: 'POST',
@@ -44,7 +51,7 @@ export async function crearUsuarioApi(datos) {
         email: datos.email,
         password: datos.password || '1234',
         nombre: datos.nombre,
-        rol: datos.rol,
+        roles,
       }),
     })
     if (!res.ok) return null

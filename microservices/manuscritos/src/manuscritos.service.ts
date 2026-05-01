@@ -23,15 +23,18 @@ export class ManuscritosService {
     };
   }
 
-  async crear(datos: Partial<Manuscrito> & { referencia?: string; fechaEnvio?: Date }): Promise<Manuscrito> {
+  async crear(datos: Partial<Manuscrito>): Promise<Manuscrito> {
     const count = await this.manuscritoModel.countDocuments();
-    const ref = datos.referencia || `RPP-${new Date().getFullYear()}-${String(count + 1).padStart(4, '0')}`;
+    const ref =
+      datos.referencia && datos.referencia !== 'PENDIENTE'
+        ? datos.referencia
+        : `RPP-${new Date().getFullYear()}-${String(count + 1).padStart(4, '0')}`;
 
-    // En Mongoose instanciamos el modelo y luego usamos .save()
     const nuevo = new this.manuscritoModel({
       ...datos,
       referencia: ref,
-      estado: datos.estado || 'pendiente', // Usamos 'pendiente' como acordó tu equipo
+      estado: datos.estado || 'pendiente',
+      fechaEnvio: datos.fechaEnvio || new Date(),
     });
     return await nuevo.save();
   }

@@ -110,6 +110,13 @@
           </v-btn>
         </form>
 
+        <div style="text-align:center; margin-top:14px; font-size:13px; color:#8B5A2B">
+          ¿No tienes cuenta?
+          <router-link to="/register" style="color:#4CAF50; font-weight:600; text-decoration:none">
+            Regístrate
+          </router-link>
+        </div>
+
         <!-- Divisor -->
         <div style="display:flex; align-items:center; gap:10px; margin:20px 0">
           <div style="flex:1; height:1px; background:#D3E0D7" />

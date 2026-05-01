@@ -107,4 +107,18 @@ export class UsuariosService implements OnModuleInit {
 
     return this.obtenerPorId(guardado.id_usuario);
   }
+
+
+
+
+// Agrega esto casi al final de tu usuarios.service.ts
+  async actualizarUsuario(id: number, datosActualizados: any) {
+    if (datosActualizados.estado) {
+      await this.actualizarEstado(id, datosActualizados.estado);
+    }
+    if (datosActualizados.roles) {
+      await this.actualizarRol(id, datosActualizados.roles);
+    }
+    return this.obtenerPorId(id);
+  }
 }

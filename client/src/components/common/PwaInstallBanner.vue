@@ -1,42 +1,4 @@
-<template>
-  <v-snackbar
-    v-model="show"
-    :timeout="-1"
-    color="primary"
-    elevation="24"
-    location="bottom right"
-    class="mb-4 mr-4"
-    rounded="lg"
-  >
-    <div class="d-flex align-center py-1">
-      <v-icon icon="mdi-cellphone-arrow-down" class="mr-3" size="32"></v-icon>
-      <div>
-        <div class="text-subtitle-1 font-weight-bold">Instalar App</div>
-        <div class="text-body-2">Accede más rápido y trabaja sin conexión.</div>
-      </div>
-    </div>
-
-    <template v-slot:actions>
-      <v-btn
-        variant="text"
-        @click="show = false"
-        class="text-none"
-      >
-        Quizás luego
-      </v-btn>
-      <v-btn
-        color="white"
-        theme="light"
-        @click="installPwa"
-        class="text-none ml-2 px-4"
-        elevation="2"
-      >
-        <v-icon left class="mr-2">mdi-download</v-icon>
-        Instalar ahora
-      </v-btn>
-    </template>
-  </v-snackbar>
-</template>
+<template></template>
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';

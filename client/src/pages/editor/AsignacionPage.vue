@@ -122,6 +122,38 @@
               </div>
             </v-card-item>
           </v-card>
+
+          <!-- SECCIÓN NUEVA: SOLICITAR REVISIONES (Mini Dashboard) -->
+          <v-card 
+            v-if="manuscrito.estado === 'LISTO_PARA_DECISION' && requiereRevisiones" 
+            class="mb-6 elevation-10" 
+            rounded="xl" 
+            color="orange-darken-3" 
+            theme="dark"
+          >
+            <v-card-item class="pa-6">
+              <v-card-title class="text-h5 font-weight-bold d-flex align-center text-white">
+                <v-icon class="mr-3" color="white">mdi-keyboard-return</v-icon>
+                Regresar al Autor (Cambios Solicitados)
+              </v-card-title>
+              <v-card-subtitle class="mt-1 opacity-90 text-white">
+                Uno o más revisores han sugerido que el autor realice modificaciones.
+              </v-card-subtitle>
+              
+              <div class="mt-6">
+                <v-btn 
+                  color="white" 
+                  class="text-orange-darken-3 font-weight-bold text-none"
+                  size="large" 
+                  variant="elevated" 
+                  @click="decidir('REQUERIDAS_REVISIONES')" 
+                  prepend-icon="mdi-send"
+                >
+                  Solicitar Cambios al Autor
+                </v-btn>
+              </div>
+            </v-card-item>
+          </v-card>
         </v-col>
 
         <!-- Columna Derecha: Seleccionar Revisores -->
@@ -196,7 +228,12 @@ const asignacionesCompletadas = computed(() =>
   asignacionesDelArticulo.value.filter(a => a.estado === 'COMPLETADA')
 )
 
+const requiereRevisiones = computed(() => {
+  return asignacionesCompletadas.value.some(a => a.recomendacion === 'REVISION_MENOR' || a.recomendacion === 'REVISION_MAYOR')
+})
+
 const seccionDecisionActiva = computed(() => {
+  if (manuscrito.value?.estado === 'LISTO_PARA_DECISION' && requiereRevisiones.value) return false
   return ['LISTO_PARA_DECISION', 'ACEPTADO', 'RECHAZADO'].includes(manuscrito.value?.estado)
 })
 
@@ -226,6 +263,7 @@ const ESTADOS = {
   ENVIADO: 'Enviado', 
   EN_REVISION: 'En revisión', 
   LISTO_PARA_DECISION: 'Listo para decisión',
+  REQUERIDAS_REVISIONES: 'Requiere Revisiones',
   ACEPTADO: 'Aceptado', 
   RECHAZADO: 'Rechazado' 
 }

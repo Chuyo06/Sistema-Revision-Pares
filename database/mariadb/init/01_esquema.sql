@@ -23,6 +23,7 @@ CREATE TABLE manuscritos (
     estado VARCHAR(50) DEFAULT 'BORRADOR',
     convocatoria VARCHAR(255),
     referencia VARCHAR(255),
+    respuestasRevisores TEXT NULL,
     revisoresAsignados INT DEFAULT 0,
     revisionesCompletadas INT DEFAULT 0,
     fechaEnvio DATE,
@@ -55,6 +56,7 @@ CREATE TABLE asignaciones_revision (
     fecha_limite DATE NOT NULL,
     puntuacion INT NULL,
     comentarios TEXT NULL,
+    recomendacion VARCHAR(50) NULL,
     fecha_completada TIMESTAMP NULL,
     FOREIGN KEY (id_revisor) REFERENCES usuarios(id_usuario) ON DELETE RESTRICT
 );

@@ -59,6 +59,30 @@ export const useAutorStore = defineStore('autor', () => {
     return null
   }
 
+  async function reenviarManuscrito(id, referenciaPdf, respuestasRevisores) {
+    try {
+      const payload = {
+        referencia: referenciaPdf,
+        respuestasRevisores: respuestasRevisores,
+        estado: 'LISTO_PARA_DECISION'
+      }
+      
+      const res = await fetch(`/api/manuscritos/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+
+      if (res.ok) {
+        await cargarMisManuscritos()
+        return true
+      }
+    } catch (e) {
+      console.error('Error reenviando manuscrito:', e)
+    }
+    return false
+  }
+
   async function cargarComentarios(manuscritoId) {
     try {
       const res = await fetch(`/api/revision/manuscrito/${manuscritoId}`)
@@ -95,5 +119,5 @@ export const useAutorStore = defineStore('autor', () => {
     return []
   }
 
-  return { manuscritos, convocatorias, cargando, cargarMisManuscritos, enviarManuscrito, cargarComentarios }
+  return { manuscritos, convocatorias, cargando, cargarMisManuscritos, enviarManuscrito, cargarComentarios, reenviarManuscrito }
 })

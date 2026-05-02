@@ -20,6 +20,7 @@ const routes = [
       { path: 'dashboard', name: 'autor-dashboard', component: () => import('@/pages/autor/DashboardPage.vue') },
       { path: 'articulos', name: 'autor-articulos', component: () => import('@/pages/autor/ArticulosPage.vue') },
       { path: 'nuevo', name: 'autor-nuevo', component: () => import('@/pages/autor/NuevoArticuloPage.vue') },
+      { path: 'reenviar/:id', name: 'autor-reenviar', component: () => import('@/pages/autor/ReenviarArticuloPage.vue') },
     ]
   },
 

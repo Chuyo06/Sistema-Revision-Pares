@@ -31,8 +31,8 @@
       v-for="m in manuscritosFiltrados"
       :key="m.id"
       style="background:#FFFFFF; border:1px solid #D3E0D7; border-radius:12px; margin-bottom:10px; overflow:hidden; transition: 0.2s;"
-      :style="(m.estado === 'ACEPTADO' || m.estado === 'RECHAZADO') ? 'cursor: pointer;' : ''"
-      @click="(m.estado === 'ACEPTADO' || m.estado === 'RECHAZADO') ? abrirComentarios(m) : null"
+      :style="(m.estado === 'ACEPTADO' || m.estado === 'RECHAZADO' || m.estado === 'REQUERIDAS_REVISIONES') ? 'cursor: pointer;' : ''"
+      @click="(m.estado === 'ACEPTADO' || m.estado === 'RECHAZADO' || m.estado === 'REQUERIDAS_REVISIONES') ? abrirComentarios(m) : null"
       class="articulo-card"
     >
       <div :style="`height:5px; background:${hexEstado(m.estado)}`" />
@@ -113,6 +113,15 @@
 
         <v-divider />
         <v-card-actions class="pa-4 justify-end">
+          <v-btn 
+            v-if="articuloSeleccionado?.estado === 'REQUERIDAS_REVISIONES'" 
+            color="orange-darken-3" 
+            variant="flat" 
+            prepend-icon="mdi-upload"
+            :to="`/autor/reenviar/${articuloSeleccionado?.id}`"
+          >
+            Reenviar Versión Corregida
+          </v-btn>
           <v-btn color="primary" variant="tonal" @click="dialogoComentarios = false">Cerrar</v-btn>
         </v-card-actions>
       </v-card>
@@ -161,9 +170,9 @@ const manuscritosFiltrados = computed(() =>
   })
 )
 
-const ESTADOS = { BORRADOR:'Borrador', ENVIADO:'Enviado', EN_REVISION:'En revisión', ACEPTADO:'Aceptado', RECHAZADO:'Rechazado' }
-const HEX     = { BORRADOR:'#9e9e9e', ENVIADO:'#546e7a', EN_REVISION:'#e65100', ACEPTADO:'#558b2f', RECHAZADO:'#c62828' }
-const CHIPS   = { BORRADOR:'secondary', ENVIADO:'info', EN_REVISION:'warning', ACEPTADO:'success', RECHAZADO:'error' }
+const ESTADOS = { BORRADOR:'Borrador', ENVIADO:'Enviado', EN_REVISION:'En revisión', REQUERIDAS_REVISIONES:'Requiere revisiones', ACEPTADO:'Aceptado', RECHAZADO:'Rechazado' }
+const HEX     = { BORRADOR:'#9e9e9e', ENVIADO:'#546e7a', EN_REVISION:'#e65100', REQUERIDAS_REVISIONES:'#ef6c00', ACEPTADO:'#558b2f', RECHAZADO:'#c62828' }
+const CHIPS   = { BORRADOR:'secondary', ENVIADO:'info', EN_REVISION:'warning', REQUERIDAS_REVISIONES:'warning', ACEPTADO:'success', RECHAZADO:'error' }
 
 function estadoLabel(e) { return ESTADOS[e] ?? e }
 function hexEstado(e)   { return HEX[e]     ?? '#9e9e9e' }

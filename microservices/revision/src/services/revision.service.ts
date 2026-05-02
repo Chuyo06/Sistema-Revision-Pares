@@ -46,6 +46,7 @@ export class RevisionService {
       estado: 'COMPLETADA',
       puntuacion: revision.puntuacion,
       comentarios: revision.comentarios,
+      recomendacion: revision.recomendacion,
       fecha_completada: new Date(),
     });
     

@@ -26,7 +26,9 @@ CREATE TABLE manuscritos (
     respuestasRevisores TEXT NULL,
     revisoresAsignados INT DEFAULT 0,
     revisionesCompletadas INT DEFAULT 0,
+    motivoRechazo TEXT NULL,
     fechaEnvio DATE,
+    fechaDecision TIMESTAMP NULL,
     fechaSubida TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

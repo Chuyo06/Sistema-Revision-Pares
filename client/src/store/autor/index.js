@@ -26,7 +26,9 @@ export const useAutorStore = defineStore('autor', () => {
           titulo: m.titulo,
           resumen: m.resumen,
           estado: m.estado,
+          motivoRechazo: m.motivoRechazo,
           fechaEnvio: m.fechaEnvio ? m.fechaEnvio.split('T')[0] : null,
+          fechaDecision: m.fechaDecision,
           convocatoria: m.convocatoria || 'General',
           revisores: 0, // Esto requeriría otro join si quisiéramos mostrarlo real
           revisionesPendientes: 0,
@@ -135,7 +137,7 @@ export const useAutorStore = defineStore('autor', () => {
       const res = await fetch(`/api/revision/manuscrito/${manuscritoId}`)
       if (res.ok) {
         const asignaciones = await res.json()
-        return asignaciones
+        const comentariosParseados = asignaciones
           .filter(a => a.estado === 'COMPLETADA' && a.comentarios)
           .map((a, index) => {
             let texto = a.comentarios || '';
@@ -159,11 +161,12 @@ export const useAutorStore = defineStore('autor', () => {
               puntuacion: a.puntuacion
             };
           })
+        return { comentarios: comentariosParseados, asignaciones }
       }
     } catch (e) {
       console.error('Error fetching comments:', e)
     }
-    return []
+    return { comentarios: [], asignaciones: [] }
   }
 
   return { manuscritos, convocatorias, cargando, cargarMisManuscritos, enviarManuscrito, guardarBorrador, eliminarBorrador, cargarComentarios, reenviarManuscrito }

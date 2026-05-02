@@ -95,18 +95,55 @@
           <div v-if="cargandoComentarios" class="text-center py-4">
             <v-progress-circular indeterminate color="primary"></v-progress-circular>
           </div>
-          <div v-else-if="comentarios.length === 0" class="text-center py-4 text-grey">
-            No hay comentarios disponibles para este artículo.
-          </div>
           <div v-else>
-            <div v-for="comentario in comentarios" :key="comentario.id" class="mb-4 pa-4 bg-grey-lighten-4 rounded-lg border">
-              <div class="d-flex align-center justify-space-between mb-2">
-                <div class="font-weight-bold" style="color:#8B5A2B">Revisor #{{ comentario.id }}</div>
-                <div class="d-flex align-center" v-if="comentario.puntuacion">
-                  <v-rating :model-value="comentario.puntuacion" color="amber" density="compact" size="small" readonly></v-rating>
+            <!-- LÍNEA DEL TIEMPO -->
+            <v-timeline density="compact" side="end" class="mb-6">
+              <v-timeline-item
+                v-for="evento in eventosLineaDeTiempo"
+                :key="evento.id"
+                :dot-color="evento.color"
+                :icon="evento.icon"
+                size="small"
+              >
+                <div class="mb-1">
+                  <div class="font-weight-bold" :style="{ color: evento.colorText || '#1B4332' }">
+                    {{ evento.titulo }}
+                  </div>
+                  <div class="text-caption text-grey">
+                    {{ evento.fecha }}
+                  </div>
                 </div>
+              </v-timeline-item>
+            </v-timeline>
+
+            <v-divider class="mb-6" />
+
+            <!-- ALERTA DE RECHAZO (solo si fue rechazado) -->
+            <v-alert
+              v-if="articuloSeleccionado?.estado === 'RECHAZADO' && articuloSeleccionado?.motivoRechazo"
+              type="error"
+              variant="tonal"
+              class="mb-6"
+              icon="mdi-alert-circle"
+            >
+              <strong>Motivo de rechazo del Editor:</strong><br/>
+              <span style="white-space: pre-wrap;">{{ articuloSeleccionado.motivoRechazo }}</span>
+            </v-alert>
+
+            <div v-if="comentarios.length === 0" class="text-center py-4 text-grey">
+              No hay comentarios disponibles para este artículo.
+            </div>
+            <div v-else>
+              <h3 class="text-h6 mb-4" style="color:#8B5A2B">Comentarios Detallados</h3>
+              <div v-for="comentario in comentarios" :key="comentario.id" class="mb-4 pa-4 bg-grey-lighten-4 rounded-lg border">
+                <div class="d-flex align-center justify-space-between mb-2">
+                  <div class="font-weight-bold" style="color:#8B5A2B">Revisor #{{ comentario.id }}</div>
+                  <div class="d-flex align-center" v-if="comentario.puntuacion">
+                    <v-rating :model-value="comentario.puntuacion" color="amber" density="compact" size="small" readonly></v-rating>
+                  </div>
+                </div>
+                <div style="color:#1B4332; white-space: pre-wrap; font-size: 14px;">{{ comentario.comentarios }}</div>
               </div>
-              <div style="color:#1B4332; white-space: pre-wrap; font-size: 14px;">{{ comentario.comentarios }}</div>
             </div>
           </div>
         </v-card-text>
@@ -144,15 +181,83 @@ const filtroEstado = ref('TODOS')
 const dialogoComentarios = ref(false)
 const cargandoComentarios = ref(false)
 const comentarios = ref([])
+const asignacionesPuras = ref([])
 const articuloSeleccionado = ref(null)
 
 async function abrirComentarios(manuscrito) {
   articuloSeleccionado.value = manuscrito
   dialogoComentarios.value = true
   cargandoComentarios.value = true
-  comentarios.value = await autorStore.cargarComentarios(manuscrito.id)
+  const data = await autorStore.cargarComentarios(manuscrito.id)
+  comentarios.value = data.comentarios
+  asignacionesPuras.value = data.asignaciones
   cargandoComentarios.value = false
 }
+
+function formatDate(dateStr) {
+  if (!dateStr) return 'Fecha desconocida'
+  return new Date(dateStr).toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' })
+}
+
+const eventosLineaDeTiempo = computed(() => {
+  if (!articuloSeleccionado.value) return []
+  
+  const eventos = []
+  let idCounter = 1
+  
+  // 1. Fecha de envío
+  const m = articuloSeleccionado.value
+  eventos.push({
+    id: idCounter++,
+    titulo: 'Manuscrito Enviado',
+    fecha: formatDate(m.fechaSubida || m.fechaEnvio),
+    color: 'info',
+    icon: 'mdi-file-upload'
+  })
+
+  // 2. Asignaciones y Revisiones
+  asignacionesPuras.value.forEach((a, i) => {
+    if (a.fecha_invitacion) {
+      eventos.push({
+        id: idCounter++,
+        titulo: `Revisor #${i+1} Asignado`,
+        fecha: formatDate(a.fecha_invitacion),
+        color: 'warning',
+        icon: 'mdi-account-arrow-right'
+      })
+    }
+    if (a.fecha_completada) {
+      eventos.push({
+        id: idCounter++,
+        titulo: `Revisor #${i+1} Completó Revisión`,
+        fecha: formatDate(a.fecha_completada),
+        color: 'success',
+        icon: 'mdi-check-all'
+      })
+    }
+  })
+
+  // 3. Veredicto Final
+  if (['ACEPTADO', 'RECHAZADO', 'REQUERIDAS_REVISIONES'].includes(m.estado)) {
+    const estado = m.estado === 'REQUERIDAS_REVISIONES' ? 'Requiere Revisiones' : m.estado
+    const isError = m.estado === 'RECHAZADO'
+    const isWarning = m.estado === 'REQUERIDAS_REVISIONES'
+    eventos.push({
+      id: idCounter++,
+      titulo: `Veredicto Final: ${estado}`,
+      fecha: formatDate(m.fechaDecision || new Date()), // Fallback si no tiene fecha guardada en BD
+      color: isError ? 'error' : (isWarning ? 'orange-darken-3' : 'success'),
+      colorText: isError ? '#c62828' : (isWarning ? '#ef6c00' : '#2e7d32'),
+      icon: 'mdi-gavel'
+    })
+  }
+
+  // Ordenar por fecha cronológica (aproximación, ya que formatDate cambia el formato, es mejor ordenar antes, 
+  // pero para simplificar lo mostramos en el orden lógico: Envío -> Asignación -> Completada -> Decisión)
+  // El orden lógico ya está implícito en cómo los insertamos.
+  
+  return eventos
+})
 
 const filtros = [
   { label:'Todos los estados', value:'TODOS' },

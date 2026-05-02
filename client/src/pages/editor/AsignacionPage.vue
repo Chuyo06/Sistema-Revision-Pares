@@ -112,7 +112,7 @@
                   :color="manuscrito.estado === 'RECHAZADO' || manuscrito.estado === 'LISTO_PARA_DECISION' ? 'error' : 'grey'" 
                   size="large" 
                   variant="elevated" 
-                  @click="decidir('RECHAZADO')" 
+                  @click="abrirDialogoRechazo" 
                   class="flex-grow-1 text-none font-weight-bold" 
                   prepend-icon="mdi-close-circle"
                   :disabled="manuscrito.estado !== 'LISTO_PARA_DECISION' && manuscrito.estado !== 'RECHAZADO'"
@@ -204,6 +204,39 @@
       <v-icon start>mdi-check-circle</v-icon>
       Operación completada con éxito
     </v-snackbar>
+
+    <!-- Modal de Rechazo -->
+    <v-dialog v-model="dialogoRechazo" max-width="500">
+      <v-card rounded="xl" border>
+        <div style="background:#c62828; height:6px; border-radius:8px 8px 0 0" />
+        <v-card-title class="pa-5 pb-2 text-h5 font-weight-bold text-error">
+          <v-icon start color="error">mdi-alert-circle</v-icon>
+          Rechazar Manuscrito
+        </v-card-title>
+        <v-card-text class="px-5">
+          <p class="mb-4">Por favor, escriba un comentario explicando el motivo del rechazo. Este comentario será visible para el autor.</p>
+          <v-textarea
+            v-model="motivoRechazo"
+            label="Motivo del rechazo *"
+            variant="outlined"
+            rows="4"
+            :rules="[v => !!v || 'Debe escribir un motivo']"
+          ></v-textarea>
+        </v-card-text>
+        <v-card-actions class="pa-4 justify-end">
+          <v-btn variant="text" @click="dialogoRechazo = false">Cancelar</v-btn>
+          <v-btn 
+            color="error" 
+            variant="flat" 
+            @click="confirmarRechazo"
+            :disabled="!motivoRechazo.trim()"
+            :loading="cargandoRechazo"
+          >
+            Confirmar Rechazo
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -254,9 +287,29 @@ async function asignar(revisorId) {
   if (exito) snackbar.value = true
 }
 
+const dialogoRechazo = ref(false)
+const motivoRechazo = ref('')
+const cargandoRechazo = ref(false)
+
+function abrirDialogoRechazo() {
+  if (manuscrito.value.estado === 'RECHAZADO') return
+  motivoRechazo.value = ''
+  dialogoRechazo.value = true
+}
+
+async function confirmarRechazo() {
+  if (!motivoRechazo.value.trim()) return
+  cargandoRechazo.value = true
+  await editorStore.tomarDecision(manuscritoId, 'RECHAZADO', motivoRechazo.value)
+  cargandoRechazo.value = false
+  dialogoRechazo.value = false
+  snackbar.value = true
+}
+
 async function decidir(decision) {
   if (manuscrito.value.estado === 'ACEPTADO' || manuscrito.value.estado === 'RECHAZADO') return;
   await editorStore.tomarDecision(manuscritoId, decision)
+  snackbar.value = true
 }
 
 const ESTADOS = { 

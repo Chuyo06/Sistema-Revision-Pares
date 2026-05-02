@@ -49,7 +49,7 @@
               v-model="form.resumen"
               label="Resumen *"
               prepend-inner-icon="mdi-text"
-              :rules="[r => !!r || 'El resumen es requerido', r => r.length >= 100 || 'Mínimo 100 caracteres']"
+              :rules="[r => !!r || 'El resumen es requerido']"
               rows="5"
               class="mb-2"
             />

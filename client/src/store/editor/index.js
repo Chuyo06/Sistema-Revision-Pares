@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { fetchManuscritos, actualizarEstadoManuscrito } from '@/services/api/manuscritos.js'
+import { fetchManuscritos, actualizarEstadoManuscrito, actualizarDatosManuscrito } from '@/services/api/manuscritos.js'
 import { fetchUsuarios } from '@/services/api/usuarios.js'
 import { fetchAsignacionesGeneral, crearAsignacion } from '@/services/api/revision.js'
 
@@ -81,8 +81,15 @@ export const useEditorStore = defineStore('editor', () => {
     return false
   }
 
-  async function tomarDecision(manuscritoId, decision) {
-    const exito = await actualizarEstadoManuscrito(manuscritoId, decision)
+  async function tomarDecision(manuscritoId, decision, motivoRechazo = null) {
+    const payload = { estado: decision };
+    if (['ACEPTADO', 'RECHAZADO', 'REQUERIDAS_REVISIONES'].includes(decision)) {
+      payload.fechaDecision = new Date().toISOString();
+    }
+    if (decision === 'RECHAZADO' && motivoRechazo) {
+      payload.motivoRechazo = motivoRechazo;
+    }
+    const exito = await actualizarDatosManuscrito(manuscritoId, payload)
     if (exito) {
       await cargarDashboardEditor()
     }

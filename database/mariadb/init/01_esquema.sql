@@ -18,6 +18,7 @@ CREATE TABLE manuscritos (
     resumen TEXT,
     contenido TEXT,
     autorId INT NOT NULL,
+    editorId INT NULL,
     autores VARCHAR(255),
     estado VARCHAR(50) DEFAULT 'BORRADOR',
     convocatoria VARCHAR(255),

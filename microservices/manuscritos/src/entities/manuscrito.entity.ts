@@ -17,6 +17,9 @@ export class Manuscrito {
   @Column()
   autorId: number;
 
+  @Column({ type: 'int', nullable: true })
+  editorId: number;
+
   @Column({ nullable: true })
   autores: string;
 

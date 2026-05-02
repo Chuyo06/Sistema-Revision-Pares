@@ -1,6 +1,8 @@
-import { Controller, Post, Get, Patch, Param, Body, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Get, Patch, Param, Body, UseInterceptors, UploadedFile, BadRequestException, Res } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ManuscritosService } from './manuscritos.service';
+
+import { join } from 'path';
 import { Manuscrito } from './entities/manuscrito.entity';
 
 @Controller('manuscritos')
@@ -23,6 +25,12 @@ export class ManuscritosController {
       throw new BadRequestException('No se envió ningún archivo');
     }
     return this.manuscritosService.guardarArchivo(archivo);
+  }
+
+  @Get('download/:referencia')
+  descargarArchivo(@Param('referencia') referencia: string, @Res() res: any) {
+    const filename = referencia.endsWith('.pdf') ? referencia : `${referencia}.pdf`;
+    return res.sendFile(join(process.cwd(), 'uploads', filename));
   }
 
   @Post()

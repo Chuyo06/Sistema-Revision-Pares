@@ -59,5 +59,41 @@ export const useAutorStore = defineStore('autor', () => {
     return null
   }
 
-  return { manuscritos, convocatorias, cargando, cargarMisManuscritos, enviarManuscrito }
+  async function cargarComentarios(manuscritoId) {
+    try {
+      const res = await fetch(`/api/revision/manuscrito/${manuscritoId}`)
+      if (res.ok) {
+        const asignaciones = await res.json()
+        return asignaciones
+          .filter(a => a.estado === 'COMPLETADA' && a.comentarios)
+          .map((a, index) => {
+            let texto = a.comentarios || '';
+            const markerAutor = 'PARA EL AUTOR: ';
+            const markerEditor = 'PARA EL EDITOR: ';
+            
+            if (texto.includes(markerAutor)) {
+              const idxAutor = texto.indexOf(markerAutor) + markerAutor.length;
+              const idxEditor = texto.indexOf(markerEditor);
+              
+              if (idxEditor !== -1 && idxEditor > idxAutor) {
+                texto = texto.substring(idxAutor, idxEditor).trim();
+              } else {
+                texto = texto.substring(idxAutor).trim();
+              }
+            }
+            
+            return {
+              id: index + 1,
+              comentarios: texto,
+              puntuacion: a.puntuacion
+            };
+          })
+      }
+    } catch (e) {
+      console.error('Error fetching comments:', e)
+    }
+    return []
+  }
+
+  return { manuscritos, convocatorias, cargando, cargarMisManuscritos, enviarManuscrito, cargarComentarios }
 })

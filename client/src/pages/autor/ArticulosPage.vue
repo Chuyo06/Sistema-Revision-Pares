@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div style="max-width:800px; padding:20px">
 
     <!-- Barra de acciones -->
@@ -30,7 +30,10 @@
     <div
       v-for="m in manuscritosFiltrados"
       :key="m.id"
-      style="background:#FFFFFF; border:1px solid #D3E0D7; border-radius:12px; margin-bottom:10px; overflow:hidden"
+      style="background:#FFFFFF; border:1px solid #D3E0D7; border-radius:12px; margin-bottom:10px; overflow:hidden; transition: 0.2s;"
+      :style="(m.estado === 'ACEPTADO' || m.estado === 'RECHAZADO') ? 'cursor: pointer;' : ''"
+      @click="(m.estado === 'ACEPTADO' || m.estado === 'RECHAZADO') ? abrirComentarios(m) : null"
+      class="articulo-card"
     >
       <div :style="`height:5px; background:${hexEstado(m.estado)}`" />
       <div style="padding:16px">
@@ -74,6 +77,46 @@
       <v-icon size="44" color="secondary">mdi-file-search-outline</v-icon>
       <p style="font-size:14px; margin-top:10px">No se encontraron artículos.</p>
     </div>
+
+    <!-- Dialogo de comentarios -->
+    <v-dialog v-model="dialogoComentarios" max-width="600">
+      <v-card color="surface" rounded="xl" border>
+        <div style="background:#546e7a; height:6px; border-radius:8px 8px 0 0" />
+        <v-card-title class="pa-5 pb-2 text-h5 font-weight-bold" style="color:#1B4332">
+          <v-icon start color="primary">mdi-comment-text-multiple-outline</v-icon>
+          Comentarios de Revisión
+        </v-card-title>
+        <v-card-subtitle class="px-5 pb-4">
+          Manuscrito: {{ articuloSeleccionado?.titulo }}
+        </v-card-subtitle>
+        <v-divider />
+
+        <v-card-text class="pa-5" style="max-height: 400px; overflow-y: auto;">
+          <div v-if="cargandoComentarios" class="text-center py-4">
+            <v-progress-circular indeterminate color="primary"></v-progress-circular>
+          </div>
+          <div v-else-if="comentarios.length === 0" class="text-center py-4 text-grey">
+            No hay comentarios disponibles para este artículo.
+          </div>
+          <div v-else>
+            <div v-for="comentario in comentarios" :key="comentario.id" class="mb-4 pa-4 bg-grey-lighten-4 rounded-lg border">
+              <div class="d-flex align-center justify-space-between mb-2">
+                <div class="font-weight-bold" style="color:#8B5A2B">Revisor #{{ comentario.id }}</div>
+                <div class="d-flex align-center" v-if="comentario.puntuacion">
+                  <v-rating :model-value="comentario.puntuacion" color="amber" density="compact" size="small" readonly></v-rating>
+                </div>
+              </div>
+              <div style="color:#1B4332; white-space: pre-wrap; font-size: 14px;">{{ comentario.comentarios }}</div>
+            </div>
+          </div>
+        </v-card-text>
+
+        <v-divider />
+        <v-card-actions class="pa-4 justify-end">
+          <v-btn color="primary" variant="tonal" @click="dialogoComentarios = false">Cerrar</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -88,6 +131,19 @@ onMounted(() => {
 })
 const busqueda = ref('')
 const filtroEstado = ref('TODOS')
+
+const dialogoComentarios = ref(false)
+const cargandoComentarios = ref(false)
+const comentarios = ref([])
+const articuloSeleccionado = ref(null)
+
+async function abrirComentarios(manuscrito) {
+  articuloSeleccionado.value = manuscrito
+  dialogoComentarios.value = true
+  cargandoComentarios.value = true
+  comentarios.value = await autorStore.cargarComentarios(manuscrito.id)
+  cargandoComentarios.value = false
+}
 
 const filtros = [
   { label:'Todos los estados', value:'TODOS' },
@@ -113,3 +169,9 @@ function estadoLabel(e) { return ESTADOS[e] ?? e }
 function hexEstado(e)   { return HEX[e]     ?? '#9e9e9e' }
 function chipEstado(e)  { return CHIPS[e]   ?? 'secondary' }
 </script>
+
+<style scoped>
+.articulo-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+</style>

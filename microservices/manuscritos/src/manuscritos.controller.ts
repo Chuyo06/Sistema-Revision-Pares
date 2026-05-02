@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Patch, Param, Body, UseInterceptors, UploadedFile, BadRequestException, Res } from '@nestjs/common';
+import { Controller, Post, Get, Patch, Delete, Param, Body, UseInterceptors, UploadedFile, BadRequestException, Res } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ManuscritosService } from './manuscritos.service';
 
@@ -62,5 +62,12 @@ export class ManuscritosController {
     const numId = +id;
     if (isNaN(numId)) return null;
     return this.manuscritosService.actualizar(numId, datos);
+  }
+
+  @Delete(':id')
+  eliminar(@Param('id') id: string) {
+    const numId = +id;
+    if (isNaN(numId)) return null;
+    return this.manuscritosService.eliminar(numId);
   }
 }

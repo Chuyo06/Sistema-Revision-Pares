@@ -18,6 +18,8 @@ const routes = [
     children: [
       { path: '', redirect: '/autor/dashboard' },
       { path: 'dashboard', name: 'autor-dashboard', component: () => import('@/pages/autor/DashboardPage.vue') },
+      { path: 'borradores', name: 'autor-borradores', component: () => import('@/pages/autor/BorradoresPage.vue') },
+      { path: 'borrador/:id', name: 'autor-editar-borrador', component: () => import('@/pages/autor/EditarBorradorPage.vue') },
       { path: 'articulos', name: 'autor-articulos', component: () => import('@/pages/autor/ArticulosPage.vue') },
       { path: 'nuevo', name: 'autor-nuevo', component: () => import('@/pages/autor/NuevoArticuloPage.vue') },
       { path: 'reenviar/:id', name: 'autor-reenviar', component: () => import('@/pages/autor/ReenviarArticuloPage.vue') },

@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { fetchManuscritosPorAutor, crearManuscrito } from '@/services/api/manuscritos.js'
+import { fetchManuscritosPorAutor, crearManuscrito, actualizarDatosManuscrito, eliminarManuscrito } from '@/services/api/manuscritos.js'
 import { useAuthStore } from '../auth.js'
 
 export const useAutorStore = defineStore('autor', () => {
@@ -39,7 +39,7 @@ export const useAutorStore = defineStore('autor', () => {
     }
   }
 
-  async function enviarManuscrito(datos) {
+  async function enviarManuscrito(datos, id = null) {
     const authStore = useAuthStore()
     const userId = authStore.usuario?.id || authStore.usuario?.id_usuario || 1
 
@@ -47,16 +47,63 @@ export const useAutorStore = defineStore('autor', () => {
       ...datos,
       autorId: userId,
       autores: authStore.usuario?.nombre || 'Autor Demo',
-      referencia: 'PENDIENTE',
+      referencia: datos.referencia || 'PENDIENTE',
       estado: 'ENVIADO'
     }
 
-    const nuevo = await crearManuscrito(payload)
-    if (nuevo) {
-      await cargarMisManuscritos()
-      return nuevo
+    if (id) {
+      const exito = await actualizarDatosManuscrito(id, payload)
+      if (exito) {
+        await cargarMisManuscritos()
+        return { id }
+      }
+      return null
+    } else {
+      const nuevo = await crearManuscrito(payload)
+      if (nuevo) {
+        await cargarMisManuscritos()
+        return nuevo
+      }
+      return null
     }
-    return null
+  }
+
+  async function guardarBorrador(datos, id = null) {
+    const authStore = useAuthStore()
+    const userId = authStore.usuario?.id || authStore.usuario?.id_usuario || 1
+
+    const payload = {
+      ...datos,
+      autorId: userId,
+      autores: authStore.usuario?.nombre || 'Autor Demo',
+      referencia: datos.referencia || null,
+      estado: 'BORRADOR'
+    }
+
+    if (id) {
+      const exito = await actualizarDatosManuscrito(id, payload)
+      if (exito) {
+        await cargarMisManuscritos()
+        return { id }
+      }
+      return null
+    } else {
+      const nuevo = await crearManuscrito(payload)
+      if (nuevo) {
+        await cargarMisManuscritos()
+        return nuevo
+      }
+      return null
+    }
+  }
+
+  async function eliminarBorrador(id) {
+    const exito = await eliminarManuscrito(id)
+    if (exito) {
+      await cargarMisManuscritos()
+      return true
+    }
+    return false
   }
 
   async function reenviarManuscrito(id, referenciaPdf, respuestasRevisores) {
@@ -119,5 +166,5 @@ export const useAutorStore = defineStore('autor', () => {
     return []
   }
 
-  return { manuscritos, convocatorias, cargando, cargarMisManuscritos, enviarManuscrito, cargarComentarios, reenviarManuscrito }
+  return { manuscritos, convocatorias, cargando, cargarMisManuscritos, enviarManuscrito, guardarBorrador, eliminarBorrador, cargarComentarios, reenviarManuscrito }
 })

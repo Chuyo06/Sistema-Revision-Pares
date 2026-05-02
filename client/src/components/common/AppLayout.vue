@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <v-layout>
     <!-- â”€â”€ Sidebar estilo X â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
     <v-navigation-drawer
@@ -91,6 +91,7 @@ const drawer = ref(true)
 const NAV_CONFIG = {
   autor: [
     { icon: 'mdi-home-outline',                  label: 'Inicio',          to: '/autor/dashboard' },
+    { icon: 'mdi-file-document-edit-outline',     label: 'Mis borradores',  to: '/autor/borradores' },
     { icon: 'mdi-file-document-multiple-outline', label: 'Mis artículos',  to: '/autor/articulos' },
     { icon: 'mdi-plus-circle-outline',            label: 'Enviar artículo',to: '/autor/nuevo' },
   ],
@@ -114,8 +115,11 @@ const navItems = computed(() => NAV_CONFIG[auth.rol] || [])
 const TITULOS = {
   'perfil':             'Mi Perfil',
   'autor-dashboard':    'Inicio',
+  'autor-borradores':   'Mis Borradores',
+  'autor-editar-borrador': 'Editar Borrador',
   'autor-articulos':    'Mis Artículos',
   'autor-nuevo':        'Enviar Artículo',
+  'autor-reenviar':     'Reenviar Artículo',
   'revisor-dashboard':  'Inicio',
   'revisor-asignados':  'Artículos Asignados',
   'revisor-revision':   'Revisión',

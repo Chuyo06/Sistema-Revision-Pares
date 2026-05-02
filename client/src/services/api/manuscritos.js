@@ -67,6 +67,37 @@ export async function actualizarEstadoManuscrito(id, estado) {
 }
 
 /**
+ * Actualizar datos de un manuscrito.
+ */
+export async function actualizarDatosManuscrito(id, datos) {
+  try {
+    const res = await fetch(`${BASE_URL}/${id}`, {
+      method: 'PATCH',
+      headers: authHeaders(),
+      body: JSON.stringify(datos),
+    })
+    return res.ok
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Eliminar un manuscrito.
+ */
+export async function eliminarManuscrito(id) {
+  try {
+    const res = await fetch(`${BASE_URL}/${id}`, {
+      method: 'DELETE',
+      headers: authHeaders()
+    })
+    return res.ok
+  } catch {
+    return false
+  }
+}
+
+/**
  * Crear un manuscrito en el backend.
  * @returns {Promise<Object|null>} null si el backend no responde
  */

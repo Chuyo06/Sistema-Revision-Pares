@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div>
     <v-btn variant="text" color="primary" prepend-icon="mdi-arrow-left" to="/autor/articulos" class="mb-4">
       Volver a mis artículos
@@ -60,10 +60,48 @@
         </p>
 
         <div v-if="valido || enviado">
-          <PdfUploader @uploaded="onPdfUploaded" @reset="onReset" />
+          <v-file-input
+            v-model="selectedFile"
+            label="Archivo PDF (Requerido para enviar)"
+            accept="application/pdf"
+            prepend-icon=""
+            prepend-inner-icon="mdi-file-pdf-box"
+            show-size
+            variant="outlined"
+            color="primary"
+            class="mb-4"
+            :disabled="enviado || isUploading"
+          ></v-file-input>
+          
+          <v-alert v-if="errorMessage" type="error" variant="tonal" class="mb-4">{{ errorMessage }}</v-alert>
+
+          <div class="d-flex gap-4">
+            <v-btn 
+              color="grey" 
+              variant="elevated" 
+              class="flex-grow-1 text-none font-weight-bold"
+              size="large"
+              @click="guardarBorrador"
+              :loading="isUploading"
+              :disabled="enviado"
+            >
+              Guardar como Borrador
+            </v-btn>
+            <v-btn 
+              color="primary" 
+              variant="elevated"
+              class="flex-grow-1 text-none font-weight-bold"
+              size="large"
+              @click="enviarManuscrito"
+              :loading="isUploading"
+              :disabled="enviado || !selectedFile"
+            >
+              Enviar Artículo
+            </v-btn>
+          </div>
         </div>
         <v-alert v-else type="info" variant="tonal" density="compact" rounded="lg">
-          Complete la información de arriba para habilitar la carga del PDF.
+          Complete la información de arriba para habilitar la carga del PDF y el guardado.
         </v-alert>
       </v-card-text>
     </v-card>
@@ -72,8 +110,10 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAutorStore } from '@/store/autor/index.js'
-import PdfUploader from '@/components/common/PdfUploader.vue'
+
+const router = useRouter()
 
 const autorStore = useAutorStore()
 
@@ -84,18 +124,93 @@ const form = ref({ titulo: '', convocatoria: '', resumen: '' })
 
 const convocatoriasAbiertas = computed(() => autorStore.convocatorias.filter(c => c.estado === 'ABIERTA'))
 
-function onPdfUploaded({ reference }) {
-  autorStore.enviarManuscrito({
-    titulo: form.value.titulo,
-    resumen: form.value.resumen,
-    convocatoria: form.value.convocatoria,
-    referencia: reference,
-  })
-  enviado.value = true
+const selectedFile = ref(null)
+const isUploading = ref(false)
+const errorMessage = ref('')
+
+async function procesarSubidaArchivo() {
+  if (!selectedFile.value) return null
+  
+  const file = Array.isArray(selectedFile.value) ? selectedFile.value[0] : selectedFile.value
+  
+  if (file.type !== 'application/pdf') {
+    errorMessage.value = 'El archivo debe ser PDF.'
+    return null
+  }
+  if (file.size > 50 * 1024 * 1024) {
+    errorMessage.value = 'El archivo supera 50MB.'
+    return null
+  }
+
+  try {
+    const formData = new FormData()
+    formData.append('archivo', file)
+
+    const res = await fetch('/api/manuscritos/upload', {
+      method: 'POST',
+      body: formData,
+    })
+
+    if (!res.ok) throw new Error('Error al subir el archivo')
+    const data = await res.json()
+    return data.referencia
+  } catch (error) {
+    errorMessage.value = 'Error al subir el archivo al servidor.'
+    return null
+  }
 }
 
-function onReset() {
-  enviado.value = false
-  form.value = { titulo: '', convocatoria: '', resumen: '' }
+async function guardarBorrador() {
+  isUploading.value = true
+  errorMessage.value = ''
+  
+  let referencia = null
+  if (selectedFile.value) {
+    referencia = await procesarSubidaArchivo()
+    if (errorMessage.value) {
+      isUploading.value = false
+      return
+    }
+  }
+
+  const exito = await autorStore.guardarBorrador({
+    ...form.value,
+    referencia
+  })
+
+  isUploading.value = false
+  if (exito) {
+    router.push('/autor/borradores')
+  }
+}
+
+async function enviarManuscrito() {
+  if (!selectedFile.value) {
+    errorMessage.value = 'Debe seleccionar un archivo PDF para enviar el manuscrito.'
+    return
+  }
+
+  isUploading.value = true
+  errorMessage.value = ''
+  
+  const referencia = await procesarSubidaArchivo()
+  if (!referencia) {
+    isUploading.value = false
+    return
+  }
+
+  const exito = await autorStore.enviarManuscrito({
+    ...form.value,
+    referencia
+  })
+
+  isUploading.value = false
+  if (exito) {
+    enviado.value = true
+  }
 }
 </script>
+
+<style scoped>
+.gap-4 { gap: 16px; }
+</style>

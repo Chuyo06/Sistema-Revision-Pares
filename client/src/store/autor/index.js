@@ -1,17 +1,16 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { fetchManuscritosPorAutor, crearManuscrito } from '@/services/api/manuscritos.js'
 import { useAuthStore } from '../auth.js'
+import { useConvocatoriasStore } from '../convocatorias.js'
 
 export const useAutorStore = defineStore('autor', () => {
   const manuscritos = ref([])
   const cargando = ref(false)
 
-  const convocatorias = ref([
-    { id: 1, nombre: 'CIIA 2026 — Congreso Internacional de IA', deadline: '2026-04-30', estado: 'ABIERTA' },
-    { id: 2, nombre: 'IoTSec 2026 — Seguridad en IoT', deadline: '2026-05-15', estado: 'ABIERTA' },
-    { id: 3, nombre: 'ISE 2025 — Ingeniería de Software', deadline: '2025-12-01', estado: 'CERRADA' },
-  ])
+  // Convocatorias vienen del store compartido (con auto-cierre por fecha).
+  const convocatoriasStore = useConvocatoriasStore()
+  const convocatorias = computed(() => convocatoriasStore.convocatorias)
 
   async function cargarMisManuscritos() {
     cargando.value = true

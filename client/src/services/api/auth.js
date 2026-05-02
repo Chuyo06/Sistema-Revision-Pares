@@ -35,7 +35,7 @@ const USUARIOS_MOCK = [
     email: 'editor@demo.com',
     password: '1234',
     avatar: 'DM',
-    roles: ['editor', 'revisor'],
+    roles: ['editor', 'editor_jefe', 'revisor'],
   },
   {
     id: 4,
@@ -44,6 +44,14 @@ const USUARIOS_MOCK = [
     password: '1234',
     avatar: 'AS',
     roles: ['administrador'],
+  },
+  {
+    id: 14,
+    nombre: 'Dra. Editora Sección',
+    email: 'editor.seccion@demo.com',
+    password: '1234',
+    avatar: 'ES',
+    roles: ['editor', 'editor_seccion'],
   },
 ]
 

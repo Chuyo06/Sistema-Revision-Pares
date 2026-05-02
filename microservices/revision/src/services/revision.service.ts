@@ -50,4 +50,11 @@ export class RevisionService {
     });
     return this.obtenerPorId(id);
   }
+
+  async eliminar(id: number) {
+    const asignacion = await this.obtenerPorId(id);
+    if (!asignacion) return false;
+    await this.asignacionRepo.remove(asignacion);
+    return true;
+  }
 }

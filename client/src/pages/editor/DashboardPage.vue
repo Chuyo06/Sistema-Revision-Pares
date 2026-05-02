@@ -75,7 +75,8 @@
 
       <!-- Panel derecho -->
       <div>
-        <div style="background:#FFFFFF; border:1px solid #D3E0D7; border-radius:12px; overflow:hidden">
+        <!-- Resumen editorial -->
+        <div style="background:#FFFFFF; border:1px solid #D3E0D7; border-radius:12px; overflow:hidden; margin-bottom:16px">
           <div style="background:#e65100; padding:10px 14px">
             <span style="font-size:13px; font-weight:600; color:#fff">Resumen editorial</span>
           </div>
@@ -86,6 +87,27 @@
           >
             <span style="font-size:13px; color:#4CAF50">{{ stat.label }}</span>
             <span style="font-size:18px; font-weight:700; color:#1B4332">{{ stat.valor }}</span>
+          </div>
+        </div>
+
+        <!-- Revisores más activos -->
+        <div style="background:#FFFFFF; border:1px solid #D3E0D7; border-radius:12px; overflow:hidden">
+          <div style="background:#558b2f; padding:10px 14px">
+            <span style="font-size:13px; font-weight:600; color:#fff">Revisores más activos</span>
+          </div>
+          <div v-if="editorStore.metricas.revisoresMasActivos.length === 0" class="pa-4 text-center text-medium-emphasis text-caption">
+            Sin revisiones completadas aún
+          </div>
+          <div
+            v-for="(r, i) in editorStore.metricas.revisoresMasActivos"
+            :key="r.id"
+            style="display:flex; align-items:center; gap:10px; padding:10px 14px; border-top:1px solid #f0e9df"
+          >
+            <div :style="`background:${podio[i] || '#f0e9df'}; color:#1B4332; border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700`">
+              {{ i + 1 }}
+            </div>
+            <span style="font-size:13px; color:#1B4332; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">{{ r.nombre }}</span>
+            <v-chip size="x-small" color="success" variant="tonal" prepend-icon="mdi-check">{{ r.completadas }}</v-chip>
           </div>
         </div>
       </div>
@@ -106,11 +128,14 @@ onMounted(() => {
 })
 
 const stats = computed(() => [
-  { label:'Total',          valor: editorStore.metricas.totalManuscritos },
-  { label:'En revisión',    valor: editorStore.metricas.enRevision },
-  { label:'Aceptados',      valor: editorStore.metricas.aceptados },
-  { label:'Tasa aceptación',valor: editorStore.metricas.tasaAceptacion + '%' },
+  { label:'Total',           valor: editorStore.metricas.totalManuscritos },
+  { label:'En revisión',     valor: editorStore.metricas.enRevision },
+  { label:'Aceptados',       valor: editorStore.metricas.aceptados },
+  { label:'Tasa aceptación', valor: editorStore.metricas.tasaAceptacion + '%' },
+  { label:'Tiempo medio',    valor: editorStore.metricas.tiempoMedioRevision + ' días' },
 ])
+
+const podio = ['#FFD700', '#C0C0C0', '#CD7F32']
 
 const ESTADOS  = { ENVIADO:'Enviado', EN_REVISION:'En revisión', ACEPTADO:'Aceptado', RECHAZADO:'Rechazado' }
 const COLORES  = { ENVIADO:'#546e7a', EN_REVISION:'#e65100', ACEPTADO:'#558b2f', RECHAZADO:'#c62828' }

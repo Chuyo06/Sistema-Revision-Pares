@@ -14,11 +14,25 @@
       <v-divider />
 
       <v-card-text class="pa-5">
+        <!-- Bloqueo: no hay convocatorias abiertas -->
+        <v-alert
+          v-if="!hayConvocatoriasAbiertas && !enviado"
+          type="warning"
+          variant="tonal"
+          rounded="lg"
+          icon="mdi-calendar-remove-outline"
+        >
+          <strong>No hay convocatorias abiertas en este momento.</strong>
+          <div class="text-body-2 mt-1">
+            Debes esperar a que el editor jefe abra una nueva convocatoria para enviar tu artículo.
+          </div>
+        </v-alert>
+
         <v-alert v-if="enviado" type="success" variant="tonal" class="mb-4" rounded="lg">
           Artículo enviado. Puede seguir su estado en "Mis artículos".
         </v-alert>
 
-        <v-form ref="formulario" v-model="valido">
+        <v-form v-if="hayConvocatoriasAbiertas" ref="formulario" v-model="valido">
           <p class="text-caption font-weight-bold mb-3" style="color:#8B5A2B; text-transform:uppercase; letter-spacing:0.05em">
             Información del manuscrito
           </p>
@@ -53,18 +67,20 @@
           />
         </v-form>
 
-        <v-divider class="my-4" />
+        <template v-if="hayConvocatoriasAbiertas">
+          <v-divider class="my-4" />
 
-        <p class="text-caption font-weight-bold mb-3" style="color:#8B5A2B; text-transform:uppercase; letter-spacing:0.05em">
-          Archivo PDF
-        </p>
+          <p class="text-caption font-weight-bold mb-3" style="color:#8B5A2B; text-transform:uppercase; letter-spacing:0.05em">
+            Archivo PDF
+          </p>
 
-        <div v-if="valido || enviado">
-          <PdfUploader @uploaded="onPdfUploaded" @reset="onReset" />
-        </div>
-        <v-alert v-else type="info" variant="tonal" density="compact" rounded="lg">
-          Complete la información de arriba para habilitar la carga del PDF.
-        </v-alert>
+          <div v-if="valido || enviado">
+            <PdfUploader @uploaded="onPdfUploaded" @reset="onReset" />
+          </div>
+          <v-alert v-else type="info" variant="tonal" density="compact" rounded="lg">
+            Complete la información de arriba para habilitar la carga del PDF.
+          </v-alert>
+        </template>
       </v-card-text>
     </v-card>
   </div>
@@ -83,6 +99,7 @@ const enviado = ref(false)
 const form = ref({ titulo: '', convocatoria: '', resumen: '' })
 
 const convocatoriasAbiertas = computed(() => autorStore.convocatorias.filter(c => c.estado === 'ABIERTA'))
+const hayConvocatoriasAbiertas = computed(() => convocatoriasAbiertas.value.length > 0)
 
 function onPdfUploaded({ reference }) {
   autorStore.enviarManuscrito({

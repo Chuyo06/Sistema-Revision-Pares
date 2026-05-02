@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Param, Query } from '@nestjs/common';
 import { RevisionService } from '../services/revision.service';
 import { AsignacionRevision } from '../entities/asignacion-revision.entity';
 
@@ -38,5 +38,14 @@ export class RevisionController {
       throw new Error('ID de asignación inválido');
     }
     return this.revisionService.enviarRevision(numId, revision);
+  }
+
+  @Delete(':id')
+  async eliminar(@Param('id') id: string) {
+    const numId = Number(id);
+    if (isNaN(numId)) {
+      throw new Error('ID de asignación inválido');
+    }
+    return this.revisionService.eliminar(numId);
   }
 }

@@ -57,6 +57,30 @@
 
     <!-- â”€â”€ Contenido principal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
     <v-main style="background:#F6F8F6">
+      <!-- Barra superior con notificaciones (solo editor) -->
+      <div
+        v-if="smAndUp && auth.rol === 'editor'"
+        style="background:#FFFFFF; border-bottom:1px solid #D3E0D7; display:flex; align-items:center; padding:8px 16px; gap:12px"
+      >
+        <span style="font-size:16px; font-weight:700; color:#1B4332; flex:1">{{ titulo }}</span>
+        <v-btn
+          icon
+          variant="text"
+          size="small"
+          @click="mostrarNotificaciones = true"
+        >
+          <v-badge
+            v-if="notifStore.count > 0"
+            :content="notifStore.count"
+            color="error"
+            floating
+          >
+            <v-icon color="brown-darken-1">mdi-bell-outline</v-icon>
+          </v-badge>
+          <v-icon v-else color="brown-darken-1">mdi-bell-outline</v-icon>
+        </v-btn>
+      </div>
+
       <!-- Barra mobile -->
       <div
         v-if="!smAndUp"
@@ -66,11 +90,79 @@
           <v-icon>mdi-menu</v-icon>
         </v-btn>
         <span style="font-size:16px; font-weight:700; color:#1B4332">{{ titulo }}</span>
+        <v-spacer />
+        <v-btn
+          v-if="auth.rol === 'editor'"
+          icon
+          variant="text"
+          size="small"
+          @click="mostrarNotificaciones = true"
+        >
+          <v-badge
+            v-if="notifStore.count > 0"
+            :content="notifStore.count"
+            color="error"
+            floating
+          >
+            <v-icon>mdi-bell-outline</v-icon>
+          </v-badge>
+          <v-icon v-else>mdi-bell-outline</v-icon>
+        </v-btn>
       </div>
 
       <!-- Página con key para forzar re-render -->
       <router-view :key="$route.fullPath" />
     </v-main>
+
+    <!-- Diálogo de notificaciones -->
+    <v-dialog v-model="mostrarNotificaciones" max-width="420">
+      <v-card rounded="lg">
+        <v-card-title class="d-flex align-center pa-4">
+          <v-icon class="mr-2" color="brown-darken-1">mdi-bell-outline</v-icon>
+          Notificaciones
+          <v-spacer />
+          <v-btn
+            v-if="notifStore.count > 0"
+            variant="text"
+            size="small"
+            @click="notifStore.marcarTodasLeidas()"
+          >
+            Marcar todo leído
+          </v-btn>
+        </v-card-title>
+        <v-divider />
+        <v-card-text class="pa-0" style="max-height:400px; overflow-y:auto">
+          <template v-if="notifStore.notificaciones.length > 0">
+            <v-list-item
+              v-for="n in notifStore.notificaciones.slice(0, 10)"
+              :key="n.id"
+              :class="n.leida ? '' : 'bg-blue-lighten-5'"
+              @click="n.ruta && router.push(n.ruta); notifStore.marcarLeida(n.id); mostrarNotificaciones = false"
+            >
+              <template #prepend>
+                <v-avatar
+                  :color="n.tipo === 'REVISION_COMPLETADA' ? 'success' : n.tipo === 'DECISION_EDITORIAL' ? 'warning' : 'info'"
+                  size="36"
+                >
+                  <v-icon color="white" size="18">
+                    {{ n.tipo === 'REVISION_COMPLETADA' ? 'mdi-check-circle' : 'mdi-gavel' }}
+                  </v-icon>
+                </v-avatar>
+              </template>
+              <v-list-item-title class="font-weight-bold text-body-2">{{ n.titulo }}</v-list-item-title>
+              <v-list-item-subtitle class="text-caption">{{ n.mensaje }}</v-list-item-subtitle>
+              <template #append>
+                <span class="text-caption text-medium-emphasis">{{ formatTime(n.timestamp) }}</span>
+              </template>
+            </v-list-item>
+          </template>
+          <div v-else class="pa-8 text-center text-medium-emphasis">
+            <v-icon size="48" color="grey-lighten-1" class="mb-2">mdi-bell-sleep-outline</v-icon>
+            <div>Sin notificaciones</div>
+          </div>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
   </v-layout>
 </template>
 
@@ -79,6 +171,7 @@ import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDisplay } from 'vuetify'
 import { useAuthStore } from '@/store/auth.js'
+import { useNotificacionesStore } from '@/store/notificaciones.js'
 import RoleSwitcher from './RoleSwitcher.vue'
 
 const auth   = useAuthStore()
@@ -87,6 +180,18 @@ const route  = useRoute()
 const { smAndUp } = useDisplay()
 
 const drawer = ref(true)
+const notifStore = useNotificacionesStore()
+const mostrarNotificaciones = ref(false)
+
+function formatTime(ts) {
+  const d = new Date(ts)
+  const now = new Date()
+  const diff = Math.floor((now - d) / 60000)
+  if (diff < 1) return 'ahora'
+  if (diff < 60) return `${diff}m`
+  if (diff < 1440) return `${Math.floor(diff / 60)}h`
+  return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })
+}
 
 const NAV_CONFIG = {
   autor: [
@@ -99,8 +204,9 @@ const NAV_CONFIG = {
     { icon: 'mdi-clipboard-list-outline', label: 'Artículos asignados', to: '/revisor/asignados' },
   ],
   editor: [
-    { icon: 'mdi-home-outline',                   label: 'Inicio',      to: '/editor/dashboard' },
-    { icon: 'mdi-file-document-multiple-outline', label: 'Manuscritos', to: '/editor/manuscritos' },
+    { icon: 'mdi-home-outline',                   label: 'Inicio',        to: '/editor/dashboard' },
+    { icon: 'mdi-file-document-multiple-outline', label: 'Manuscritos',   to: '/editor/manuscritos' },
+    { icon: 'mdi-calendar-star-outline',          label: 'Convocatorias', to: '/editor/convocatorias' },
   ],
   administrador: [
     { icon: 'mdi-home-outline',           label: 'Inicio',      to: '/administrador/dashboard' },
@@ -119,9 +225,10 @@ const TITULOS = {
   'revisor-dashboard':  'Inicio',
   'revisor-asignados':  'Artículos Asignados',
   'revisor-revision':   'Revisión',
-  'editor-dashboard':   'Panel Editorial',
-  'editor-manuscritos': 'Manuscritos',
-  'editor-asignacion':  'Asignación',
+  'editor-dashboard':    'Panel Editorial',
+  'editor-manuscritos':  'Manuscritos',
+  'editor-asignacion':   'Asignación',
+  'editor-convocatorias':'Convocatorias',
   'admin-dashboard':    'Administración',
   'admin-usuarios':     'Usuarios',
   'admin-manuscritos':  'Manuscritos Globales',

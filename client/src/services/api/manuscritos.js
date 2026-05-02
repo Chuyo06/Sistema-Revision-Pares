@@ -67,6 +67,22 @@ export async function actualizarEstadoManuscrito(id, estado) {
 }
 
 /**
+ * Asignar editor de sección a un manuscrito (solo editor jefe).
+ */
+export async function asignarEditorSeccionApi(manuscritoId, editorSeccionId) {
+  try {
+    const res = await fetch(`${BASE_URL}/${manuscritoId}`, {
+      method: 'PATCH',
+      headers: authHeaders(),
+      body: JSON.stringify({ editorSeccionId }),
+    })
+    return res.ok
+  } catch {
+    return false
+  }
+}
+
+/**
  * Crear un manuscrito en el backend.
  * @returns {Promise<Object|null>} null si el backend no responde
  */

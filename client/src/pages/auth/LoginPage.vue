@@ -151,10 +151,11 @@ const password = ref('')
 const mostrarPass = ref(false)
 
 const usuariosDemo = [
-  { email:'autor@demo.com',   password:'1234', rol:'Autor',    icon:'mdi-account-edit-outline',    color:'#546e7a' },
-  { email:'revisor@demo.com', password:'1234', rol:'Revisor',  icon:'mdi-clipboard-check-outline', color:'#558b2f' },
-  { email:'editor@demo.com',  password:'1234', rol:'Editor',   icon:'mdi-pencil-ruler',            color:'#e65100' },
-  { email:'admin@demo.com',   password:'1234', rol:'Admin',    icon:'mdi-shield-account-outline',  color:'#7b1fa2' },
+  { email:'autor@demo.com',           password:'1234', rol:'Autor',          icon:'mdi-account-edit-outline',    color:'#546e7a' },
+  { email:'revisor@demo.com',         password:'1234', rol:'Revisor',        icon:'mdi-clipboard-check-outline', color:'#558b2f' },
+  { email:'editor@demo.com',          password:'1234', rol:'Editor Jefe',    icon:'mdi-account-tie',             color:'#bf360c' },
+  { email:'editor.seccion@demo.com',  password:'1234', rol:'Editor Sección', icon:'mdi-account-tie-outline',     color:'#ef6c00' },
+  { email:'admin@demo.com',           password:'1234', rol:'Admin',          icon:'mdi-shield-account-outline',  color:'#7b1fa2' },
 ]
 
 async function iniciarSesion() {

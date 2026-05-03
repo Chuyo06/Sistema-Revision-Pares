@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div style="max-width:800px; padding:20px">
 
     <!-- Barra de acciones -->
@@ -30,7 +30,10 @@
     <div
       v-for="m in manuscritosFiltrados"
       :key="m.id"
-      style="background:#FFFFFF; border:1px solid #D3E0D7; border-radius:12px; margin-bottom:10px; overflow:hidden"
+      style="background:#FFFFFF; border:1px solid #D3E0D7; border-radius:12px; margin-bottom:10px; overflow:hidden; transition: 0.2s;"
+      :style="(m.estado === 'ACEPTADO' || m.estado === 'RECHAZADO' || m.estado === 'REQUERIDAS_REVISIONES') ? 'cursor: pointer;' : ''"
+      @click="(m.estado === 'ACEPTADO' || m.estado === 'RECHAZADO' || m.estado === 'REQUERIDAS_REVISIONES') ? abrirComentarios(m) : null"
+      class="articulo-card"
     >
       <div :style="`height:5px; background:${hexEstado(m.estado)}`" />
       <div style="padding:16px">
@@ -74,6 +77,92 @@
       <v-icon size="44" color="secondary">mdi-file-search-outline</v-icon>
       <p style="font-size:14px; margin-top:10px">No se encontraron artículos.</p>
     </div>
+
+    <!-- Dialogo de comentarios -->
+    <v-dialog v-model="dialogoComentarios" max-width="600">
+      <v-card color="surface" rounded="xl" border>
+        <div style="background:#546e7a; height:6px; border-radius:8px 8px 0 0" />
+        <v-card-title class="pa-5 pb-2 text-h5 font-weight-bold" style="color:#1B4332">
+          <v-icon start color="primary">mdi-comment-text-multiple-outline</v-icon>
+          Comentarios de Revisión
+        </v-card-title>
+        <v-card-subtitle class="px-5 pb-4">
+          Manuscrito: {{ articuloSeleccionado?.titulo }}
+        </v-card-subtitle>
+        <v-divider />
+
+        <v-card-text class="pa-5" style="max-height: 400px; overflow-y: auto;">
+          <div v-if="cargandoComentarios" class="text-center py-4">
+            <v-progress-circular indeterminate color="primary"></v-progress-circular>
+          </div>
+          <div v-else>
+            <!-- LÍNEA DEL TIEMPO -->
+            <v-timeline density="compact" side="end" class="mb-6">
+              <v-timeline-item
+                v-for="evento in eventosLineaDeTiempo"
+                :key="evento.id"
+                :dot-color="evento.color"
+                :icon="evento.icon"
+                size="small"
+              >
+                <div class="mb-1">
+                  <div class="font-weight-bold" :style="{ color: evento.colorText || '#1B4332' }">
+                    {{ evento.titulo }}
+                  </div>
+                  <div class="text-caption text-grey">
+                    {{ evento.fecha }}
+                  </div>
+                </div>
+              </v-timeline-item>
+            </v-timeline>
+
+            <v-divider class="mb-6" />
+
+            <!-- ALERTA DE RECHAZO (solo si fue rechazado) -->
+            <v-alert
+              v-if="articuloSeleccionado?.estado === 'RECHAZADO' && articuloSeleccionado?.motivoRechazo"
+              type="error"
+              variant="tonal"
+              class="mb-6"
+              icon="mdi-alert-circle"
+            >
+              <strong>Motivo de rechazo del Editor:</strong><br/>
+              <span style="white-space: pre-wrap;">{{ articuloSeleccionado.motivoRechazo }}</span>
+            </v-alert>
+
+            <div v-if="comentarios.length === 0" class="text-center py-4 text-grey">
+              No hay comentarios disponibles para este artículo.
+            </div>
+            <div v-else>
+              <h3 class="text-h6 mb-4" style="color:#8B5A2B">Comentarios Detallados</h3>
+              <div v-for="comentario in comentarios" :key="comentario.id" class="mb-4 pa-4 bg-grey-lighten-4 rounded-lg border">
+                <div class="d-flex align-center justify-space-between mb-2">
+                  <div class="font-weight-bold" style="color:#8B5A2B">Revisor #{{ comentario.id }}</div>
+                  <div class="d-flex align-center" v-if="comentario.puntuacion">
+                    <v-rating :model-value="comentario.puntuacion" color="amber" density="compact" size="small" readonly></v-rating>
+                  </div>
+                </div>
+                <div style="color:#1B4332; white-space: pre-wrap; font-size: 14px;">{{ comentario.comentarios }}</div>
+              </div>
+            </div>
+          </div>
+        </v-card-text>
+
+        <v-divider />
+        <v-card-actions class="pa-4 justify-end">
+          <v-btn 
+            v-if="articuloSeleccionado?.estado === 'REQUERIDAS_REVISIONES'" 
+            color="orange-darken-3" 
+            variant="flat" 
+            prepend-icon="mdi-upload"
+            :to="`/autor/reenviar/${articuloSeleccionado?.id}`"
+          >
+            Reenviar Versión Corregida
+          </v-btn>
+          <v-btn color="primary" variant="tonal" @click="dialogoComentarios = false">Cerrar</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -88,6 +177,87 @@ onMounted(() => {
 })
 const busqueda = ref('')
 const filtroEstado = ref('TODOS')
+
+const dialogoComentarios = ref(false)
+const cargandoComentarios = ref(false)
+const comentarios = ref([])
+const asignacionesPuras = ref([])
+const articuloSeleccionado = ref(null)
+
+async function abrirComentarios(manuscrito) {
+  articuloSeleccionado.value = manuscrito
+  dialogoComentarios.value = true
+  cargandoComentarios.value = true
+  const data = await autorStore.cargarComentarios(manuscrito.id)
+  comentarios.value = data.comentarios
+  asignacionesPuras.value = data.asignaciones
+  cargandoComentarios.value = false
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return 'Fecha desconocida'
+  return new Date(dateStr).toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' })
+}
+
+const eventosLineaDeTiempo = computed(() => {
+  if (!articuloSeleccionado.value) return []
+  
+  const eventos = []
+  let idCounter = 1
+  
+  // 1. Fecha de envío
+  const m = articuloSeleccionado.value
+  eventos.push({
+    id: idCounter++,
+    titulo: 'Manuscrito Enviado',
+    fecha: formatDate(m.fechaSubida || m.fechaEnvio),
+    color: 'info',
+    icon: 'mdi-file-upload'
+  })
+
+  // 2. Asignaciones y Revisiones
+  asignacionesPuras.value.forEach((a, i) => {
+    if (a.fecha_invitacion) {
+      eventos.push({
+        id: idCounter++,
+        titulo: `Revisor #${i+1} Asignado`,
+        fecha: formatDate(a.fecha_invitacion),
+        color: 'warning',
+        icon: 'mdi-account-arrow-right'
+      })
+    }
+    if (a.fecha_completada) {
+      eventos.push({
+        id: idCounter++,
+        titulo: `Revisor #${i+1} Completó Revisión`,
+        fecha: formatDate(a.fecha_completada),
+        color: 'success',
+        icon: 'mdi-check-all'
+      })
+    }
+  })
+
+  // 3. Veredicto Final
+  if (['ACEPTADO', 'RECHAZADO', 'REQUERIDAS_REVISIONES'].includes(m.estado)) {
+    const estado = m.estado === 'REQUERIDAS_REVISIONES' ? 'Requiere Revisiones' : m.estado
+    const isError = m.estado === 'RECHAZADO'
+    const isWarning = m.estado === 'REQUERIDAS_REVISIONES'
+    eventos.push({
+      id: idCounter++,
+      titulo: `Veredicto Final: ${estado}`,
+      fecha: formatDate(m.fechaDecision || new Date()), // Fallback si no tiene fecha guardada en BD
+      color: isError ? 'error' : (isWarning ? 'orange-darken-3' : 'success'),
+      colorText: isError ? '#c62828' : (isWarning ? '#ef6c00' : '#2e7d32'),
+      icon: 'mdi-gavel'
+    })
+  }
+
+  // Ordenar por fecha cronológica (aproximación, ya que formatDate cambia el formato, es mejor ordenar antes, 
+  // pero para simplificar lo mostramos en el orden lógico: Envío -> Asignación -> Completada -> Decisión)
+  // El orden lógico ya está implícito en cómo los insertamos.
+  
+  return eventos
+})
 
 const filtros = [
   { label:'Todos los estados', value:'TODOS' },
@@ -105,11 +275,17 @@ const manuscritosFiltrados = computed(() =>
   })
 )
 
-const ESTADOS = { BORRADOR:'Borrador', ENVIADO:'Enviado', EN_REVISION:'En revisión', ACEPTADO:'Aceptado', RECHAZADO:'Rechazado' }
-const HEX     = { BORRADOR:'#9e9e9e', ENVIADO:'#546e7a', EN_REVISION:'#e65100', ACEPTADO:'#558b2f', RECHAZADO:'#c62828' }
-const CHIPS   = { BORRADOR:'secondary', ENVIADO:'info', EN_REVISION:'warning', ACEPTADO:'success', RECHAZADO:'error' }
+const ESTADOS = { BORRADOR:'Borrador', ENVIADO:'Enviado', EN_REVISION:'En revisión', REQUERIDAS_REVISIONES:'Requiere revisiones', ACEPTADO:'Aceptado', RECHAZADO:'Rechazado' }
+const HEX     = { BORRADOR:'#9e9e9e', ENVIADO:'#546e7a', EN_REVISION:'#e65100', REQUERIDAS_REVISIONES:'#ef6c00', ACEPTADO:'#558b2f', RECHAZADO:'#c62828' }
+const CHIPS   = { BORRADOR:'secondary', ENVIADO:'info', EN_REVISION:'warning', REQUERIDAS_REVISIONES:'warning', ACEPTADO:'success', RECHAZADO:'error' }
 
 function estadoLabel(e) { return ESTADOS[e] ?? e }
 function hexEstado(e)   { return HEX[e]     ?? '#9e9e9e' }
 function chipEstado(e)  { return CHIPS[e]   ?? 'secondary' }
 </script>
+
+<style scoped>
+.articulo-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+</style>

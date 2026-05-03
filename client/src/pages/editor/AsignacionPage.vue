@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <v-container fluid style="background:#F6F8F6; min-height: 100%; padding: 24px">
     <!-- Botón Volver -->
     <v-btn variant="text" to="/editor/manuscritos" prepend-icon="mdi-arrow-left" class="mb-6 text-none">
@@ -76,29 +76,80 @@
             </v-card-text>
           </v-card>
 
-          <!-- SECCIÃ“N: DECISIÃ“N EDITORIAL FINAL -->
+          <!-- SECCIÓN: DECISIÓN EDITORIAL FINAL -->
           <v-card 
-            v-if="asignacionesCompletadas.length > 0" 
+            v-if="asignacionesDelArticulo.length > 0" 
             class="mb-6 elevation-10" 
             rounded="xl" 
-            color="brown-darken-4" 
-            theme="dark"
+            :color="seccionDecisionActiva ? 'brown-darken-4' : 'grey-lighten-3'" 
+            :theme="seccionDecisionActiva ? 'dark' : 'light'"
           >
             <v-card-item class="pa-6">
-              <v-card-title class="text-h5 font-weight-bold d-flex align-center">
-                <v-icon class="mr-3" color="amber">mdi-gavel</v-icon>
+              <v-card-title class="text-h5 font-weight-bold d-flex align-center" :class="seccionDecisionActiva ? 'text-white' : 'text-grey-darken-1'">
+                <v-icon class="mr-3" :color="seccionDecisionActiva ? 'amber' : 'grey'">mdi-gavel</v-icon>
                 Decisión Editorial
               </v-card-title>
-              <v-card-subtitle class="mt-1 opacity-70">
-                Basado en {{ asignacionesCompletadas.length }} revisiones recibidas
+              <v-card-subtitle class="mt-1" :class="seccionDecisionActiva ? 'opacity-70 text-white' : 'text-grey-darken-1'">
+                <span v-if="manuscrito.estado === 'LISTO_PARA_DECISION'">Todas las revisiones completadas. Listo para su decisión.</span>
+                <span v-else-if="manuscrito.estado === 'ACEPTADO'">Manuscrito Aceptado</span>
+                <span v-else-if="manuscrito.estado === 'RECHAZADO'">Manuscrito Rechazado</span>
+                <span v-else>Esperando a que todos los revisores finalicen ({{ asignacionesCompletadas.length }} de {{ asignacionesDelArticulo.length }} completadas)</span>
               </v-card-subtitle>
               
               <div class="d-flex gap-4 mt-6">
-                <v-btn color="success" size="large" variant="elevated" @click="decidir('ACEPTADO')" class="flex-grow-1 text-none font-weight-bold" prepend-icon="mdi-check-circle">
+                <v-btn 
+                  :color="manuscrito.estado === 'ACEPTADO' || manuscrito.estado === 'LISTO_PARA_DECISION' ? 'success' : 'grey'" 
+                  size="large" 
+                  variant="elevated" 
+                  @click="decidir('ACEPTADO')" 
+                  class="flex-grow-1 text-none font-weight-bold" 
+                  prepend-icon="mdi-check-circle"
+                  :disabled="manuscrito.estado !== 'LISTO_PARA_DECISION' && manuscrito.estado !== 'ACEPTADO'"
+                >
                   Aceptar Manuscrito
                 </v-btn>
-                <v-btn color="error" size="large" variant="elevated" @click="decidir('RECHAZADO')" class="flex-grow-1 text-none font-weight-bold" prepend-icon="mdi-close-circle">
+                <v-btn 
+                  :color="manuscrito.estado === 'RECHAZADO' || manuscrito.estado === 'LISTO_PARA_DECISION' ? 'error' : 'grey'" 
+                  size="large" 
+                  variant="elevated" 
+                  @click="abrirDialogoRechazo" 
+                  class="flex-grow-1 text-none font-weight-bold" 
+                  prepend-icon="mdi-close-circle"
+                  :disabled="manuscrito.estado !== 'LISTO_PARA_DECISION' && manuscrito.estado !== 'RECHAZADO'"
+                >
                   Rechazar
+                </v-btn>
+              </div>
+            </v-card-item>
+          </v-card>
+
+          <!-- SECCIÓN NUEVA: SOLICITAR REVISIONES (Mini Dashboard) -->
+          <v-card 
+            v-if="manuscrito.estado === 'LISTO_PARA_DECISION' && requiereRevisiones" 
+            class="mb-6 elevation-10" 
+            rounded="xl" 
+            color="orange-darken-3" 
+            theme="dark"
+          >
+            <v-card-item class="pa-6">
+              <v-card-title class="text-h5 font-weight-bold d-flex align-center text-white">
+                <v-icon class="mr-3" color="white">mdi-keyboard-return</v-icon>
+                Regresar al Autor (Cambios Solicitados)
+              </v-card-title>
+              <v-card-subtitle class="mt-1 opacity-90 text-white">
+                Uno o más revisores han sugerido que el autor realice modificaciones.
+              </v-card-subtitle>
+              
+              <div class="mt-6">
+                <v-btn 
+                  color="white" 
+                  class="text-orange-darken-3 font-weight-bold text-none"
+                  size="large" 
+                  variant="elevated" 
+                  @click="decidir('REQUERIDAS_REVISIONES')" 
+                  prepend-icon="mdi-send"
+                >
+                  Solicitar Cambios al Autor
                 </v-btn>
               </div>
             </v-card-item>
@@ -153,6 +204,39 @@
       <v-icon start>mdi-check-circle</v-icon>
       Operación completada con éxito
     </v-snackbar>
+
+    <!-- Modal de Rechazo -->
+    <v-dialog v-model="dialogoRechazo" max-width="500">
+      <v-card rounded="xl" border>
+        <div style="background:#c62828; height:6px; border-radius:8px 8px 0 0" />
+        <v-card-title class="pa-5 pb-2 text-h5 font-weight-bold text-error">
+          <v-icon start color="error">mdi-alert-circle</v-icon>
+          Rechazar Manuscrito
+        </v-card-title>
+        <v-card-text class="px-5">
+          <p class="mb-4">Por favor, escriba un comentario explicando el motivo del rechazo. Este comentario será visible para el autor.</p>
+          <v-textarea
+            v-model="motivoRechazo"
+            label="Motivo del rechazo *"
+            variant="outlined"
+            rows="4"
+            :rules="[v => !!v || 'Debe escribir un motivo']"
+          ></v-textarea>
+        </v-card-text>
+        <v-card-actions class="pa-4 justify-end">
+          <v-btn variant="text" @click="dialogoRechazo = false">Cancelar</v-btn>
+          <v-btn 
+            color="error" 
+            variant="flat" 
+            @click="confirmarRechazo"
+            :disabled="!motivoRechazo.trim()"
+            :loading="cargandoRechazo"
+          >
+            Confirmar Rechazo
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -177,6 +261,15 @@ const asignacionesCompletadas = computed(() =>
   asignacionesDelArticulo.value.filter(a => a.estado === 'COMPLETADA')
 )
 
+const requiereRevisiones = computed(() => {
+  return asignacionesCompletadas.value.some(a => a.recomendacion === 'REVISION_MENOR' || a.recomendacion === 'REVISION_MAYOR')
+})
+
+const seccionDecisionActiva = computed(() => {
+  if (manuscrito.value?.estado === 'LISTO_PARA_DECISION' && requiereRevisiones.value) return false
+  return ['LISTO_PARA_DECISION', 'ACEPTADO', 'RECHAZADO'].includes(manuscrito.value?.estado)
+})
+
 onMounted(() => {
   editorStore.cargarDashboardEditor()
 })
@@ -194,13 +287,36 @@ async function asignar(revisorId) {
   if (exito) snackbar.value = true
 }
 
+const dialogoRechazo = ref(false)
+const motivoRechazo = ref('')
+const cargandoRechazo = ref(false)
+
+function abrirDialogoRechazo() {
+  if (manuscrito.value.estado === 'RECHAZADO') return
+  motivoRechazo.value = ''
+  dialogoRechazo.value = true
+}
+
+async function confirmarRechazo() {
+  if (!motivoRechazo.value.trim()) return
+  cargandoRechazo.value = true
+  await editorStore.tomarDecision(manuscritoId, 'RECHAZADO', motivoRechazo.value)
+  cargandoRechazo.value = false
+  dialogoRechazo.value = false
+  snackbar.value = true
+}
+
 async function decidir(decision) {
+  if (manuscrito.value.estado === 'ACEPTADO' || manuscrito.value.estado === 'RECHAZADO') return;
   await editorStore.tomarDecision(manuscritoId, decision)
+  snackbar.value = true
 }
 
 const ESTADOS = { 
   ENVIADO: 'Enviado', 
   EN_REVISION: 'En revisión', 
+  LISTO_PARA_DECISION: 'Listo para decisión',
+  REQUERIDAS_REVISIONES: 'Requiere Revisiones',
   ACEPTADO: 'Aceptado', 
   RECHAZADO: 'Rechazado' 
 }
@@ -209,6 +325,7 @@ function chipColor(e) {
   if (e === 'ACEPTADO') return 'success'
   if (e === 'RECHAZADO') return 'error'
   if (e === 'EN_REVISION') return 'warning'
+  if (e === 'LISTO_PARA_DECISION') return 'info'
   return 'info'
 }
 </script>

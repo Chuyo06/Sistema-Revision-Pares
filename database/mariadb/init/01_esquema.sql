@@ -18,13 +18,17 @@ CREATE TABLE manuscritos (
     resumen TEXT,
     contenido TEXT,
     autorId INT NOT NULL,
+    editorId INT NULL,
     autores VARCHAR(255),
     estado VARCHAR(50) DEFAULT 'BORRADOR',
     convocatoria VARCHAR(255),
     referencia VARCHAR(255),
+    respuestasRevisores TEXT NULL,
     revisoresAsignados INT DEFAULT 0,
     revisionesCompletadas INT DEFAULT 0,
+    motivoRechazo TEXT NULL,
     fechaEnvio DATE,
+    fechaDecision TIMESTAMP NULL,
     fechaSubida TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -54,6 +58,7 @@ CREATE TABLE asignaciones_revision (
     fecha_limite DATE NOT NULL,
     puntuacion INT NULL,
     comentarios TEXT NULL,
+    recomendacion VARCHAR(50) NULL,
     fecha_completada TIMESTAMP NULL,
     FOREIGN KEY (id_revisor) REFERENCES usuarios(id_usuario) ON DELETE RESTRICT
 );

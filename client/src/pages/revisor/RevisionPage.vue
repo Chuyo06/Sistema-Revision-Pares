@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div>
     <v-btn variant="text" color="primary" prepend-icon="mdi-arrow-left" to="/revisor/asignados" class="mb-4">
       Volver a asignados
@@ -14,6 +14,19 @@
             {{ articulo.autores }} Â· {{ articulo.convocatoria }}
           </div>
           <p class="text-body-2" style="color:#4CAF50">{{ articulo.resumen }}</p>
+          
+          <v-btn
+            v-if="articulo.referencia"
+            color="primary"
+            variant="outlined"
+            size="small"
+            class="mt-4"
+            prepend-icon="mdi-file-pdf-box"
+            :href="`/api/manuscritos/download/${articulo.referencia}`"
+            target="_blank"
+          >
+            Ver PDF Adjunto
+          </v-btn>
         </v-card-text>
       </v-card>
 

@@ -1,7 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Not } from 'typeorm';
 import { Manuscrito } from './entities/manuscrito.entity';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class ManuscritosService {
@@ -10,9 +12,16 @@ export class ManuscritosService {
     private manuscritoRepository: Repository<Manuscrito>,
   ) {}
 
-  async guardarArchivo(archivo: { originalname: string; size: number }) {
+  async guardarArchivo(archivo: Express.Multer.File) {
     const count = await this.manuscritoRepository.count();
     const referencia = `RPP-${new Date().getFullYear()}-${String(count + 1).padStart(4, '0')}`;
+
+    const uploadDir = path.join(process.cwd(), 'uploads');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    const filename = `${referencia}.pdf`;
+    fs.writeFileSync(path.join(uploadDir, filename), archivo.buffer);
 
     return {
       referencia,
@@ -37,6 +46,7 @@ export class ManuscritosService {
 
   async obtenerTodos(): Promise<Manuscrito[]> {
     return await this.manuscritoRepository.find({
+      where: { estado: Not('BORRADOR') },
       order: { fechaSubida: 'DESC' },
     });
   }
@@ -55,5 +65,10 @@ export class ManuscritosService {
   async actualizar(id: number, datos: Partial<Manuscrito>): Promise<Manuscrito | null> {
     await this.manuscritoRepository.update(id, datos);
     return this.obtenerPorId(id);
+  }
+
+  async eliminar(id: number): Promise<boolean> {
+    const result = await this.manuscritoRepository.delete(id);
+    return (result.affected ?? 0) > 0;
   }
 }

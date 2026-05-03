@@ -46,9 +46,49 @@ export class RevisionService {
       estado: 'COMPLETADA',
       puntuacion: revision.puntuacion,
       comentarios: revision.comentarios,
+      recomendacion: revision.recomendacion,
       fecha_completada: new Date(),
     });
-    return this.obtenerPorId(id);
+    
+    const asignacionActualizada = await this.obtenerPorId(id);
+    if (!asignacionActualizada) return null;
+
+    try {
+      const idManuscrito = asignacionActualizada.id_manuscrito_mongo;
+      const todasLasAsignaciones = await this.obtenerPorManuscrito(Number(idManuscrito));
+      
+      const asignacionesActivas = todasLasAsignaciones.filter(a => a.estado !== 'DECLINADO' && a.estado !== 'EXPIRADA');
+      const todasCompletadas = asignacionesActivas.length > 0 && asignacionesActivas.every(a => a.estado === 'COMPLETADA');
+
+      if (todasCompletadas) {
+        const resManuscrito = await fetch(`http://manuscritos:3000/manuscritos/${idManuscrito}`);
+        if (resManuscrito.ok) {
+          const manuscrito = await resManuscrito.json();
+          
+          await fetch(`http://manuscritos:3000/manuscritos/${idManuscrito}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ estado: 'LISTO_PARA_DECISION' })
+          });
+
+          if (manuscrito.editorId) {
+            await fetch(`http://notificaciones:3000/notificaciones`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                destinatarioId: manuscrito.editorId,
+                tipo: 'REVISIONES_COMPLETADAS',
+                mensaje: `Todas las revisiones del manuscrito ${manuscrito.titulo || manuscrito.referencia} han sido completadas. Está listo para decisión.`
+              })
+            });
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error procesando el flujo post-revisión:', error);
+    }
+
+    return asignacionActualizada;
   }
 
   async eliminar(id: number) {

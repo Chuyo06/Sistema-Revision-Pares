@@ -26,6 +26,9 @@ export class AsignacionRevision {
   @Column({ type: 'text', nullable: true })
   comentarios: string;
 
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  recomendacion: string;
+
   @Column({ type: 'timestamp', name: 'fecha_completada', nullable: true })
   fecha_completada: Date;
 }

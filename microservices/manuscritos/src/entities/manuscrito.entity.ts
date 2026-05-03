@@ -17,6 +17,9 @@ export class Manuscrito {
   @Column()
   autorId: number;
 
+  @Column({ type: 'int', nullable: true })
+  editorId: number;
+
   @Column({ nullable: true })
   autores: string;
 
@@ -28,6 +31,9 @@ export class Manuscrito {
 
   @Column({ nullable: true })
   referencia: string;
+
+  @Column({ type: 'text', nullable: true })
+  respuestasRevisores: string;
 
   @Column({ type: 'int', default: 0 })
   revisoresAsignados: number;

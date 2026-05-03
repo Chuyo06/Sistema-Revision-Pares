@@ -23,6 +23,13 @@ export class RevisionController {
     return this.revisionService.obtenerPorId(numId);
   }
 
+  @Get('manuscrito/:id')
+  async obtenerPorManuscrito(@Param('id') id: string) {
+    const numId = Number(id);
+    if (isNaN(numId)) return [];
+    return this.revisionService.obtenerPorManuscrito(numId);
+  }
+
   @Post()
   async crear(@Body() datos: Partial<AsignacionRevision>) {
     return this.revisionService.crear(datos);

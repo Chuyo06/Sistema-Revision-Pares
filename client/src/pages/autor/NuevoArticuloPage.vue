@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div>
     <v-btn variant="text" color="primary" prepend-icon="mdi-arrow-left" to="/autor/articulos" class="mb-4">
       Volver a mis artículos
@@ -60,7 +60,7 @@
             v-model="form.resumen"
             label="Resumen *"
             prepend-inner-icon="mdi-text"
-            :rules="[r => !!r || 'El resumen es requerido', r => r.length >= 100 || 'Mínimo 100 caracteres']"
+            :rules="[r => !!r || 'El resumen es requerido']"
             rows="5"
             class="mb-2"
             :disabled="enviado"
@@ -88,8 +88,10 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAutorStore } from '@/store/autor/index.js'
-import PdfUploader from '@/components/common/PdfUploader.vue'
+
+const router = useRouter()
 
 const autorStore = useAutorStore()
 
@@ -101,18 +103,93 @@ const form = ref({ titulo: '', convocatoria: '', resumen: '' })
 const convocatoriasAbiertas = computed(() => autorStore.convocatorias.filter(c => c.estado === 'ABIERTA'))
 const hayConvocatoriasAbiertas = computed(() => convocatoriasAbiertas.value.length > 0)
 
-function onPdfUploaded({ reference }) {
-  autorStore.enviarManuscrito({
-    titulo: form.value.titulo,
-    resumen: form.value.resumen,
-    convocatoria: form.value.convocatoria,
-    referencia: reference,
-  })
-  enviado.value = true
+const selectedFile = ref(null)
+const isUploading = ref(false)
+const errorMessage = ref('')
+
+async function procesarSubidaArchivo() {
+  if (!selectedFile.value) return null
+  
+  const file = Array.isArray(selectedFile.value) ? selectedFile.value[0] : selectedFile.value
+  
+  if (file.type !== 'application/pdf') {
+    errorMessage.value = 'El archivo debe ser PDF.'
+    return null
+  }
+  if (file.size > 50 * 1024 * 1024) {
+    errorMessage.value = 'El archivo supera 50MB.'
+    return null
+  }
+
+  try {
+    const formData = new FormData()
+    formData.append('archivo', file)
+
+    const res = await fetch('/api/manuscritos/upload', {
+      method: 'POST',
+      body: formData,
+    })
+
+    if (!res.ok) throw new Error('Error al subir el archivo')
+    const data = await res.json()
+    return data.referencia
+  } catch (error) {
+    errorMessage.value = 'Error al subir el archivo al servidor.'
+    return null
+  }
 }
 
-function onReset() {
-  enviado.value = false
-  form.value = { titulo: '', convocatoria: '', resumen: '' }
+async function guardarBorrador() {
+  isUploading.value = true
+  errorMessage.value = ''
+  
+  let referencia = null
+  if (selectedFile.value) {
+    referencia = await procesarSubidaArchivo()
+    if (errorMessage.value) {
+      isUploading.value = false
+      return
+    }
+  }
+
+  const exito = await autorStore.guardarBorrador({
+    ...form.value,
+    referencia
+  })
+
+  isUploading.value = false
+  if (exito) {
+    router.push('/autor/borradores')
+  }
+}
+
+async function enviarManuscrito() {
+  if (!selectedFile.value) {
+    errorMessage.value = 'Debe seleccionar un archivo PDF para enviar el manuscrito.'
+    return
+  }
+
+  isUploading.value = true
+  errorMessage.value = ''
+  
+  const referencia = await procesarSubidaArchivo()
+  if (!referencia) {
+    isUploading.value = false
+    return
+  }
+
+  const exito = await autorStore.enviarManuscrito({
+    ...form.value,
+    referencia
+  })
+
+  isUploading.value = false
+  if (exito) {
+    enviado.value = true
+  }
 }
 </script>
+
+<style scoped>
+.gap-4 { gap: 16px; }
+</style>

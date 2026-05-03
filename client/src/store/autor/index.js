@@ -25,7 +25,9 @@ export const useAutorStore = defineStore('autor', () => {
           titulo: m.titulo,
           resumen: m.resumen,
           estado: m.estado,
+          motivoRechazo: m.motivoRechazo,
           fechaEnvio: m.fechaEnvio ? m.fechaEnvio.split('T')[0] : null,
+          fechaDecision: m.fechaDecision,
           convocatoria: m.convocatoria || 'General',
           revisores: 0, // Esto requeriría otro join si quisiéramos mostrarlo real
           revisionesPendientes: 0,
@@ -38,7 +40,7 @@ export const useAutorStore = defineStore('autor', () => {
     }
   }
 
-  async function enviarManuscrito(datos) {
+  async function enviarManuscrito(datos, id = null) {
     const authStore = useAuthStore()
     const userId = authStore.usuario?.id || authStore.usuario?.id_usuario || 1
 
@@ -46,17 +48,125 @@ export const useAutorStore = defineStore('autor', () => {
       ...datos,
       autorId: userId,
       autores: authStore.usuario?.nombre || 'Autor Demo',
-      referencia: 'PENDIENTE',
+      referencia: datos.referencia || 'PENDIENTE',
       estado: 'ENVIADO'
     }
 
-    const nuevo = await crearManuscrito(payload)
-    if (nuevo) {
-      await cargarMisManuscritos()
-      return nuevo
+    if (id) {
+      const exito = await actualizarDatosManuscrito(id, payload)
+      if (exito) {
+        await cargarMisManuscritos()
+        return { id }
+      }
+      return null
+    } else {
+      const nuevo = await crearManuscrito(payload)
+      if (nuevo) {
+        await cargarMisManuscritos()
+        return nuevo
+      }
+      return null
     }
-    return null
   }
 
-  return { manuscritos, convocatorias, cargando, cargarMisManuscritos, enviarManuscrito }
+  async function guardarBorrador(datos, id = null) {
+    const authStore = useAuthStore()
+    const userId = authStore.usuario?.id || authStore.usuario?.id_usuario || 1
+
+    const payload = {
+      ...datos,
+      autorId: userId,
+      autores: authStore.usuario?.nombre || 'Autor Demo',
+      referencia: datos.referencia || null,
+      estado: 'BORRADOR'
+    }
+
+    if (id) {
+      const exito = await actualizarDatosManuscrito(id, payload)
+      if (exito) {
+        await cargarMisManuscritos()
+        return { id }
+      }
+      return null
+    } else {
+      const nuevo = await crearManuscrito(payload)
+      if (nuevo) {
+        await cargarMisManuscritos()
+        return nuevo
+      }
+      return null
+    }
+  }
+
+  async function eliminarBorrador(id) {
+    const exito = await eliminarManuscrito(id)
+    if (exito) {
+      await cargarMisManuscritos()
+      return true
+    }
+    return false
+  }
+
+  async function reenviarManuscrito(id, referenciaPdf, respuestasRevisores) {
+    try {
+      const payload = {
+        referencia: referenciaPdf,
+        respuestasRevisores: respuestasRevisores,
+        estado: 'LISTO_PARA_DECISION'
+      }
+      
+      const res = await fetch(`/api/manuscritos/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+
+      if (res.ok) {
+        await cargarMisManuscritos()
+        return true
+      }
+    } catch (e) {
+      console.error('Error reenviando manuscrito:', e)
+    }
+    return false
+  }
+
+  async function cargarComentarios(manuscritoId) {
+    try {
+      const res = await fetch(`/api/revision/manuscrito/${manuscritoId}`)
+      if (res.ok) {
+        const asignaciones = await res.json()
+        const comentariosParseados = asignaciones
+          .filter(a => a.estado === 'COMPLETADA' && a.comentarios)
+          .map((a, index) => {
+            let texto = a.comentarios || '';
+            const markerAutor = 'PARA EL AUTOR: ';
+            const markerEditor = 'PARA EL EDITOR: ';
+            
+            if (texto.includes(markerAutor)) {
+              const idxAutor = texto.indexOf(markerAutor) + markerAutor.length;
+              const idxEditor = texto.indexOf(markerEditor);
+              
+              if (idxEditor !== -1 && idxEditor > idxAutor) {
+                texto = texto.substring(idxAutor, idxEditor).trim();
+              } else {
+                texto = texto.substring(idxAutor).trim();
+              }
+            }
+            
+            return {
+              id: index + 1,
+              comentarios: texto,
+              puntuacion: a.puntuacion
+            };
+          })
+        return { comentarios: comentariosParseados, asignaciones }
+      }
+    } catch (e) {
+      console.error('Error fetching comments:', e)
+    }
+    return { comentarios: [], asignaciones: [] }
+  }
+
+  return { manuscritos, convocatorias, cargando, cargarMisManuscritos, enviarManuscrito, guardarBorrador, eliminarBorrador, cargarComentarios, reenviarManuscrito }
 })

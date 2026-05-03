@@ -1,6 +1,6 @@
 <template>
   <v-container fluid style="background:#F6F8F6; min-height: 100%; padding: 24px">
-    <!-- Botón Volver -->
+    <!-- Botï¿½n Volver -->
     <v-btn variant="text" to="/editor/manuscritos" prepend-icon="mdi-arrow-left" class="mb-6 text-none">
       Volver a Manuscritos
     </v-btn>
@@ -14,7 +14,7 @@
 
     <template v-else-if="manuscrito">
       <v-row>
-        <!-- Columna Izquierda: Información y Decisiones -->
+        <!-- Columna Izquierda: Informaciï¿½n y Decisiones -->
         <v-col cols="12" md="8">
           <!-- Cabecera del Manuscrito -->
           <v-card class="mb-6 overflow-hidden" elevation="3" rounded="xl" border>
@@ -69,7 +69,7 @@
                   </v-list-item-subtitle>
 
                   <template v-slot:append>
-                    <!-- Quitar revisor: solo si NO ha enviado su revisión -->
+                    <!-- Quitar revisor: solo si NO ha enviado su revisiï¿½n -->
                     <v-btn
                       v-if="asig.estado !== 'COMPLETADA'"
                       icon
@@ -86,12 +86,12 @@
               </v-list>
               <div v-else class="pa-8 text-center text-grey-darken-1">
                 <v-icon size="48" class="mb-2 opacity-20">mdi-account-question-outline</v-icon>
-                <div>No hay revisores asignados todavía.</div>
+                <div>No hay revisores asignados todavï¿½a.</div>
               </div>
             </v-card-text>
           </v-card>
 
-          <!-- SECCIÓN: DECISIÓN EDITORIAL FINAL — solo editor jefe -->
+          <!-- SECCIï¿½N: DECISIï¿½N EDITORIAL FINAL ï¿½ solo editor jefe -->
           <v-card
             v-if="editorStore.esEditorJefe && asignacionesCompletadas.length > 0"
             class="mb-6 elevation-10"
@@ -102,10 +102,13 @@
             <v-card-item class="pa-6">
               <v-card-title class="text-h5 font-weight-bold d-flex align-center">
                 <v-icon class="mr-3" color="amber">mdi-gavel</v-icon>
-                Decisión Editorial Final
+                Decisiï¿½n Editorial Final
               </v-card-title>
-              <v-card-subtitle class="mt-1 opacity-70">
-                Basado en {{ asignacionesCompletadas.length }} revisiones recibidas
+              <v-card-subtitle class="mt-1" :class="seccionDecisionActiva ? 'opacity-70 text-white' : 'text-grey-darken-1'">
+                <span v-if="manuscrito.estado === 'LISTO_PARA_DECISION'">Todas las revisiones completadas. Listo para su decisiÃ³n.</span>
+                <span v-else-if="manuscrito.estado === 'ACEPTADO'">Manuscrito Aceptado</span>
+                <span v-else-if="manuscrito.estado === 'RECHAZADO'">Manuscrito Rechazado</span>
+                <span v-else>Esperando a que todos los revisores finalicen ({{ asignacionesCompletadas.length }} de {{ asignacionesDelArticulo.length }} completadas)</span>
               </v-card-subtitle>
 
               <div class="d-flex gap-4 mt-6 flex-wrap">
@@ -122,7 +125,7 @@
             </v-card-item>
           </v-card>
 
-          <!-- Mensaje informativo para editor de sección -->
+          <!-- Mensaje informativo para editor de secciï¿½n -->
           <v-alert
             v-else-if="editorStore.esEditorSeccion && asignacionesCompletadas.length > 0"
             type="info"
@@ -131,7 +134,7 @@
             class="mb-6"
             icon="mdi-information-outline"
           >
-            Tu rol de editor de sección puede gestionar revisores, pero la <strong>decisión final</strong>
+            Tu rol de editor de secciï¿½n puede gestionar revisores, pero la <strong>decisiï¿½n final</strong>
             (aceptar / rechazar / pedir revisiones) la toma el editor jefe.
           </v-alert>
         </v-col>
@@ -146,7 +149,7 @@
               <v-text-field
                 v-model="busquedaRevisor"
                 prepend-inner-icon="mdi-magnify"
-                placeholder="Buscar por nombre o institución"
+                placeholder="Buscar por nombre o instituciï¿½n"
                 density="compact"
                 hide-details
                 variant="outlined"
@@ -154,7 +157,7 @@
                 class="mb-2"
               />
               <div v-if="revisoresFiltrados.length === 0" class="pa-4 text-center text-medium-emphasis text-caption">
-                Ningún revisor coincide con la búsqueda
+                Ningï¿½n revisor coincide con la bï¿½squeda
               </div>
               <div
                 v-for="revisor in revisoresFiltrados"
@@ -214,7 +217,7 @@
           </v-list-item-title>
           <v-list-item-subtitle class="text-caption mt-1">
             {{ new Date(entrada.fecha).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' }) }}
-            <span v-if="entrada.carta || entrada.comentario" class="ml-2">· Con carta al autor</span>
+            <span v-if="entrada.carta || entrada.comentario" class="ml-2">ï¿½ Con carta al autor</span>
           </v-list-item-subtitle>
         </v-list-item>
       </v-list>
@@ -233,6 +236,39 @@
       <v-icon start>{{ snackbarColor === 'success' ? 'mdi-check-circle' : 'mdi-alert-circle' }}</v-icon>
       {{ snackbarMsg }}
     </v-snackbar>
+
+    <!-- Modal de Rechazo -->
+    <v-dialog v-model="dialogoRechazo" max-width="500">
+      <v-card rounded="xl" border>
+        <div style="background:#c62828; height:6px; border-radius:8px 8px 0 0" />
+        <v-card-title class="pa-5 pb-2 text-h5 font-weight-bold text-error">
+          <v-icon start color="error">mdi-alert-circle</v-icon>
+          Rechazar Manuscrito
+        </v-card-title>
+        <v-card-text class="px-5">
+          <p class="mb-4">Por favor, escriba un comentario explicando el motivo del rechazo. Este comentario serÃ¡ visible para el autor.</p>
+          <v-textarea
+            v-model="motivoRechazo"
+            label="Motivo del rechazo *"
+            variant="outlined"
+            rows="4"
+            :rules="[v => !!v || 'Debe escribir un motivo']"
+          ></v-textarea>
+        </v-card-text>
+        <v-card-actions class="pa-4 justify-end">
+          <v-btn variant="text" @click="dialogoRechazo = false">Cancelar</v-btn>
+          <v-btn 
+            color="error" 
+            variant="flat" 
+            @click="confirmarRechazo"
+            :disabled="!motivoRechazo.trim()"
+            :loading="cargandoRechazo"
+          >
+            Confirmar Rechazo
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -248,7 +284,7 @@ const editorStore = useEditorStore()
 const historialStore = useHistorialStore()
 const snackbar = ref(false)
 const snackbarColor = ref('success')
-const snackbarMsg = ref('Operación completada con éxito')
+const snackbarMsg = ref('Operaciï¿½n completada con ï¿½xito')
 const busquedaRevisor = ref('')
 
 function notify(msg, color = 'success') {
@@ -260,12 +296,12 @@ function notify(msg, color = 'success') {
 const manuscritoId = Number(route.params.id)
 const manuscrito = computed(() => (editorStore.manuscritos || []).find(m => String(m.id) === String(manuscritoId)))
 
-// Lista de revisores filtrada: excluye al autor del artículo y aplica búsqueda.
+// Lista de revisores filtrada: excluye al autor del artï¿½culo y aplica bï¿½squeda.
 const revisoresFiltrados = computed(() => {
   const autorId = manuscrito.value?.autorId
   const term = (busquedaRevisor.value || '').toLowerCase()
   return (editorStore.revisoresDisponibles || []).filter(r => {
-    if (Number(r.id) === Number(autorId)) return false // ítem 7: nunca el autor
+    if (Number(r.id) === Number(autorId)) return false // ï¿½tem 7: nunca el autor
     if (!term) return true
     return (r.nombre || '').toLowerCase().includes(term) ||
            (r.institucion || '').toLowerCase().includes(term)
@@ -286,6 +322,15 @@ const asignacionesCompletadas = computed(() =>
   asignacionesDelArticulo.value.filter(a => a.estado === 'COMPLETADA')
 )
 
+const requiereRevisiones = computed(() => {
+  return asignacionesCompletadas.value.some(a => a.recomendacion === 'REVISION_MENOR' || a.recomendacion === 'REVISION_MAYOR')
+})
+
+const seccionDecisionActiva = computed(() => {
+  if (manuscrito.value?.estado === 'LISTO_PARA_DECISION' && requiereRevisiones.value) return false
+  return ['LISTO_PARA_DECISION', 'ACEPTADO', 'RECHAZADO'].includes(manuscrito.value?.estado)
+})
+
 onMounted(() => {
   editorStore.cargarDashboardEditor()
 })
@@ -303,7 +348,7 @@ async function asignar(revisorId) {
   if (res?.ok) {
     notify('Revisor invitado correctamente', 'success')
   } else if (res?.motivo === 'AUTOR_DEL_ARTICULO') {
-    notify('No puedes asignar al autor del artículo como revisor', 'error')
+    notify('No puedes asignar al autor del artï¿½culo como revisor', 'error')
   } else {
     notify('No se pudo invitar al revisor', 'error')
   }
@@ -312,9 +357,9 @@ async function asignar(revisorId) {
 async function quitar(idAsignacion) {
   const res = await editorStore.quitarRevisor(idAsignacion)
   if (res?.ok) {
-    notify('Revisor quitado de la asignación', 'success')
+    notify('Revisor quitado de la asignaciï¿½n', 'success')
   } else if (res?.motivo === 'YA_COMPLETADA') {
-    notify('No se puede quitar: el revisor ya envió su revisión', 'error')
+    notify('No se puede quitar: el revisor ya enviï¿½ su revisiï¿½n', 'error')
   } else {
     notify('No se pudo quitar al revisor', 'error')
   }
@@ -331,9 +376,9 @@ function abrirDecision(decision) {
 async function confirmarDecision({ decision, plantilla, comentario }) {
   const res = await editorStore.tomarDecisionConPlantilla(manuscritoId, decision, plantilla, comentario)
   if (res?.ok) {
-    notify('Decisión registrada correctamente', 'success')
+    notify('Decisiï¿½n registrada correctamente', 'success')
   } else {
-    notify('No se pudo registrar la decisión', 'error')
+    notify('No se pudo registrar la decisiï¿½n', 'error')
   }
 }
 
@@ -345,7 +390,7 @@ function decisionLabel(d) {
 
 const ESTADOS = { 
   ENVIADO: 'Enviado', 
-  EN_REVISION: 'En revisión', 
+  EN_REVISION: 'En revisiï¿½n', 
   ACEPTADO: 'Aceptado', 
   RECHAZADO: 'Rechazado' 
 }
@@ -354,6 +399,7 @@ function chipColor(e) {
   if (e === 'ACEPTADO') return 'success'
   if (e === 'RECHAZADO') return 'error'
   if (e === 'EN_REVISION') return 'warning'
+  if (e === 'LISTO_PARA_DECISION') return 'info'
   return 'info'
 }
 </script>

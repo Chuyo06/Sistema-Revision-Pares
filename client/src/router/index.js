@@ -49,6 +49,7 @@ const routes = [
       { path: 'dashboard', name: 'editor-dashboard', component: () => import('@/pages/editor/DashboardPage.vue') },
       { path: 'manuscritos', name: 'editor-manuscritos', component: () => import('@/pages/editor/ManuscritosPage.vue') },
       { path: 'asignacion/:id', name: 'editor-asignacion', component: () => import('@/pages/editor/AsignacionPage.vue') },
+      { path: 'convocatorias', name: 'editor-convocatorias', component: () => import('@/pages/editor/ConvocatoriasPage.vue') },
     ]
   },
 

@@ -28,7 +28,7 @@ CREATE TABLE manuscritos (
     revisionesCompletadas INT DEFAULT 0,
     motivoRechazo TEXT NULL,
     fechaEnvio DATE,
-    fechaDecision TIMESTAMP NULL,
+    editor_seccion_id INT NULL,
     fechaSubida TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

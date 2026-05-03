@@ -90,4 +90,11 @@ export class RevisionService {
 
     return asignacionActualizada;
   }
+
+  async eliminar(id: number) {
+    const asignacion = await this.obtenerPorId(id);
+    if (!asignacion) return false;
+    await this.asignacionRepo.remove(asignacion);
+    return true;
+  }
 }

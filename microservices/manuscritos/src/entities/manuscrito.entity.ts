@@ -44,11 +44,8 @@ export class Manuscrito {
   @Column({ type: 'date', nullable: true })
   fechaEnvio: Date;
 
-  @Column({ type: 'text', nullable: true })
-  motivoRechazo: string;
-
-  @Column({ type: 'timestamp', nullable: true })
-  fechaDecision: Date;
+  @Column({ type: 'int', nullable: true, name: 'editor_seccion_id' })
+  editorSeccionId: number;
 
   @CreateDateColumn()
   fechaSubida: Date;

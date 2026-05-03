@@ -1,6 +1,6 @@
 <template>
   <v-container fluid style="background:#F6F8F6; min-height: 100%; padding: 24px">
-    <!-- Botón Volver -->
+    <!-- Bot�n Volver -->
     <v-btn variant="text" to="/editor/manuscritos" prepend-icon="mdi-arrow-left" class="mb-6 text-none">
       Volver a Manuscritos
     </v-btn>
@@ -14,7 +14,7 @@
 
     <template v-else-if="manuscrito">
       <v-row>
-        <!-- Columna Izquierda: Información y Decisiones -->
+        <!-- Columna Izquierda: Informaci�n y Decisiones -->
         <v-col cols="12" md="8">
           <!-- Cabecera del Manuscrito -->
           <v-card class="mb-6 overflow-hidden" elevation="3" rounded="xl" border>
@@ -32,7 +32,7 @@
             </v-card-item>
           </v-card>
 
-          <!-- SECCIÃ“N: REVISORES ASIGNADOS -->
+          <!-- SECCIÓN: REVISORES ASIGNADOS -->
           <v-card class="mb-6" elevation="2" rounded="lg" border>
             <v-card-title class="pa-4 d-flex align-center">
               <v-icon color="brown" class="mr-2">mdi-account-check</v-icon>
@@ -53,10 +53,10 @@
                   </template>
 
                   <v-list-item-title class="text-h6 font-weight-bold">
-                    Revisor #{{ asig.id_revisor }} 
+                    {{ nombreRevisor(asig.id_revisor) }}
                     <v-chip size="x-small" variant="tonal" class="ml-2">{{ asig.estado }}</v-chip>
                   </v-list-item-title>
-                  
+
                   <v-list-item-subtitle class="mt-1">
                     <div v-if="asig.puntuacion" class="d-flex align-center mb-1">
                       <v-rating :model-value="asig.puntuacion" color="amber" density="compact" size="small" readonly></v-rating>
@@ -67,27 +67,42 @@
                     </div>
                     <div v-else-if="asig.estado !== 'COMPLETADA'" class="text-caption text-grey">Esperando respuesta del revisor...</div>
                   </v-list-item-subtitle>
+
+                  <template v-slot:append>
+                    <!-- Quitar revisor: solo si NO ha enviado su revisi�n -->
+                    <v-btn
+                      v-if="asig.estado !== 'COMPLETADA'"
+                      icon
+                      variant="text"
+                      size="small"
+                      color="error"
+                      title="Quitar revisor"
+                      @click="quitar(asig.id_asignacion)"
+                    >
+                      <v-icon>mdi-account-remove-outline</v-icon>
+                    </v-btn>
+                  </template>
                 </v-list-item>
               </v-list>
               <div v-else class="pa-8 text-center text-grey-darken-1">
                 <v-icon size="48" class="mb-2 opacity-20">mdi-account-question-outline</v-icon>
-                <div>No hay revisores asignados todavía.</div>
+                <div>No hay revisores asignados todav�a.</div>
               </div>
             </v-card-text>
           </v-card>
 
-          <!-- SECCIÓN: DECISIÓN EDITORIAL FINAL -->
-          <v-card 
-            v-if="asignacionesDelArticulo.length > 0" 
-            class="mb-6 elevation-10" 
-            rounded="xl" 
-            :color="seccionDecisionActiva ? 'brown-darken-4' : 'grey-lighten-3'" 
-            :theme="seccionDecisionActiva ? 'dark' : 'light'"
+          <!-- SECCI�N: DECISI�N EDITORIAL FINAL � solo editor jefe -->
+          <v-card
+            v-if="editorStore.esEditorJefe && asignacionesCompletadas.length > 0"
+            class="mb-6 elevation-10"
+            rounded="xl"
+            color="brown-darken-4"
+            theme="dark"
           >
             <v-card-item class="pa-6">
-              <v-card-title class="text-h5 font-weight-bold d-flex align-center" :class="seccionDecisionActiva ? 'text-white' : 'text-grey-darken-1'">
-                <v-icon class="mr-3" :color="seccionDecisionActiva ? 'amber' : 'grey'">mdi-gavel</v-icon>
-                Decisión Editorial
+              <v-card-title class="text-h5 font-weight-bold d-flex align-center">
+                <v-icon class="mr-3" color="amber">mdi-gavel</v-icon>
+                Decisi�n Editorial Final
               </v-card-title>
               <v-card-subtitle class="mt-1" :class="seccionDecisionActiva ? 'opacity-70 text-white' : 'text-grey-darken-1'">
                 <span v-if="manuscrito.estado === 'LISTO_PARA_DECISION'">Todas las revisiones completadas. Listo para su decisión.</span>
@@ -95,65 +110,33 @@
                 <span v-else-if="manuscrito.estado === 'RECHAZADO'">Manuscrito Rechazado</span>
                 <span v-else>Esperando a que todos los revisores finalicen ({{ asignacionesCompletadas.length }} de {{ asignacionesDelArticulo.length }} completadas)</span>
               </v-card-subtitle>
-              
-              <div class="d-flex gap-4 mt-6">
-                <v-btn 
-                  :color="manuscrito.estado === 'ACEPTADO' || manuscrito.estado === 'LISTO_PARA_DECISION' ? 'success' : 'grey'" 
-                  size="large" 
-                  variant="elevated" 
-                  @click="decidir('ACEPTADO')" 
-                  class="flex-grow-1 text-none font-weight-bold" 
-                  prepend-icon="mdi-check-circle"
-                  :disabled="manuscrito.estado !== 'LISTO_PARA_DECISION' && manuscrito.estado !== 'ACEPTADO'"
-                >
-                  Aceptar Manuscrito
+
+              <div class="d-flex gap-4 mt-6 flex-wrap">
+                <v-btn color="success" size="large" variant="elevated" @click="abrirDecision('ACEPTADO')" class="flex-grow-1 text-none font-weight-bold" prepend-icon="mdi-check-circle">
+                  Aceptar
                 </v-btn>
-                <v-btn 
-                  :color="manuscrito.estado === 'RECHAZADO' || manuscrito.estado === 'LISTO_PARA_DECISION' ? 'error' : 'grey'" 
-                  size="large" 
-                  variant="elevated" 
-                  @click="abrirDialogoRechazo" 
-                  class="flex-grow-1 text-none font-weight-bold" 
-                  prepend-icon="mdi-close-circle"
-                  :disabled="manuscrito.estado !== 'LISTO_PARA_DECISION' && manuscrito.estado !== 'RECHAZADO'"
-                >
+                <v-btn color="warning" size="large" variant="elevated" @click="abrirDecision('EN_REVISION')" class="flex-grow-1 text-none font-weight-bold" prepend-icon="mdi-refresh">
+                  Pedir revisiones
+                </v-btn>
+                <v-btn color="error" size="large" variant="elevated" @click="abrirDecision('RECHAZADO')" class="flex-grow-1 text-none font-weight-bold" prepend-icon="mdi-close-circle">
                   Rechazar
                 </v-btn>
               </div>
             </v-card-item>
           </v-card>
 
-          <!-- SECCIÓN NUEVA: SOLICITAR REVISIONES (Mini Dashboard) -->
-          <v-card 
-            v-if="manuscrito.estado === 'LISTO_PARA_DECISION' && requiereRevisiones" 
-            class="mb-6 elevation-10" 
-            rounded="xl" 
-            color="orange-darken-3" 
-            theme="dark"
+          <!-- Mensaje informativo para editor de secci�n -->
+          <v-alert
+            v-else-if="editorStore.esEditorSeccion && asignacionesCompletadas.length > 0"
+            type="info"
+            variant="tonal"
+            border="start"
+            class="mb-6"
+            icon="mdi-information-outline"
           >
-            <v-card-item class="pa-6">
-              <v-card-title class="text-h5 font-weight-bold d-flex align-center text-white">
-                <v-icon class="mr-3" color="white">mdi-keyboard-return</v-icon>
-                Regresar al Autor (Cambios Solicitados)
-              </v-card-title>
-              <v-card-subtitle class="mt-1 opacity-90 text-white">
-                Uno o más revisores han sugerido que el autor realice modificaciones.
-              </v-card-subtitle>
-              
-              <div class="mt-6">
-                <v-btn 
-                  color="white" 
-                  class="text-orange-darken-3 font-weight-bold text-none"
-                  size="large" 
-                  variant="elevated" 
-                  @click="decidir('REQUERIDAS_REVISIONES')" 
-                  prepend-icon="mdi-send"
-                >
-                  Solicitar Cambios al Autor
-                </v-btn>
-              </div>
-            </v-card-item>
-          </v-card>
+            Tu rol de editor de secci�n puede gestionar revisores, pero la <strong>decisi�n final</strong>
+            (aceptar / rechazar / pedir revisiones) la toma el editor jefe.
+          </v-alert>
         </v-col>
 
         <!-- Columna Derecha: Seleccionar Revisores -->
@@ -162,11 +145,24 @@
             <template v-slot:append>
               <v-icon color="primary">mdi-account-search</v-icon>
             </template>
-            <v-card-text class="pa-2">
-              <div 
-                v-for="revisor in (editorStore.revisoresDisponibles || [])" 
-                :key="revisor.id" 
-                class="revisor-card ma-2 pa-4 border rounded-lg transition-swing"
+            <v-card-text class="pa-3">
+              <v-text-field
+                v-model="busquedaRevisor"
+                prepend-inner-icon="mdi-magnify"
+                placeholder="Buscar por nombre o instituci�n"
+                density="compact"
+                hide-details
+                variant="outlined"
+                clearable
+                class="mb-2"
+              />
+              <div v-if="revisoresFiltrados.length === 0" class="pa-4 text-center text-medium-emphasis text-caption">
+                Ning�n revisor coincide con la b�squeda
+              </div>
+              <div
+                v-for="revisor in revisoresFiltrados"
+                :key="revisor.id"
+                class="revisor-card mb-2 pa-3 border rounded-lg transition-swing"
                 :class="revisorAsignado(revisor.id) ? 'bg-grey-lighten-4 opacity-70' : 'bg-white'"
               >
                 <div class="d-flex justify-space-between align-center mb-2">
@@ -174,12 +170,12 @@
                   <v-chip size="x-small" color="success" variant="flat">{{ revisor.matching }}% match</v-chip>
                 </div>
                 <div class="text-caption text-grey-darken-1 mb-3 line-height-1">{{ revisor.institucion }}</div>
-                <v-btn 
-                  block 
-                  size="small" 
+                <v-btn
+                  block
+                  size="small"
                   :color="revisorAsignado(revisor.id) ? 'grey' : 'primary'"
                   :variant="revisorAsignado(revisor.id) ? 'text' : 'flat'"
-                  @click="asignar(revisor.id)" 
+                  @click="asignar(revisor.id)"
                   :disabled="revisorAsignado(revisor.id)"
                   class="text-none"
                 >
@@ -200,9 +196,45 @@
        </v-col>
     </v-row>
 
-    <v-snackbar v-model="snackbar" timeout="3000" color="success" location="top right">
-      <v-icon start>mdi-check-circle</v-icon>
-      Operación completada con éxito
+    <!-- Historial de decisiones editoriales -->
+    <v-card v-if="historialManuscrito.length > 0" class="mt-6" border rounded="lg" elevation="1">
+      <v-card-title class="pa-4 d-flex align-center">
+        <v-icon color="brown" class="mr-2">mdi-history</v-icon>
+        Historial de decisiones
+        <v-chip size="x-small" variant="tonal" color="brown" class="ml-2">{{ historialManuscrito.length }}</v-chip>
+      </v-card-title>
+      <v-divider />
+      <v-list lines="two" class="bg-transparent pa-0">
+        <v-list-item v-for="entrada in historialManuscrito" :key="entrada.id" class="pa-4 border-bottom">
+          <template #prepend>
+            <v-avatar :color="entrada.decision === 'ACEPTADO' ? 'success' : entrada.decision === 'RECHAZADO' ? 'error' : 'warning'" size="40">
+              <v-icon color="white" size="20">{{ entrada.decision === 'ACEPTADO' ? 'mdi-check-circle' : entrada.decision === 'RECHAZADO' ? 'mdi-close-circle' : 'mdi-refresh' }}</v-icon>
+            </v-avatar>
+          </template>
+          <v-list-item-title class="font-weight-bold text-body-2">
+            {{ decisionLabel(entrada.decision) }}
+            <span class="text-caption text-medium-emphasis ml-2">por {{ entrada.editorNombre || entrada.editor || 'Editor' }}</span>
+          </v-list-item-title>
+          <v-list-item-subtitle class="text-caption mt-1">
+            {{ new Date(entrada.fecha).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' }) }}
+            <span v-if="entrada.carta || entrada.comentario" class="ml-2">� Con carta al autor</span>
+          </v-list-item-subtitle>
+        </v-list-item>
+      </v-list>
+    </v-card>
+
+    <!-- DecisionDialog con plantillas -->
+    <DecisionDialog
+      v-model="dialogDecision"
+      :decision="decisionActual"
+      :manuscrito-titulo="manuscrito ? manuscrito.titulo : ''"
+      :referencia="manuscrito ? manuscrito.referencia : ''"
+      @confirmar="confirmarDecision"
+    />
+
+    <v-snackbar v-model="snackbar" timeout="3000" :color="snackbarColor" location="top right">
+      <v-icon start>{{ snackbarColor === 'success' ? 'mdi-check-circle' : 'mdi-alert-circle' }}</v-icon>
+      {{ snackbarMsg }}
     </v-snackbar>
 
     <!-- Modal de Rechazo -->
@@ -244,13 +276,42 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useEditorStore } from '@/store/editor/index.js'
+import { useHistorialStore } from '@/store/historial.js'
+import DecisionDialog from '@/components/common/DecisionDialog.vue'
 
 const route = useRoute()
 const editorStore = useEditorStore()
+const historialStore = useHistorialStore()
 const snackbar = ref(false)
+const snackbarColor = ref('success')
+const snackbarMsg = ref('Operaci�n completada con �xito')
+const busquedaRevisor = ref('')
+
+function notify(msg, color = 'success') {
+  snackbarMsg.value = msg
+  snackbarColor.value = color
+  snackbar.value = true
+}
 
 const manuscritoId = Number(route.params.id)
 const manuscrito = computed(() => (editorStore.manuscritos || []).find(m => String(m.id) === String(manuscritoId)))
+
+// Lista de revisores filtrada: excluye al autor del art�culo y aplica b�squeda.
+const revisoresFiltrados = computed(() => {
+  const autorId = manuscrito.value?.autorId
+  const term = (busquedaRevisor.value || '').toLowerCase()
+  return (editorStore.revisoresDisponibles || []).filter(r => {
+    if (Number(r.id) === Number(autorId)) return false // �tem 7: nunca el autor
+    if (!term) return true
+    return (r.nombre || '').toLowerCase().includes(term) ||
+           (r.institucion || '').toLowerCase().includes(term)
+  })
+})
+
+function nombreRevisor(id) {
+  const r = (editorStore.revisoresDisponibles || []).find(x => Number(x.id) === Number(id))
+  return r?.nombre || `Revisor #${id}`
+}
 
 const asignacionesDelArticulo = computed(() => {
   if (!editorStore.asignaciones) return []
@@ -283,40 +344,53 @@ function revisorAsignado(id) {
 }
 
 async function asignar(revisorId) {
-  const exito = await editorStore.asignarRevisor(manuscritoId, revisorId)
-  if (exito) snackbar.value = true
+  const res = await editorStore.asignarRevisor(manuscritoId, revisorId)
+  if (res?.ok) {
+    notify('Revisor invitado correctamente', 'success')
+  } else if (res?.motivo === 'AUTOR_DEL_ARTICULO') {
+    notify('No puedes asignar al autor del art�culo como revisor', 'error')
+  } else {
+    notify('No se pudo invitar al revisor', 'error')
+  }
 }
 
-const dialogoRechazo = ref(false)
-const motivoRechazo = ref('')
-const cargandoRechazo = ref(false)
-
-function abrirDialogoRechazo() {
-  if (manuscrito.value.estado === 'RECHAZADO') return
-  motivoRechazo.value = ''
-  dialogoRechazo.value = true
+async function quitar(idAsignacion) {
+  const res = await editorStore.quitarRevisor(idAsignacion)
+  if (res?.ok) {
+    notify('Revisor quitado de la asignaci�n', 'success')
+  } else if (res?.motivo === 'YA_COMPLETADA') {
+    notify('No se puede quitar: el revisor ya envi� su revisi�n', 'error')
+  } else {
+    notify('No se pudo quitar al revisor', 'error')
+  }
 }
 
-async function confirmarRechazo() {
-  if (!motivoRechazo.value.trim()) return
-  cargandoRechazo.value = true
-  await editorStore.tomarDecision(manuscritoId, 'RECHAZADO', motivoRechazo.value)
-  cargandoRechazo.value = false
-  dialogoRechazo.value = false
-  snackbar.value = true
+const dialogDecision = ref(false)
+const decisionActual = ref('ACEPTADO')
+
+function abrirDecision(decision) {
+  decisionActual.value = decision
+  dialogDecision.value = true
 }
 
-async function decidir(decision) {
-  if (manuscrito.value.estado === 'ACEPTADO' || manuscrito.value.estado === 'RECHAZADO') return;
-  await editorStore.tomarDecision(manuscritoId, decision)
-  snackbar.value = true
+async function confirmarDecision({ decision, plantilla, comentario }) {
+  const res = await editorStore.tomarDecisionConPlantilla(manuscritoId, decision, plantilla, comentario)
+  if (res?.ok) {
+    notify('Decisi�n registrada correctamente', 'success')
+  } else {
+    notify('No se pudo registrar la decisi�n', 'error')
+  }
+}
+
+const historialManuscrito = computed(() => historialStore.porManuscrito(manuscritoId))
+
+function decisionLabel(d) {
+  return { ACEPTADO: 'Aceptado', RECHAZADO: 'Rechazado', EN_REVISION: 'Revisiones solicitadas' }[d] || d
 }
 
 const ESTADOS = { 
   ENVIADO: 'Enviado', 
-  EN_REVISION: 'En revisión', 
-  LISTO_PARA_DECISION: 'Listo para decisión',
-  REQUERIDAS_REVISIONES: 'Requiere Revisiones',
+  EN_REVISION: 'En revisi�n', 
   ACEPTADO: 'Aceptado', 
   RECHAZADO: 'Rechazado' 
 }

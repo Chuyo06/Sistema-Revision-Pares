@@ -1,10 +1,10 @@
 ﻿<template>
   <div style="display:flex; align-items:center; gap:10px; width:100%">
-    <v-menu v-if="auth.tieneMultiplesRoles" location="top start">
+    <v-menu v-if="rolesNavegables.length > 1" location="top start">
       <template v-slot:activator="{ props }">
-        <div 
-          v-bind="props" 
-          style="cursor: pointer" 
+        <div
+          v-bind="props"
+          style="cursor: pointer"
           title="Cambiar rol"
           :style="`background:${rolMeta.color}; border-radius:50%; width:38px; height:38px; display:flex; align-items:center; justify-content:center; flex-shrink:0`"
         >
@@ -13,7 +13,7 @@
       </template>
       <v-list>
         <v-list-item
-          v-for="rolOption in auth.roles"
+          v-for="rolOption in rolesNavegables"
           :key="rolOption"
           @click="cambiarRolUi(rolOption)"
         >
@@ -68,13 +68,31 @@ const auth = useAuthStore()
 const router = useRouter()
 
 const ROL_META = {
-  autor:         { label:'Autor',         icon:'mdi-account-edit-outline',    color:'#546e7a' },
-  revisor:       { label:'Revisor',       icon:'mdi-clipboard-check-outline', color:'#558b2f' },
-  editor:        { label:'Editor',        icon:'mdi-pencil-ruler',            color:'#e65100' },
-  administrador: { label:'Administrador', icon:'mdi-shield-account-outline',  color:'#c62828' },
+  autor:          { label:'Autor',           icon:'mdi-account-edit-outline',    color:'#546e7a' },
+  revisor:        { label:'Revisor',         icon:'mdi-clipboard-check-outline', color:'#558b2f' },
+  editor:         { label:'Editor',          icon:'mdi-pencil-ruler',            color:'#e65100' },
+  editor_jefe:    { label:'Editor Jefe',     icon:'mdi-account-tie',             color:'#bf360c' },
+  editor_seccion: { label:'Editor Sección',  icon:'mdi-account-tie-outline',     color:'#ef6c00' },
+  administrador:  { label:'Administrador',   icon:'mdi-shield-account-outline',  color:'#c62828' },
 }
 
-const rolMeta = computed(() => ROL_META[auth.rol] || { label: auth.rol, icon:'mdi-account', color:'#8B5A2B' })
+// Sólo los roles "primarios" se navegan vía router (autor, revisor, editor, administrador).
+// Los sub-roles (editor_jefe, editor_seccion) NO son rutas — modifican la vista interna.
+const ROLES_PRIMARIOS = ['autor', 'revisor', 'editor', 'administrador']
+const rolesNavegables = computed(() =>
+  (auth.roles || []).filter(r => ROLES_PRIMARIOS.includes(r.toLowerCase()))
+)
+
+// Etiqueta más específica: si el usuario está en /editor y tiene editor_jefe/seccion, mostramos eso.
+const rolMostrar = computed(() => {
+  if (auth.rol === 'editor') {
+    if (auth.roles?.includes('editor_jefe')) return 'editor_jefe'
+    if (auth.roles?.includes('editor_seccion')) return 'editor_seccion'
+  }
+  return auth.rol
+})
+
+const rolMeta = computed(() => ROL_META[rolMostrar.value] || { label: rolMostrar.value, icon:'mdi-account', color:'#8B5A2B' })
 
 function cambiarRolUi(nuevoRol) {
   auth.cambiarRol(nuevoRol)

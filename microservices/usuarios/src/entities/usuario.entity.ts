@@ -5,6 +5,8 @@ export enum RolUsuario {
   AUTOR = 'AUTOR',
   REVISOR = 'REVISOR',
   EDITOR = 'EDITOR',
+  EDITOR_JEFE = 'EDITOR_JEFE',
+  EDITOR_SECCION = 'EDITOR_SECCION',
   ADMIN = 'ADMIN',
 }
 

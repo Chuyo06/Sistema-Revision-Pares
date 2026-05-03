@@ -70,6 +70,23 @@ export async function crearAsignacion(revisorId, manuscritoId) {
 }
 
 /**
+ * Eliminar una asignación de revisión.
+ * Solo se permitirá quitar al revisor si todavía no envió su revisión
+ * (la validación de "no completada" se hace antes desde el store).
+ */
+export async function eliminarAsignacionApi(idAsignacion) {
+  try {
+    const res = await fetch(`${BASE_URL}/${idAsignacion}`, {
+      method: 'DELETE',
+      headers: authHeaders(),
+    })
+    return res.ok
+  } catch {
+    return false
+  }
+}
+
+/**
  * Enviar una revisión al backend.
  * @returns {Promise<Object|null>}
  */

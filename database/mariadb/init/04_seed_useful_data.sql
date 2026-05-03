@@ -13,7 +13,7 @@ DELETE FROM usuarios;
 INSERT INTO usuarios (id_usuario, email, password_hash, roles, estado) VALUES
 (1, 'autor@demo.com',      '$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'AUTOR', 'ACTIVO'),
 (2, 'revisor@demo.com',    '$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'REVISOR', 'ACTIVO'),
-(3, 'editor@demo.com',     '$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'EDITOR', 'ACTIVO'),
+(3, 'editor@demo.com',     '$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'EDITOR,EDITOR_JEFE', 'ACTIVO'),
 (4, 'admin@demo.com',      '$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'ADMIN', 'ACTIVO'),
 (5, 'carlos.r@mit.edu',    '$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'REVISOR', 'ACTIVO'),
 (6, 'elena.v@stanford.edu','$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'AUTOR', 'ACTIVO'),
@@ -21,11 +21,12 @@ INSERT INTO usuarios (id_usuario, email, password_hash, roles, estado) VALUES
 (8, 's.kawasaki@u-tokyo.jp','$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'REVISOR', 'ACTIVO'),
 (9, 'l.martinez@unam.mx',  '$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'AUTOR', 'ACTIVO'),
 (10, 'h.mueller@tu-berlin.de','$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'REVISOR', 'ACTIVO'),
-(11, 'j.doe@oxford.ac.uk',  '$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'EDITOR', 'ACTIVO'),
+(11, 'j.doe@oxford.ac.uk',  '$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'EDITOR,EDITOR_SECCION', 'ACTIVO'),
 (12, 'm.patel@iit.ac.in',   '$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'REVISOR', 'ACTIVO'),
-(13, 'super@demo.com',      '$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'AUTOR,REVISOR,EDITOR,ADMIN', 'ACTIVO');
+(13, 'super@demo.com',      '$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'AUTOR,REVISOR,EDITOR,EDITOR_JEFE,ADMIN', 'ACTIVO'),
+(14, 'editor.seccion@demo.com', '$2b$10$YgyopBwXlY4AZEr/S2psaeJtjHQb7b6ic5OUqiehAWXK.SxsJ.DJC', 'EDITOR,EDITOR_SECCION', 'ACTIVO');
 
--- 2. PERFILES PROFESIONALES
+-- 2. PERFILES PROFESIONALES (los 13 originales + editor de sección id 14)
 INSERT INTO perfiles_profesionales (id_usuario, nombre_completo, institucion, orcid, especialidad_academica) VALUES
 (1,  'Dra. Ana García',         'Universidad Nacional',      '0000-0001-1111-1111', 'Redes Neuronales y Procesamiento de Imágenes'),
 (2,  'Dr. Roberto Mendoza',     'Instituto de IA',           '0000-0002-2222-2222', 'Procesamiento de Lenguaje Natural (NLP)'),
@@ -39,7 +40,8 @@ INSERT INTO perfiles_profesionales (id_usuario, nombre_completo, institucion, or
 (10, 'Hans Müller',             'TU Berlin',                 '0000-0010-1010-1010', 'Ciberseguridad y Privacidad'),
 (11, 'John Doe',                'University of Oxford',      '0000-0011-1111-1111', 'Lógica Computacional y Ética'),
 (12, 'Meera Patel',             'IIT Bombay',                '0000-0012-1212-1212', 'Visión por Computadora y Deep Learning'),
-(13, 'Super Usuario Multi-Rol', 'Universidad Global',        NULL,                  'Todas las Áreas');
+(13, 'Super Usuario Multi-Rol', 'Universidad Global',        NULL,                  'Todas las Áreas'),
+(14, 'Dra. Editora Sección',    'Revista Innovación Tech',   '0000-0014-1414-1414', 'Editor de Sección de Ingeniería');
 
 -- 3. MANUSCRITOS
 INSERT INTO manuscritos (id, titulo, resumen, autorId, autores, estado, convocatoria, referencia, fechaEnvio) VALUES
@@ -67,3 +69,8 @@ WHERE id_revisor = 10 AND id_manuscrito_mongo = '202';
 UPDATE manuscritos SET revisoresAsignados = 2, revisionesCompletadas = 0 WHERE id = 201;
 UPDATE manuscritos SET revisoresAsignados = 2, revisionesCompletadas = 1 WHERE id = 202;
 UPDATE manuscritos SET revisoresAsignados = 1, revisionesCompletadas = 1 WHERE id = 203; -- Ya aceptado
+
+-- 7. ASIGNAR EDITOR DE SECCIÓN A ALGUNOS MANUSCRITOS (id 11 = j.doe, id 14 = editor.seccion@demo)
+UPDATE manuscritos SET editor_seccion_id = 11 WHERE id = 201;
+UPDATE manuscritos SET editor_seccion_id = 14 WHERE id IN (202, 203);
+-- 204 y 205 quedan sin asignar (visibles al editor jefe para que los asigne)

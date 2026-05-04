@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div style="max-width:1000px; padding:20px">
     <div style="font-size:13px; font-weight:700; color:#8B5A2B; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:14px">
       Control Global de Manuscritos
@@ -41,6 +41,18 @@
             <td style="max-width:300px">
               <div class="text-truncate font-weight-medium">{{ m.titulo }}</div>
               <div class="text-caption color-secondary">{{ m.convocatoria }}</div>
+              <div v-if="m.estado === 'RECHAZADO' && m.motivoRechazo" class="mt-2">
+                <v-alert
+                  density="compact"
+                  type="error"
+                  variant="tonal"
+                  class="text-caption"
+                  icon="mdi-alert-circle-outline"
+                >
+                  <strong class="d-block mb-1">Comentarios del revisor:</strong>
+                  <div style="white-space: pre-wrap; line-height: 1.2;">{{ m.motivoRechazo }}</div>
+                </v-alert>
+              </div>
             </td>
             <td>
               <v-chip :color="chipColor(m.estado)" size="x-small" label>{{ m.estado }}</v-chip>

@@ -14,7 +14,7 @@
         />
       </v-col>
       <v-col cols="auto">
-        <v-btn color="primary" @click="dialogoNuevo = true">Nuevo usuario</v-btn>
+        <v-btn color="primary" @click="abrirNuevo">Nuevo usuario</v-btn>
       </v-col>
     </v-row>
 
@@ -54,6 +54,15 @@
           <v-btn
             size="small"
             variant="text"
+            color="primary"
+            class="mr-2"
+            @click="abrirEditar(item)"
+          >
+            Editar
+          </v-btn>
+          <v-btn
+            size="small"
+            variant="text"
             :color="item.estado === 'activo' ? 'error' : 'success'"
             @click="adminStore.toggleEstadoUsuario(item.id)"
           >
@@ -65,11 +74,11 @@
 
     <v-dialog v-model="dialogoNuevo" max-width="500">
       <v-card>
-        <v-card-title>Nuevo usuario</v-card-title>
+        <v-card-title>{{ editandoId ? 'Editar usuario' : 'Nuevo usuario' }}</v-card-title>
         <v-card-text>
-          <v-form ref="formRef" v-model="valido" @submit.prevent="crearUsuario">
+          <v-form ref="formRef" v-model="valido" @submit.prevent="guardarUsuario">
             <v-text-field v-model="nuevoUsuario.nombre" label="Nombre completo *" :rules="[r => !!r || 'Requerido']" class="mb-2" />
-            <v-text-field v-model="nuevoUsuario.email" label="Email *" type="email" :rules="[r => !!r || 'Requerido']" class="mb-2" />
+            <v-text-field v-model="nuevoUsuario.email" label="Email *" type="email" :rules="[r => !!r || 'Requerido']" class="mb-2" :disabled="!!editandoId" />
             <v-select
               v-model="nuevoUsuario.rol"
               :items="['autor', 'revisor', 'editor', 'administrador']"
@@ -80,8 +89,8 @@
         </v-card-text>
         <v-card-actions>
           <v-spacer />
-          <v-btn @click="dialogoNuevo = false">Cancelar</v-btn>
-          <v-btn color="primary" :disabled="!valido" @click="crearUsuario">Crear</v-btn>
+          <v-btn @click="cerrarDialogo">Cancelar</v-btn>
+          <v-btn color="primary" :disabled="!valido" @click="guardarUsuario">{{ editandoId ? 'Actualizar' : 'Crear' }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -101,6 +110,7 @@ const dialogoNuevo = ref(false)
 const valido = ref(false)
 const snackbar = ref(false)
 const mensajeSnackbar = ref('')
+const editandoId = ref(null)
 
 const nuevoUsuario = ref({ nombre: '', email: '', rol: '' })
 
@@ -125,11 +135,37 @@ const headers = [
   { title: '', key: 'acciones', sortable: false, align: 'end' },
 ]
 
-async function crearUsuario() {
-  await adminStore.agregarUsuario({ ...nuevoUsuario.value })
-  dialogoNuevo.value = false
+function abrirNuevo() {
+  editandoId.value = null
   nuevoUsuario.value = { nombre: '', email: '', rol: '' }
-  mensajeSnackbar.value = 'Usuario creado/actualizado correctamente'
+  dialogoNuevo.value = true
+}
+
+function abrirEditar(usuario) {
+  editandoId.value = usuario.id
+  nuevoUsuario.value = { 
+    nombre: usuario.nombre, 
+    email: usuario.email, 
+    rol: usuario.roles[0] || 'autor' 
+  }
+  dialogoNuevo.value = true
+}
+
+function cerrarDialogo() {
+  dialogoNuevo.value = false
+  editandoId.value = null
+  nuevoUsuario.value = { nombre: '', email: '', rol: '' }
+}
+
+async function guardarUsuario() {
+  if (editandoId.value) {
+    await adminStore.editarUsuario(editandoId.value, { ...nuevoUsuario.value })
+    mensajeSnackbar.value = 'Usuario actualizado correctamente'
+  } else {
+    await adminStore.agregarUsuario({ ...nuevoUsuario.value })
+    mensajeSnackbar.value = 'Usuario creado correctamente'
+  }
+  cerrarDialogo()
   snackbar.value = true
 }
 </script>

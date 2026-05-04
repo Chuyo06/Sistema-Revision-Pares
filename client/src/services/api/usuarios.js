@@ -53,3 +53,21 @@ export async function crearUsuarioApi(datos) {
     return null
   }
 }
+
+export async function actualizarUsuarioApi(id, datos) {
+  try {
+    const res = await fetch(`${BASE_URL}/${id}`, {
+      method: 'PATCH',
+      headers: authHeaders(),
+      body: JSON.stringify({
+        email: datos.email,
+        nombre: datos.nombre,
+        rol: datos.rol,
+      }),
+    })
+    if (!res.ok) return null
+    return await res.json()
+  } catch {
+    return null
+  }
+}

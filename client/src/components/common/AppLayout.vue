@@ -201,8 +201,9 @@ const NAV_CONFIG = {
     { icon: 'mdi-plus-circle-outline',            label: 'Enviar artículo',to: '/autor/nuevo' },
   ],
   revisor: [
-    { icon: 'mdi-home-outline',        label: 'Inicio',              to: '/revisor/dashboard' },
-    { icon: 'mdi-clipboard-list-outline', label: 'Artículos asignados', to: '/revisor/asignados' },
+    { icon: 'mdi-home-outline',              label: 'Inicio',              to: '/revisor/dashboard' },
+    { icon: 'mdi-clipboard-list-outline',    label: 'Artículos asignados', to: '/revisor/asignados' },
+    { icon: 'mdi-account-circle-outline',    label: 'Mi Perfil',           to: '/perfil' },
   ],
   editor: [
     { icon: 'mdi-home-outline',                   label: 'Inicio',        to: '/editor/dashboard' },
@@ -211,8 +212,11 @@ const NAV_CONFIG = {
   ],
   administrador: [
     { icon: 'mdi-home-outline',           label: 'Inicio',      to: '/administrador/dashboard' },
+    { icon: 'mdi-monitor-dashboard',      label: 'Monitor',     to: '/administrador/monitor' },
     { icon: 'mdi-account-group-outline',  label: 'Usuarios',    to: '/administrador/usuarios' },
     { icon: 'mdi-file-document-outline',  label: 'Manuscritos', to: '/administrador/manuscritos' },
+    { icon: 'mdi-tag-multiple-outline',   label: 'Temáticas',   to: '/administrador/areas' },
+    { icon: 'mdi-robot-outline',          label: 'Ajustes IA',  to: '/administrador/ia' },
   ],
 }
 

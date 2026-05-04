@@ -126,8 +126,9 @@
             </v-row>
             <v-combobox
               v-model="form.areasTematicas"
+              :items="adminStore.areasTematicas"
               label="Áreas temáticas"
-              hint="Escribe y presiona Enter para añadir"
+              hint="Selecciona áreas existentes o escribe y presiona Enter para crear nuevas"
               persistent-hint
               multiple
               chips
@@ -170,9 +171,11 @@
 import { ref } from 'vue'
 import { useConvocatoriasStore } from '@/store/convocatorias.js'
 import { useEditorStore } from '@/store/editor/index.js'
+import { useAdminStore } from '@/store/administrador/index.js'
 
 const convStore = useConvocatoriasStore()
 const editorStore = useEditorStore()
+const adminStore = useAdminStore()
 
 const dialogo = ref(false)
 const dialogoEliminar = ref(false)

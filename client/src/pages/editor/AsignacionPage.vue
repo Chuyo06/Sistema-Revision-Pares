@@ -146,6 +146,51 @@
               <v-icon color="primary">mdi-account-search</v-icon>
             </template>
             <v-card-text class="pa-3">
+              <v-btn
+                v-if="!sugerenciasIA || sugerenciasIA.length === 0"
+                block
+                color="primary"
+                variant="tonal"
+                class="mb-3 text-none"
+                prepend-icon="mdi-robot-outline"
+                :loading="cargandoMatchingIA"
+                @click="sugerirRevisoresIA"
+              >
+                Sugerir revisores con IA
+              </v-btn>
+
+              <div v-if="sugerenciasIA && sugerenciasIA.length > 0" class="mb-4">
+                <div class="text-caption font-weight-bold text-primary mb-2">Recomendaciones de IA:</div>
+                <div
+                  v-for="sug in sugerenciasIA"
+                  :key="'ia-'+sug.id"
+                  class="revisor-card mb-2 pa-3 border rounded-lg transition-swing"
+                  style="border-color: #7b1fa2 !important; border-width: 2px !important;"
+                >
+                  <div class="d-flex justify-space-between align-center mb-1">
+                    <div class="font-weight-bold text-brown">{{ sug.revisor }}</div>
+                    <v-chip size="x-small" color="purple" variant="flat">{{ sug.afinidad }}% afinidad</v-chip>
+                  </div>
+                  <div class="text-caption text-grey-darken-1 mb-2 line-height-1">
+                    <v-icon size="14" color="purple" class="mr-1">mdi-robot-outline</v-icon>
+                    {{ sug.justificacion }}
+                  </div>
+                  <v-btn
+                    block
+                    size="small"
+                    color="purple"
+                    variant="flat"
+                    @click="asignar(sug.id)"
+                    :disabled="revisorAsignado(sug.id)"
+                    class="text-none"
+                  >
+                    {{ revisorAsignado(sug.id) ? 'Ya asignado' : 'Invitar a Revisar' }}
+                  </v-btn>
+                </div>
+                <v-divider class="my-3"></v-divider>
+                <div class="text-caption font-weight-bold mb-2">Todos los revisores:</div>
+              </div>
+
               <v-text-field
                 v-model="busquedaRevisor"
                 prepend-inner-icon="mdi-magnify"
@@ -296,17 +341,47 @@ function notify(msg, color = 'success') {
 const manuscritoId = Number(route.params.id)
 const manuscrito = computed(() => (editorStore.manuscritos || []).find(m => String(m.id) === String(manuscritoId)))
 
-// Lista de revisores filtrada: excluye al autor del art�culo y aplica b�squeda.
+// Lista de revisores filtrada: excluye al autor del artculo y aplica bsqueda.
 const revisoresFiltrados = computed(() => {
   const autorId = manuscrito.value?.autorId
   const term = (busquedaRevisor.value || '').toLowerCase()
   return (editorStore.revisoresDisponibles || []).filter(r => {
-    if (Number(r.id) === Number(autorId)) return false // �tem 7: nunca el autor
+    if (Number(r.id) === Number(autorId)) return false // Nunca el autor
     if (!term) return true
     return (r.nombre || '').toLowerCase().includes(term) ||
            (r.institucion || '').toLowerCase().includes(term)
   })
 })
+
+const sugerenciasIA = ref(null)
+const cargandoMatchingIA = ref(false)
+
+async function sugerirRevisoresIA() {
+  cargandoMatchingIA.value = true
+  try {
+    const res = await fetch('/api/matching/suggest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        titulo: manuscrito.value?.titulo || '',
+        resumen: manuscrito.value?.resumen || '',
+        palabrasClave: 'Investigación, academia' // Placeholder if no keywords
+      })
+    })
+    if (res.ok) {
+      const data = await res.json()
+      sugerenciasIA.value = data.sugerencias
+      notify('Revisores sugeridos por IA', 'success')
+    } else {
+      notify('Error al obtener sugerencias de IA', 'error')
+    }
+  } catch (e) {
+    console.error('Error in sugerirRevisoresIA:', e)
+    notify('Error de red al conectar con IA', 'error')
+  } finally {
+    cargandoMatchingIA.value = false
+  }
+}
 
 function nombreRevisor(id) {
   const r = (editorStore.revisoresDisponibles || []).find(x => Number(x.id) === Number(id))

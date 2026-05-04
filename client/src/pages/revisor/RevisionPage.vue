@@ -91,7 +91,17 @@
               class="mb-4"
             />
 
-            <div class="d-flex justify-end">
+            <div class="d-flex justify-space-between align-center">
+              <v-btn
+                color="secondary"
+                variant="tonal"
+                @click="solicitarFeedbackIA"
+                :loading="cargandoIA"
+                :disabled="!revision.comentariosAutor || revision.comentariosAutor.length < 20"
+                prepend-icon="mdi-robot-outline"
+              >
+                Asistente de Calidad IA
+              </v-btn>
               <v-btn
                 type="submit"
                 color="primary"
@@ -117,6 +127,41 @@
           </v-card-text>
           <v-card-actions class="justify-center pb-4">
             <v-btn color="primary" @click="irAsignados">Ver mis artículos</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+      <!-- Feedback IA -->
+      <v-dialog v-model="dialogoFeedbackIA" max-width="500">
+        <v-card color="surface" border>
+          <div style="background:#7b1fa2; height:6px; border-radius:8px 8px 0 0" />
+          <v-card-title class="pa-4 pb-2" style="color:#1B4332">
+            <v-icon start color="primary">mdi-robot</v-icon>
+            Asistente de Calidad
+          </v-card-title>
+          <v-divider />
+          <v-card-text class="pa-5">
+            <div class="mb-4">
+              <strong>Score estimado de la revisión:</strong> 
+              <span :class="feedbackIA.score > 70 ? 'text-success font-weight-bold' : 'text-error font-weight-bold'">
+                {{ feedbackIA.score }}/100
+              </span>
+            </div>
+            <div class="mb-4">
+              <strong>Constructividad:</strong> {{ feedbackIA.constructividad }}<br/>
+              <strong>Tono:</strong> {{ feedbackIA.tono }}
+            </div>
+            <div>
+              <strong>Sugerencias de mejora:</strong>
+              <ul class="mt-2 pl-4">
+                <li v-for="(sug, i) in feedbackIA.sugerencias" :key="i" class="text-body-2 mb-1" style="color:#8B5A2B">
+                  {{ sug }}
+                </li>
+              </ul>
+            </div>
+          </v-card-text>
+          <v-card-actions class="pa-4 pt-0 justify-end">
+            <v-btn color="primary" variant="tonal" @click="dialogoFeedbackIA = false">Entendido</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -148,6 +193,9 @@ const valido = ref(false)
 const enviando = ref(false)
 const dialogoConfirmacion = ref(false)
 
+const cargandoIA = ref(false)
+const dialogoFeedbackIA = ref(false)
+const feedbackIA = ref({ score: 0, constructividad: '', tono: '', sugerencias: [] })
 
 const revision = reactive({
   originalidad: 0, metodologia: 0, claridad: 0, relevancia: 0,
@@ -167,6 +215,26 @@ const recomendaciones = [
   { value: 'REVISION_MAYOR',  label: 'Revisiones mayores' },
   { value: 'RECHAZAR',        label: 'Rechazar' },
 ]
+
+async function solicitarFeedbackIA() {
+  if (!revision.comentariosAutor) return;
+  cargandoIA.value = true;
+  try {
+    const res = await fetch('/api/analisis/evaluate-review', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ comentarios: revision.comentariosAutor })
+    });
+    if (res.ok) {
+      feedbackIA.value = await res.json();
+      dialogoFeedbackIA.value = true;
+    }
+  } catch (e) {
+    console.error("Error solicitando feedback IA", e);
+  } finally {
+    cargandoIA.value = false;
+  }
+}
 
 async function enviarRevision() {
   enviando.value = true

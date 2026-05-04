@@ -8,7 +8,7 @@ Plataforma integral para la gestión del proceso editorial de revisión por pare
 
 Este proyecto está diseñado para ejecutarse con el menor número de comandos posible, orquestando bases de datos y servicios mediante Docker.
 
-### 1. Requisitos Previos
+### 1. Requisitos Previos 
 - **Node.js 20+**
 - **Docker Desktop** (Debes tenerlo iniciado)
 
@@ -22,7 +22,7 @@ npm install
 npm run dev:fresh
 ```
 
-## 🔑 Credenciales de Acceso para Pruebas
+## 🔑 Credenciales de Acceso para Pruebas 
 
 Para facilitar el testing de los diferentes flujos, utiliza la siguiente tabla de usuarios preconfigurados. Todos los servicios comparten el mismo sistema de autenticación centralizado.
 

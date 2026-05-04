@@ -151,3 +151,25 @@ function loginMock(email, password) {
     }, 400)
   })
 }
+
+/**
+ * Cambia la contraseña del usuario autenticado verificando la actual primero.
+ */
+export async function cambiarPasswordApi(userId, passwordActual, passwordNueva) {
+  const raw = localStorage.getItem('rpp_usuario')
+  const usuario = raw ? JSON.parse(raw) : null
+  const headers = { 'Content-Type': 'application/json' }
+  if (usuario?.token) headers['Authorization'] = `Bearer ${usuario.token}`
+
+  const res = await fetch(`${AUTH_URL}/password/${userId}`, {
+    method: 'PATCH',
+    headers,
+    body: JSON.stringify({ passwordActual, passwordNueva }),
+  })
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}))
+    throw new Error(data.message || 'Error al cambiar la contraseña')
+  }
+  return await res.json()
+}

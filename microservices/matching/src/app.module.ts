@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Manuscrito, ManuscritoSchema } from './schemas/manuscrito.schema';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { MatchingModule } from './matching/matching.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { AppService } from './app.service';
     MongooseModule.forFeature([
       { name: Manuscrito.name, schema: ManuscritoSchema }
     ]),
+    MatchingModule,
   ],
   controllers: [AppController],
   providers: [AppService],

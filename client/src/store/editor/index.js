@@ -52,14 +52,15 @@ export const useEditorStore = defineStore('editor', () => {
     JSON.parse(localStorage.getItem('rpp_notif_asigs') || '[]')
   ))
 
-  // Sub-rol activo (cualquier usuario con rol "editor" además tiene editor_jefe o editor_seccion)
+  // Sub-rol activo: en el sistema académico, cualquier usuario con rol 'editor' es editor jefe.
+  // 'editor_jefe' y 'editor_seccion' son alias de granularidad futura que aún no están en BD.
   const esEditorJefe = computed(() => {
     const auth = useAuthStore()
-    return auth.roles.includes('editor_jefe')
+    return auth.roles.includes('editor_jefe') || auth.roles.includes('editor')
   })
   const esEditorSeccion = computed(() => {
     const auth = useAuthStore()
-    return auth.roles.includes('editor_seccion') && !auth.roles.includes('editor_jefe')
+    return auth.roles.includes('editor_seccion') && !auth.roles.includes('editor_jefe') && !auth.roles.includes('editor')
   })
 
   // Vista filtrada: editor de sección solo ve los manuscritos asignados a él.

@@ -63,6 +63,9 @@ const routes = [
       { path: 'dashboard', name: 'admin-dashboard', component: () => import('@/pages/administrador/DashboardPage.vue') },
       { path: 'usuarios', name: 'admin-usuarios', component: () => import('@/pages/administrador/UsuariosPage.vue') },
       { path: 'manuscritos', name: 'admin-manuscritos', component: () => import('@/pages/administrador/ManuscritosPage.vue') },
+      { path: 'areas', name: 'admin-areas', component: () => import('@/pages/administrador/AreasPage.vue') },
+      { path: 'monitor', name: 'admin-monitor', component: () => import('@/pages/administrador/MonitorPage.vue') },
+      { path: 'ia', name: 'admin-ia', component: () => import('@/pages/administrador/ConfiguracionIAPage.vue') },
     ]
   },
 

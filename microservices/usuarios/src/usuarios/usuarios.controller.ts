@@ -5,6 +5,11 @@ import { UsuariosService } from './usuarios.service';
 export class UsuariosController {
   constructor(private readonly usuariosService: UsuariosService) {}
 
+  @Get('health')
+  healthCheck() {
+    return { status: 'ok', service: 'usuarios', timestamp: new Date().toISOString() };
+  }
+
   @Get()
   obtenerTodos() {
     return this.usuariosService.obtenerTodos();
@@ -32,5 +37,15 @@ export class UsuariosController {
   @Post()
   crearUsuario(@Body() body: { email: string; password: string; nombre: string; rol?: string }) {
     return this.usuariosService.crearUsuario(body);
+  }
+
+  @Patch(':id')
+  actualizarUsuario(
+    @Param('id') id: string,
+    @Body() body: { nombre?: string; email?: string; rol?: string; roles?: string[] }
+  ) {
+    const numericId = +id;
+    if (isNaN(numericId)) return null;
+    return this.usuariosService.actualizarUsuario(numericId, body);
   }
 }

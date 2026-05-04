@@ -81,4 +81,20 @@ export class AuthService {
     await this.perfilRepository.save(perfil);
     return { success: true, message: 'Avatar actualizado exitosamente' };
   }
+
+  async cambiarPassword(id_usuario: number, passwordActual: string, passwordNueva: string) {
+    const user = await this.usuarioRepository.findOne({ where: { id_usuario } });
+    if (!user) throw new BadRequestException('Usuario no encontrado');
+
+    // Verificar que la contraseña actual es correcta
+    const isValid = await bcrypt.compare(passwordActual, user.password_hash);
+    if (!isValid) throw new UnauthorizedException('La contraseña actual no es correcta');
+
+    // Encriptar y guardar la nueva contraseña
+    const salt = await bcrypt.genSalt(10);
+    user.password_hash = await bcrypt.hash(passwordNueva, salt);
+    await this.usuarioRepository.save(user);
+
+    return { success: true, message: 'Contraseña actualizada correctamente' };
+  }
 }

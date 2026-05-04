@@ -1,36 +1,31 @@
 -- MICROSERVICIO: USUARIOS (Gestión de Identidad)
 -- ==========================================
 
+-- Tabla de roles
+CREATE TABLE roles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(255) UNIQUE NOT NULL
+);
+
 -- Tabla principal de autenticación y roles
 CREATE TABLE usuarios (
     id_usuario INT AUTO_INCREMENT PRIMARY KEY,
     email VARCHAR(150) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
-    roles VARCHAR(255) DEFAULT 'AUTOR',
     estado ENUM('ACTIVO', 'INACTIVO', 'SUSPENDIDO') DEFAULT 'ACTIVO',
     fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Tabla de manuscritos
-CREATE TABLE manuscritos (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    titulo VARCHAR(255) NOT NULL,
-    resumen TEXT,
-    contenido TEXT,
-    autorId INT NOT NULL,
-    editorId INT NULL,
-    autores VARCHAR(255),
-    estado VARCHAR(50) DEFAULT 'BORRADOR',
-    convocatoria VARCHAR(255),
-    referencia VARCHAR(255),
-    respuestasRevisores TEXT NULL,
-    revisoresAsignados INT DEFAULT 0,
-    revisionesCompletadas INT DEFAULT 0,
-    motivoRechazo TEXT NULL,
-    fechaEnvio DATE,
-    editor_seccion_id INT NULL,
-    fechaSubida TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+-- Tabla pivote para relación ManyToMany entre usuarios y roles
+CREATE TABLE usuario_roles (
+    usuario_id INT NOT NULL,
+    rol_id INT NOT NULL,
+    PRIMARY KEY (usuario_id, rol_id),
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id_usuario) ON DELETE CASCADE,
+    FOREIGN KEY (rol_id) REFERENCES roles(id) ON DELETE CASCADE
 );
+
+-- (La tabla de manuscritos ha sido migrada a MongoDB)
 
 -- Tabla de información pública/académica (Separada por seguridad y normalización)
 CREATE TABLE perfiles_profesionales (

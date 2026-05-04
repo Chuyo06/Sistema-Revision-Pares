@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <v-container class="pa-4 pa-md-8 mx-auto" style="max-width: 800px">
     
     <!-- Título de la vista -->
@@ -124,6 +124,34 @@
       </v-card-text>
     </v-card>
 
+    <!-- Tarjeta de Especialidades (Sólo Revisor) -->
+    <v-card v-if="auth.roles.includes('revisor')" class="security-card mt-6" elevation="0" rounded="xl" style="border: 1px solid #D3E0D7; background: #ffffff;">
+      <v-card-title class="px-8 pt-6 pb-2" style="font-size: 18px; font-weight: 700; color: #1B4332;">
+        <v-icon color="#558b2f" class="mr-2 mb-1" size="22">mdi-school-outline</v-icon>
+        Especialidades y Áreas Temáticas
+      </v-card-title>
+      <v-card-text class="px-8 pb-8 pt-4">
+        <p style="font-size: 14px; color: #8B5A2B; margin-bottom: 24px;">
+          Selecciona tus áreas de experiencia. Esta información ayudará al sistema de asignación inteligente a recomendarte manuscritos relevantes.
+        </p>
+        
+        <v-combobox
+          v-model="especialidadesSeleccionadas"
+          :items="adminStore.areasTematicas"
+          label="Tus especialidades"
+          hint="Selecciona áreas existentes o escribe y presiona Enter para crear nuevas"
+          persistent-hint
+          multiple
+          chips
+          closable-chips
+          variant="outlined"
+          density="comfortable"
+          class="custom-input"
+          @update:modelValue="guardarEspecialidades"
+        ></v-combobox>
+      </v-card-text>
+    </v-card>
+
     <!-- Notificación -->
     <v-snackbar v-model="snackbar.show" :color="snackbar.color" :timeout="3000" location="bottom right">
       <span class="font-weight-medium"> {{ snackbar.text }} </span>
@@ -137,12 +165,25 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useAuthStore } from '@/store/auth.js'
-import { updateAvatarApi } from '@/services/api/auth.js'
+import { updateAvatarApi, cambiarPasswordApi } from '@/services/api/auth.js'
+import { useAdminStore } from '@/store/administrador/index.js'
 
 const auth = useAuthStore()
+const adminStore = useAdminStore()
 
 const formValid = ref(false)
 const isSubmitting = ref(false)
+
+const especialidadesSeleccionadas = ref(auth.usuario?.especialidades || [])
+
+function guardarEspecialidades() {
+  auth.actualizarPerfil({ especialidades: especialidadesSeleccionadas.value })
+  snackbar.value = {
+    show: true,
+    text: 'Especialidades actualizadas. Esto ayudará al Matching Inteligente.',
+    color: 'success'
+  }
+}
 
 const fileInput = ref(null)
 const avatarImage = ref(null)
@@ -177,22 +218,28 @@ const isFormSubmittable = computed(() => {
          passwords.value.nueva === passwords.value.confirmar
 })
 
-function cambiarPassword() {
+async function cambiarPassword() {
   if (!isFormSubmittable.value) return
 
   isSubmitting.value = true
   
-  // Simulando llamada a servidor para cambiar pwd
-  setTimeout(() => {
-    isSubmitting.value = false
+  try {
+    await cambiarPasswordApi(auth.usuario.id, passwords.value.actual, passwords.value.nueva)
     snackbar.value = {
       show: true,
-      text: '¡Tu contraseña ha sido actualizada con éxito!',
+      text: '¡Contraseña actualizada con éxito! Ya puedes iniciar sesión con la nueva.',
       color: 'success'
     }
-    // Limpiar form
     passwords.value = { actual: '', nueva: '', confirmar: '' }
-  }, 1200)
+  } catch (error) {
+    snackbar.value = {
+      show: true,
+      text: error.message || 'Error al cambiar la contraseña',
+      color: 'error'
+    }
+  } finally {
+    isSubmitting.value = false
+  }
 }
 
 function triggerFileInput() {

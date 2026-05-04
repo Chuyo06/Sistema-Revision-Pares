@@ -31,8 +31,8 @@
       v-for="m in manuscritosFiltrados"
       :key="m.id"
       style="background:#FFFFFF; border:1px solid #D3E0D7; border-radius:12px; margin-bottom:10px; overflow:hidden; transition: 0.2s;"
-      :style="(m.estado === 'ACEPTADO' || m.estado === 'RECHAZADO' || m.estado === 'REQUERIDAS_REVISIONES') ? 'cursor: pointer;' : ''"
-      @click="(m.estado === 'ACEPTADO' || m.estado === 'RECHAZADO' || m.estado === 'REQUERIDAS_REVISIONES') ? abrirComentarios(m) : null"
+      :style="m.estado !== 'BORRADOR' ? 'cursor: pointer;' : ''"
+      @click="m.estado !== 'BORRADOR' ? abrirComentarios(m) : null"
       class="articulo-card"
     >
       <div :style="`height:5px; background:${hexEstado(m.estado)}`" />
@@ -83,8 +83,8 @@
       <v-card color="surface" rounded="xl" border>
         <div style="background:#546e7a; height:6px; border-radius:8px 8px 0 0" />
         <v-card-title class="pa-5 pb-2 text-h5 font-weight-bold" style="color:#1B4332">
-          <v-icon start color="primary">mdi-comment-text-multiple-outline</v-icon>
-          Comentarios de Revisión
+          <v-icon start color="primary">mdi-history</v-icon>
+          Historial del Manuscrito
         </v-card-title>
         <v-card-subtitle class="px-5 pb-4">
           Manuscrito: {{ articuloSeleccionado?.titulo }}

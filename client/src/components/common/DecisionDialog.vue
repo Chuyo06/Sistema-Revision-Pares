@@ -12,17 +12,31 @@
           <span v-if="referencia" class="text-caption text-medium-emphasis ml-2">{{ referencia }}</span>
         </div>
 
-        <v-select
-          v-model="plantillaElegida"
-          :items="plantillas"
-          item-title="nombre"
-          item-value="id"
-          label="Plantilla"
-          variant="outlined"
-          density="comfortable"
-          class="mb-3"
-          @update:model-value="aplicarPlantilla"
-        />
+        <div class="d-flex align-center gap-4 mb-3">
+          <v-select
+            v-model="plantillaElegida"
+            :items="plantillas"
+            item-title="nombre"
+            item-value="id"
+            label="Plantilla"
+            variant="outlined"
+            density="comfortable"
+            hide-details
+            class="flex-grow-1"
+            @update:model-value="aplicarPlantilla"
+          />
+          <v-btn
+            color="purple"
+            variant="tonal"
+            prepend-icon="mdi-robot-outline"
+            :loading="cargandoIA"
+            @click="generarBorradorIA"
+            class="text-none"
+            style="height: 48px;"
+          >
+            Generar con IA
+          </v-btn>
+        </div>
 
         <v-textarea
           v-model="comentario"
@@ -147,10 +161,33 @@ const PLANTILLAS_BASE = {
 const plantillas = computed(() => PLANTILLAS_BASE[props.decision] || [])
 const plantillaElegida = ref(null)
 const comentario = ref('')
+const cargandoIA = ref(false)
 
 function aplicarPlantilla(id) {
   const p = plantillas.value.find(x => x.id === id)
   if (p) comentario.value = p.texto
+}
+
+async function generarBorradorIA() {
+  cargandoIA.value = true
+  try {
+    const res = await fetch('/api/analisis/draft-decision', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        decisionEditor: props.decision,
+        revisiones: ['Revisión 1 simulada', 'Revisión 2 simulada'] // Idealmente esto vendría de los props
+      })
+    })
+    if (res.ok) {
+      const data = await res.json()
+      comentario.value = data.carta + (data.timelineSugerido ? `\n\nTiempo sugerido para revisión: ${data.timelineSugerido}` : '')
+    }
+  } catch (e) {
+    console.error('Error generando borrador IA:', e)
+  } finally {
+    cargandoIA.value = false
+  }
 }
 
 // Al abrir el diálogo, precarga la primera plantilla.

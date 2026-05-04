@@ -9,6 +9,11 @@ import { Manuscrito } from './entities/manuscrito.entity';
 export class ManuscritosController {
   constructor(private readonly manuscritosService: ManuscritosService) {}
 
+  @Get('health')
+  healthCheck() {
+    return { status: 'ok', service: 'manuscritos', timestamp: new Date().toISOString() };
+  }
+
   @Post('upload')
   @UseInterceptors(FileInterceptor('archivo', {
     limits: { fileSize: 50 * 1024 * 1024 }, // 50 MB

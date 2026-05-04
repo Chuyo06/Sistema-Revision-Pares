@@ -6,6 +6,11 @@ import { AsignacionRevision } from '../entities/asignacion-revision.entity';
 export class RevisionController {
   constructor(private readonly revisionService: RevisionService) {}
 
+  @Get('health')
+  healthCheck() {
+    return { status: 'ok', service: 'revision', timestamp: new Date().toISOString() };
+  }
+
   @Get()
   async obtenerAsignaciones(@Query('revisorId') revisorId?: string) {
     if (revisorId) {

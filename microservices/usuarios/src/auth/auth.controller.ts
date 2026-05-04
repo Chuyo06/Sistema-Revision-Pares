@@ -19,4 +19,12 @@ export class AuthController {
   updateAvatar(@Param('id') id: string, @Body('avatar') avatar: string) {
     return this.authService.updateAvatar(Number(id), avatar);
   }
+
+  @Patch('password/:id')
+  cambiarPassword(
+    @Param('id') id: string,
+    @Body() body: { passwordActual: string; passwordNueva: string }
+  ) {
+    return this.authService.cambiarPassword(Number(id), body.passwordActual, body.passwordNueva);
+  }
 }

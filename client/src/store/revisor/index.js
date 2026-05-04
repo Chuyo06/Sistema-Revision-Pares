@@ -24,7 +24,7 @@ export const useRevisorStore = defineStore('revisor', () => {
     cargando.value = true
     try {
       const authStore = useAuthStore()
-      const userId = authStore.usuario?.id || authStore.usuario?.id_usuario || 2 // Fallback demo
+      const userId = authStore.usuario?.id || authStore.usuario?.id_usuario
       
       const [asignaciones, manuscritos] = await Promise.all([
         fetchAsignaciones(userId),
@@ -32,11 +32,17 @@ export const useRevisorStore = defineStore('revisor', () => {
       ])
 
       if (asignaciones && manuscritos) {
+        // Normalizar _id de MongoDB → id (igual que hace el editor store)
+        const manuscritosNorm = manuscritos.map(m => ({
+          ...m,
+          id: m._id || m.id,
+        }))
+
         // Enlazar asignaciones con manuscritos
         articulosAsignados.value = asignaciones.map(asig => {
-          const manuscrito = manuscritos.find(m => String(m.id) === String(asig.id_manuscrito_mongo)) || {}
+          const manuscrito = manuscritosNorm.find(m => String(m.id) === String(asig.id_manuscrito_mongo)) || {}
           
-          // Mapear estado DB MariaDB a Estado UI (o dejar el nativo)
+          // Mapear estado DB MariaDB a Estado UI
           let estadoUI = asig.estado
           if (estadoUI === 'INVITADO') estadoUI = 'PENDIENTE'
           if (estadoUI === 'ACEPTADO') estadoUI = 'EN_PROGRESO'
@@ -63,7 +69,7 @@ export const useRevisorStore = defineStore('revisor', () => {
   async function enviarRevision(articuloId, revision) {
     const res = await enviarRevisionApi(articuloId, revision)
     if (res) {
-      const articulo = articulosAsignados.value.find(a => a.id === articuloId)
+      const articulo = articulosAsignados.value.find(a => String(a.id) === String(articuloId))
       if (articulo) {
         articulo.estado = 'COMPLETADA'
         articulo.revision = revision

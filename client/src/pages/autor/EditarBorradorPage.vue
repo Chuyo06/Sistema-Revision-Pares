@@ -132,13 +132,13 @@ const manuscritoCargado = ref(false)
 const form = ref({ titulo: '', convocatoria: '', resumen: '' })
 const referenciaActual = ref(null)
 
-const manuscritoId = Number(route.params.id)
+const manuscritoId = route.params.id
 
 onMounted(async () => {
   if (autorStore.manuscritos.length === 0) {
     await autorStore.cargarMisManuscritos()
   }
-  const m = autorStore.manuscritos.find(m => m.id === manuscritoId)
+  const m = autorStore.manuscritos.find(m => String(m.id) === String(manuscritoId))
   if (m) {
     form.value = { 
       titulo: m.titulo || '', 
@@ -169,8 +169,8 @@ async function procesarSubidaArchivo() {
     errorMessage.value = 'El archivo debe ser PDF.'
     return null
   }
-  if (file.size > 50 * 1024 * 1024) {
-    errorMessage.value = 'El archivo supera 50MB.'
+  if (file.size > 5 * 1024 * 1024) {
+    errorMessage.value = 'El archivo supera 5MB.'
     return null
   }
 

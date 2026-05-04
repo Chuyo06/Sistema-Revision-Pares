@@ -132,9 +132,9 @@ const snackbarMsg = ref('')
 const snackbarColor = ref('success')
 const probandoConexion = ref(false)
 
-function guardarConfiguracion() {
-  // Aquí se enviaría la config al backend
-  snackbarMsg.value = 'Configuración guardada exitosamente'
+async function guardarConfiguracion() {
+  await adminStore.guardarConfiguracionIA()
+  snackbarMsg.value = 'Configuración guardada exitosamente en el servidor'
   snackbarColor.value = 'success'
   snackbar.value = true
 }

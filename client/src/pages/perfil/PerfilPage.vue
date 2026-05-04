@@ -20,7 +20,7 @@
             :style="avatarImage ? `background: url(${avatarImage}) center/cover no-repeat;` : ''"
           >
             <span v-if="!avatarImage" style="font-size: 38px; font-weight: 700; color: white;">
-              {{ auth.usuario?.avatar?.length <= 2 ? auth.usuario.avatar : (auth.usuario?.nombre?.substring(0,2)?.toUpperCase() || 'US') }}
+              {{ (auth.usuario?.nombre?.substring(0,2)?.toUpperCase() || 'US') }}
             </span>
             
             <!-- Overlay Hover para cambiar foto -->
@@ -166,6 +166,7 @@
 import { ref, computed } from 'vue'
 import { useAuthStore } from '@/store/auth.js'
 import { updateAvatarApi, cambiarPasswordApi } from '@/services/api/auth.js'
+import { actualizarUsuarioApi } from '@/services/api/usuarios.js'
 import { useAdminStore } from '@/store/administrador/index.js'
 
 const auth = useAuthStore()
@@ -176,8 +177,18 @@ const isSubmitting = ref(false)
 
 const especialidadesSeleccionadas = ref(auth.usuario?.especialidades || [])
 
-function guardarEspecialidades() {
+async function guardarEspecialidades() {
+  const especialidadesStr = especialidadesSeleccionadas.value.join(', ')
   auth.actualizarPerfil({ especialidades: especialidadesSeleccionadas.value })
+  
+  if (auth.usuario?.id) {
+    try {
+      await actualizarUsuarioApi(auth.usuario.id, { especialidad: especialidadesStr })
+    } catch (e) {
+      console.error('Error al guardar especialidades', e)
+    }
+  }
+
   snackbar.value = {
     show: true,
     text: 'Especialidades actualizadas. Esto ayudará al Matching Inteligente.',
@@ -186,7 +197,7 @@ function guardarEspecialidades() {
 }
 
 const fileInput = ref(null)
-const avatarImage = ref(null)
+const avatarImage = ref(auth.usuario?.avatar?.length > 10 ? auth.usuario.avatar : null)
 const isUploadingPhoto = ref(false)
 
 const passwords = ref({

@@ -12,9 +12,41 @@ export class MatchingService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    // In a real application, we would load reviewers from DB here.
-    // For MVP, we'll mock some reviewers.
-    await this.seedMockReviewers();
+    // Seeding movido a carga perezosa (lazy-loading) para optimizar el tiempo de arranque
+  }
+
+  private async loadRealReviewers() {
+    this.logger.log('Loading real reviewers from Usuarios microservice...');
+    try {
+      const urlUsuarios = process.env.MS_USUARIOS_URL || 'http://usuarios:3000';
+      const res = await fetch(`${urlUsuarios}/`);
+      if (!res.ok) throw new Error('Failed to fetch users');
+      const usuarios = await res.json();
+      
+      const revisores = usuarios.filter((u: any) => u.roles && u.roles.includes('revisor'));
+      if (revisores.length === 0) {
+        this.logger.warn('No real reviewers found, using fallback mocks');
+        return this.seedMockReviewers();
+      }
+
+      const docs: VectorDocument[] = [];
+      for (const rev of revisores) {
+        const especialidades = rev.especialidad ? rev.especialidad : 'General';
+        const textToEmbed = `Nombre: ${rev.nombre}. Especialidad y publicaciones: ${especialidades}`;
+        const embedding = await this.geminiService.generateEmbedding(textToEmbed);
+        docs.push({
+          id: rev.id.toString(),
+          text: textToEmbed,
+          metadata: rev,
+          embedding,
+        });
+      }
+      this.vectorStore.clear();
+      this.vectorStore.addDocuments(docs);
+    } catch (error) {
+      this.logger.error('Error loading real reviewers, falling back to mocks', error);
+      await this.seedMockReviewers();
+    }
   }
 
   private async seedMockReviewers() {
@@ -43,6 +75,11 @@ export class MatchingService implements OnModuleInit {
 
   async suggestReviewers(titulo: string, resumen: string, palabrasClave: string): Promise<any> {
     try {
+      // Lazy load reviewers si el store está vacío
+      if (this.vectorStore.getDocumentCount() === 0) {
+        await this.loadRealReviewers();
+      }
+
       // 1. Generate embedding for the manuscript
       const textToEmbed = `Título: ${titulo}. Resumen: ${resumen}. Palabras clave: ${palabrasClave}`;
       const queryEmbedding = await this.geminiService.generateEmbedding(textToEmbed);

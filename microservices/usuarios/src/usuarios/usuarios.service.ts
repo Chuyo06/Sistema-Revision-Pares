@@ -105,9 +105,13 @@ export class UsuariosService implements OnModuleInit {
     return this.obtenerPorId(id);
   }
 
-  async actualizarUsuario(id: number, datos: { nombre?: string; institucion?: string; especialidad?: string; estado?: string; roles?: string[] }) {
+  async actualizarUsuario(id: number, datos: { nombre?: string; email?: string; institucion?: string; especialidad?: string; estado?: string; rol?: string; roles?: string[] }) {
     const usuario = await this.usuarioRepo.findOne({ where: { id_usuario: id }, relations: ['perfil', 'roles'] });
     if (!usuario) return null;
+
+    if (datos.email) {
+      usuario.email = datos.email;
+    }
 
     if (datos.estado) {
       usuario.estado = datos.estado.toUpperCase() as any;
@@ -115,18 +119,21 @@ export class UsuariosService implements OnModuleInit {
     
     if (datos.roles) {
       usuario.roles = await this.getOrCreateRoles(datos.roles);
+    } else if (datos.rol) {
+      usuario.roles = await this.getOrCreateRoles([datos.rol]);
     }
 
     await this.usuarioRepo.save(usuario);
 
-    if (datos.nombre || datos.institucion || datos.especialidad) {
-      const perfil = await this.perfilRepo.findOne({ where: { usuario: { id_usuario: id } } });
-      if (perfil) {
-        if (datos.nombre) perfil.nombre_completo = datos.nombre;
-        if (datos.institucion !== undefined) perfil.institucion = datos.institucion;
-        if (datos.especialidad !== undefined) perfil.especialidad_academica = datos.especialidad;
-        await this.perfilRepo.save(perfil);
+    if (datos.nombre !== undefined || datos.institucion !== undefined || datos.especialidad !== undefined) {
+      let perfil = await this.perfilRepo.findOne({ where: { usuario: { id_usuario: id } } });
+      if (!perfil) {
+        perfil = this.perfilRepo.create({ usuario, nombre_completo: datos.nombre || '' });
       }
+      if (datos.nombre !== undefined) perfil.nombre_completo = datos.nombre;
+      if (datos.institucion !== undefined) perfil.institucion = datos.institucion;
+      if (datos.especialidad !== undefined) perfil.especialidad_academica = datos.especialidad;
+      await this.perfilRepo.save(perfil);
     }
 
     return this.obtenerPorId(id);
@@ -159,41 +166,5 @@ export class UsuariosService implements OnModuleInit {
     return this.obtenerPorId(guardado.id_usuario);
   }
 
-  async actualizarUsuario(id: number, datos: { nombre?: string; email?: string; rol?: string; roles?: string[] }) {
-    // Buscar usuario con su perfil
-    const u = await this.usuarioRepo.findOne({
-      where: { id_usuario: id },
-      relations: ['perfil'],
-    });
 
-    if (!u) return null;
-
-    // Actualizar campos base
-    if (datos.email) u.email = datos.email;
-    
-    // Actualizar roles
-    if (datos.roles) {
-      u.roles = datos.roles.map(r => r.toUpperCase()) as any;
-    } else if (datos.rol) {
-      // Si pasan un solo rol nuevo pero queremos mantener array de 1 rol
-      u.roles = [datos.rol.toUpperCase()] as any;
-    }
-
-    await this.usuarioRepo.save(u);
-
-    // Actualizar perfil si se proporcionó un nombre
-    if (datos.nombre && u.perfil) {
-      u.perfil.nombre_completo = datos.nombre;
-      await this.perfilRepo.save(u.perfil);
-    } else if (datos.nombre && !u.perfil) {
-      // En caso de que no tenga perfil, lo creamos
-      const nuevoPerfil = this.perfilRepo.create({
-        usuario: u,
-        nombre_completo: datos.nombre,
-      });
-      await this.perfilRepo.save(nuevoPerfil);
-    }
-
-    return this.obtenerPorId(id);
-  }
 }

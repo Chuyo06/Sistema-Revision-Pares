@@ -180,8 +180,8 @@ const route = useRoute()
 const router = useRouter()
 const revisorStore = useRevisorStore()
 
-const articuloId = Number(route.params.id)
-const articulo = computed(() => revisorStore.articulosAsignados.find(a => a.id === articuloId))
+const articuloId = route.params.id
+const articulo = computed(() => revisorStore.articulosAsignados.find(a => String(a.id) === String(articuloId)))
 
 onMounted(() => {
   if (revisorStore.articulosAsignados.length === 0) {

@@ -7,7 +7,7 @@ import { MatchingModule } from './matching/matching.module';
 
 @Module({
   imports: [
-    MongooseModule.forRoot('mongodb://admin:password@mongodb:27017/mi_base_datos?authSource=admin'),
+    MongooseModule.forRoot(process.env.MONGO_URI || 'mongodb://admin:password@mongodb:27017/manuscritos?authSource=admin'),
     
     // Registramos nuestro esquema específico
     MongooseModule.forFeature([

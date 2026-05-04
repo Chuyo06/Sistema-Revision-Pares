@@ -2,7 +2,7 @@ import { Controller, Get, Post, Delete, Body, Param, Query } from '@nestjs/commo
 import { RevisionService } from '../services/revision.service';
 import { AsignacionRevision } from '../entities/asignacion-revision.entity';
 
-@Controller('revision')
+@Controller()
 export class RevisionController {
   constructor(private readonly revisionService: RevisionService) {}
 
@@ -30,9 +30,8 @@ export class RevisionController {
 
   @Get('manuscrito/:id')
   async obtenerPorManuscrito(@Param('id') id: string) {
-    const numId = Number(id);
-    if (isNaN(numId)) return [];
-    return this.revisionService.obtenerPorManuscrito(numId);
+    if (!id) return [];
+    return this.revisionService.obtenerPorManuscrito(id);
   }
 
   @Post()

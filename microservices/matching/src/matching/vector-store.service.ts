@@ -36,6 +36,10 @@ export class VectorStoreService {
     this.logger.log('Vector store cleared.');
   }
 
+  getDocumentCount(): number {
+    return this.documents.length;
+  }
+
   // Find top K most similar documents
   search(queryEmbedding: number[], topK: number = 5): Array<{ doc: VectorDocument; score: number }> {
     const results = this.documents

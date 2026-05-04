@@ -1,7 +1,7 @@
 import { Controller, Get, Param, Patch, Post, Body } from '@nestjs/common';
 import { UsuariosService } from './usuarios.service';
 
-@Controller('users')
+@Controller()
 export class UsuariosController {
   constructor(private readonly usuariosService: UsuariosService) {}
 
@@ -27,7 +27,7 @@ export class UsuariosController {
   @Patch(':id')
   actualizarUsuario(
     @Param('id') id: string,
-    @Body() body: { nombre?: string; institucion?: string; especialidad?: string; estado?: string; roles?: string[] }
+    @Body() body: { nombre?: string; email?: string; institucion?: string; especialidad?: string; estado?: string; rol?: string; roles?: string[] }
   ) {
     const numericId = +id;
     if (isNaN(numericId)) {
@@ -51,13 +51,5 @@ export class UsuariosController {
     return this.usuariosService.crearUsuario(body);
   }
 
-  @Patch(':id')
-  actualizarUsuario(
-    @Param('id') id: string,
-    @Body() body: { nombre?: string; email?: string; rol?: string; roles?: string[] }
-  ) {
-    const numericId = +id;
-    if (isNaN(numericId)) return null;
-    return this.usuariosService.actualizarUsuario(numericId, body);
-  }
+
 }

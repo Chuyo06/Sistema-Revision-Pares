@@ -201,11 +201,15 @@ function abrirDialogo(c = null) {
   dialogo.value = true
 }
 
-function guardar() {
-  if (editando.value) {
-    convStore.actualizar(editando.value, form.value)
-  } else {
-    convStore.crear(form.value)
+async function guardar() {
+  try {
+    if (editando.value) {
+      await convStore.actualizar(editando.value, form.value)
+    } else {
+      await convStore.crear(form.value)
+    }
+  } catch (e) {
+    console.error('Error al guardar convocatoria', e)
   }
   dialogo.value = false
 }
@@ -215,8 +219,12 @@ function confirmarEliminar(c) {
   dialogoEliminar.value = true
 }
 
-function eliminarConfirmado() {
-  convStore.eliminar(convAEliminar.value.id)
+async function eliminarConfirmado() {
+  try {
+    await convStore.eliminar(convAEliminar.value.id)
+  } catch (e) {
+    console.error('Error al eliminar convocatoria', e)
+  }
   dialogoEliminar.value = false
   convAEliminar.value = null
 }

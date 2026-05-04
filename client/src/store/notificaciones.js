@@ -1,59 +1,76 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
-
-const STORAGE_KEY = 'rpp_notificaciones'
-
-function cargarPersistidas() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? JSON.parse(raw) : []
-  } catch {
-    return []
-  }
-}
-
-function persistir(lista) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(lista))
-}
+import { ref, computed, onBeforeUnmount } from 'vue'
+import { fetchNotificaciones, marcarNotificacionLeida, crearNotificacionApi } from '@/services/api/notificaciones.js'
 
 export const useNotificacionesStore = defineStore('notificaciones', () => {
-  const notificaciones = ref(cargarPersistidas())
+  const notificaciones = ref([])
+  const cargando = ref(false)
+  let pollingInterval = null
 
   const sinLeer = computed(() => notificaciones.value.filter(n => !n.leida))
-
   const count = computed(() => sinLeer.value.length)
 
-  function agregar(notificacion) {
-    const nueva = {
-      id: Date.now(),
-      leida: false,
-      timestamp: new Date().toISOString(),
-      ...notificacion
+  async function cargar() {
+    cargando.value = true
+    const data = await fetchNotificaciones()
+    if (data) {
+      notificaciones.value = data
     }
-    notificaciones.value.unshift(nueva)
-    persistir(notificaciones.value.slice(0, 50))
+    cargando.value = false
   }
 
-  function marcarLeida(id) {
-    const notif = notificaciones.value.find(n => n.id === id)
-    if (notif) {
-      notif.leida = true
-      persistir(notificaciones.value)
+  function iniciarPolling() {
+    if (pollingInterval) return
+    cargar() // Primera carga
+    pollingInterval = setInterval(cargar, 30000) // Cada 30 segundos
+  }
+
+  function detenerPolling() {
+    if (pollingInterval) {
+      clearInterval(pollingInterval)
+      pollingInterval = null
     }
   }
 
-  function marcarTodasLeidas() {
-    notificaciones.value.forEach(n => n.leida = true)
-    persistir(notificaciones.value)
+  async function agregar(notificacion) {
+    // Si queremos persistir en el backend inmediatamente
+    const exito = await crearNotificacionApi(notificacion)
+    if (exito) {
+      await cargar()
+    } else {
+      // Fallback local si el backend falla
+      const nueva = {
+        id: Date.now(),
+        leida: false,
+        timestamp: new Date().toISOString(),
+        ...notificacion
+      }
+      notificaciones.value.unshift(nueva)
+    }
+  }
+
+  async function marcarLeida(id) {
+    const exito = await marcarNotificacionLeida(id)
+    if (exito) {
+      const notif = notificaciones.value.find(n => String(n.id) === String(id))
+      if (notif) notif.leida = true
+    }
+  }
+
+  async function marcarTodasLeidas() {
+    // Implementación simple: marcar una por una o un endpoint bulk si existiera
+    for (const n of sinLeer.value) {
+      await marcarLeida(n.id)
+    }
   }
 
   function limpiar() {
     notificaciones.value = []
-    persistir([])
   }
 
   function agregarNotificacionRevision(manuscrito, revisor) {
     agregar({
+      destinatarioId: manuscrito.autorId, // Notificar al autor o al editor?
       tipo: 'REVISION_COMPLETADA',
       titulo: 'Revisión completada',
       mensaje: `${revisor.nombre} completó la revisión de "${manuscrito.titulo}"`,
@@ -62,12 +79,13 @@ export const useNotificacionesStore = defineStore('notificaciones', () => {
   }
 
   function agregarNotificacionDecision(manuscrito, decision) {
-    const labels = { ACEPTADO: 'aceptado', RECHAZADO: 'rechazado', EN_REVISION: 'enviado a revisión' }
+    const estadoLimpio = decision === 'REQUERIDAS_REVISIONES' ? 'requiere revisiones' : decision.toLowerCase();
     agregar({
+      destinatarioId: manuscrito.autorId,
       tipo: 'DECISION_EDITORIAL',
-      titulo: 'Decisión editorial tomada',
-      mensaje: `El manuscrito "${manuscrito.titulo}" fue ${labels[decision] || decision}`,
-      ruta: `/editor/asignacion/${manuscrito.id}`
+      titulo: 'Decisión Editorial',
+      mensaje: `El editor ha tomado una decisión sobre su manuscrito "${manuscrito.titulo}": ${estadoLimpio}`,
+      ruta: `/autor/manuscrito/${manuscrito.id}`
     })
   }
 
@@ -75,6 +93,10 @@ export const useNotificacionesStore = defineStore('notificaciones', () => {
     notificaciones,
     sinLeer,
     count,
+    cargando,
+    cargar,
+    iniciarPolling,
+    detenerPolling,
     agregar,
     marcarLeida,
     marcarTodasLeidas,
@@ -82,4 +104,4 @@ export const useNotificacionesStore = defineStore('notificaciones', () => {
     agregarNotificacionRevision,
     agregarNotificacionDecision
   }
-})
+})

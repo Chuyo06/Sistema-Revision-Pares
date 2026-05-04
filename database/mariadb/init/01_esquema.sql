@@ -57,3 +57,9 @@ CREATE TABLE asignaciones_revision (
     fecha_completada TIMESTAMP NULL,
     FOREIGN KEY (id_revisor) REFERENCES usuarios(id_usuario) ON DELETE RESTRICT
 );
+
+-- Índices recomendados por auditoría para optimización
+CREATE INDEX idx_usuarios_email ON usuarios(email);
+CREATE INDEX idx_perfiles_usuario ON perfiles_profesionales(id_usuario);
+CREATE INDEX idx_asignaciones_revisor ON asignaciones_revision(id_revisor);
+CREATE INDEX idx_asignaciones_manuscrito ON asignaciones_revision(id_manuscrito_mongo);

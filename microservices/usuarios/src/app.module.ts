@@ -2,26 +2,34 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CacheModule } from '@nestjs/cache-manager'; 
 import { redisStore } from 'cache-manager-redis-yet'; 
-import { Usuario } from './entities/usuario.entity';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';import { Usuario } from './entities/usuario.entity';
 import { PerfilProfesional } from './entities/perfil-profesional.entity';
 import { Rol } from './entities/rol.entity';
+import { AjusteSistema } from './entities/ajuste-sistema.entity';
 import { AuthModule } from './auth/auth.module';
 import { UsuariosModule } from './usuarios/usuarios.module';
 
 @Module({
   imports: [
+    // 0. Rate Limiting (10 peticiones por minuto por IP)
+    ThrottlerModule.forRoot([{
+      ttl: 60000,
+      limit: 10,
+    }]),
+    
     // 1. Conexión de MariaDB
     TypeOrmModule.forRoot({
       type: 'mariadb',
-      host: 'mariadb',
-      port: 3306,
-      username: 'root',
-      password: 'root_password',
-      database: 'mi_base_datos',
-      entities: [Usuario, PerfilProfesional, Rol],
-      synchronize: false,
+      host: process.env.MARIADB_HOST || 'mariadb',
+      port: process.env.MARIADB_PORT ? parseInt(process.env.MARIADB_PORT, 10) : 3306,
+      username: process.env.MARIADB_USER || 'root',
+      password: process.env.MARIADB_PASSWORD || 'root_password',
+      database: process.env.MARIADB_DATABASE || 'mi_base_datos',
+      entities: [Usuario, PerfilProfesional, Rol, AjusteSistema],
+      synchronize: true,
     }),
-    TypeOrmModule.forFeature([Usuario, PerfilProfesional, Rol]),
+    TypeOrmModule.forFeature([Usuario, PerfilProfesional, Rol, AjusteSistema]),
 
     // 2. Auth y Usuarios
     AuthModule,
@@ -41,7 +49,12 @@ import { UsuariosModule } from './usuarios/usuarios.module';
     }),
   ],
   controllers: [],
-  providers: [],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
   exports: [],
 })
 export class AppModule {}

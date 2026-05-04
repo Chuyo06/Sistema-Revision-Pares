@@ -13,5 +13,7 @@ app.use(vuetify)
 
 app.mount('#app')
 
-// Registrar Service Worker para PWA
-registerSW()
+// Registrar Service Worker para PWA (solo en producción o si está disponible)
+registerSW().catch(err => {
+  console.warn('[App] Service Worker no disponible:', err.message)
+})

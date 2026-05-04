@@ -115,7 +115,7 @@
                 <v-btn color="success" size="large" variant="elevated" @click="abrirDecision('ACEPTADO')" class="flex-grow-1 text-none font-weight-bold" prepend-icon="mdi-check-circle">
                   Aceptar
                 </v-btn>
-                <v-btn color="warning" size="large" variant="elevated" @click="abrirDecision('EN_REVISION')" class="flex-grow-1 text-none font-weight-bold" prepend-icon="mdi-refresh">
+                <v-btn color="warning" size="large" variant="elevated" @click="abrirDecision('REQUERIDAS_REVISIONES')" class="flex-grow-1 text-none font-weight-bold" prepend-icon="mdi-refresh">
                   Pedir revisiones
                 </v-btn>
                 <v-btn color="error" size="large" variant="elevated" @click="abrirDecision('RECHAZADO')" class="flex-grow-1 text-none font-weight-bold" prepend-icon="mdi-close-circle">
@@ -338,7 +338,7 @@ function notify(msg, color = 'success') {
   snackbar.value = true
 }
 
-const manuscritoId = Number(route.params.id)
+const manuscritoId = route.params.id
 const manuscrito = computed(() => (editorStore.manuscritos || []).find(m => String(m.id) === String(manuscritoId)))
 
 // Lista de revisores filtrada: excluye al autor del artculo y aplica bsqueda.

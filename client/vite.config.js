@@ -53,40 +53,14 @@ export default defineConfig({
     port: 5173,
     open: true,
     proxy: {
-      '/api/auth': {
-        target: 'http://localhost:3001',
+      '/api': {
+        target: 'http://localhost:8080',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
-      },
-      '/api/usuarios': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
-      },
-      '/api/manuscritos': {
-        target: 'http://localhost:3002',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
-      },
-      '/api/revision': {
-        target: 'http://localhost:3003',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
-      },
-      '/api/matching': {
-        target: 'http://localhost:3004',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
-      },
-      '/api/analisis': {
-        target: 'http://localhost:3005',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
       },
     },
   },
   build: {
-    minify: false,
+    minify: true,
     rollupOptions: {
       output: {
         entryFileNames: '[name].js',

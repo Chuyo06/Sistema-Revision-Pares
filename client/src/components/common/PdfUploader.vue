@@ -20,7 +20,7 @@
           show-size
           variant="outlined"
           color="primary"
-          hint="Requisitos: Formato PDF. Tamaño máximo 50MB."
+          hint="Requisitos: Formato PDF. Tamaño máximo 5MB."
           persistent-hint
           class="mb-6"
         ></v-file-input>
@@ -79,6 +79,7 @@
 
 <script setup>
 import { ref, computed } from 'vue';
+import { apiFetch } from '@/services/api/client.js';
 
 const selectedFile = ref(null);
 const errorMessage = ref('');
@@ -86,7 +87,7 @@ const isUploading = ref(false);
 const uploadSuccess = ref(false);
 const referenceNumber = ref('');
 
-const MAX_FILE_SIZE = 50 * 1024 * 1024;
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 const isValidForUpload = computed(() => {
   const file = getFileToProcess();
@@ -111,7 +112,7 @@ const validateFile = () => {
 
   if (file.size > MAX_FILE_SIZE) {
     const sizeInMB = (file.size / 1024 / 1024).toFixed(2);
-    errorMessage.value = `Error: El archivo supera el tamaño máximo de 50MB (Actual: ${sizeInMB}MB).`;
+    errorMessage.value = `Error: El archivo supera el tamaño máximo de 5MB (Actual: ${sizeInMB}MB).`;
     return false;
   }
 
@@ -130,7 +131,7 @@ const uploadFile = async () => {
     const formData = new FormData();
     formData.append('archivo', file);
 
-    const res = await fetch('/api/manuscritos/upload', {
+    const res = await apiFetch('/api/manuscritos/upload', {
       method: 'POST',
       body: formData,
     });

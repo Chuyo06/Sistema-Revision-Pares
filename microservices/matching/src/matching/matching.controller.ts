@@ -1,7 +1,7 @@
 import { Controller, Post, Body, Get } from '@nestjs/common';
 import { MatchingService } from './matching.service';
 
-@Controller('matching')
+@Controller()
 export class MatchingController {
   constructor(private readonly matchingService: MatchingService) {}
 

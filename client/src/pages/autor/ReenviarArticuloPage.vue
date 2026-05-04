@@ -95,8 +95,8 @@ const valido = ref(false)
 const enviado = ref(false)
 const respuestasRevisores = ref('')
 
-const manuscritoId = Number(route.params.id)
-const manuscrito = computed(() => autorStore.manuscritos.find(m => m.id === manuscritoId))
+const manuscritoId = route.params.id
+const manuscrito = computed(() => autorStore.manuscritos.find(m => String(m.id) === String(manuscritoId)))
 
 onMounted(async () => {
   if (autorStore.manuscritos.length === 0) {

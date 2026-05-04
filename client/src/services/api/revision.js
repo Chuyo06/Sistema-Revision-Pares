@@ -1,30 +1,14 @@
-// ─────────────────────────────────────────────────────────────
-// Servicio de revisión
-//
-// Proxy definido en vite.config.js → http://localhost:3003
-// Fallback: retorna null para que los stores usen mock.
-// ─────────────────────────────────────────────────────────────
+import { apiFetch } from './client.js'
 
 const BASE_URL = '/api/revision'
 
-function authHeaders() {
-  const raw = localStorage.getItem('rpp_usuario')
-  const usuario = raw ? JSON.parse(raw) : null
-  const headers = { 'Content-Type': 'application/json' }
-  if (usuario?.token) {
-    headers['Authorization'] = `Bearer ${usuario.token}`
-  }
-  return headers
-}
-
 /**
  * Obtener asignaciones de revisión.
- * @returns {Promise<Array|null>}
  */
 export async function fetchAsignaciones(revisorId) {
   try {
     const url = revisorId ? `${BASE_URL}?revisorId=${revisorId}` : BASE_URL;
-    const res = await fetch(url, { headers: authHeaders() })
+    const res = await apiFetch(url)
     if (!res.ok) return []
     const data = await res.json()
     return data.map(asig => ({ ...asig, id: asig.id_asignacion }))
@@ -38,7 +22,7 @@ export async function fetchAsignaciones(revisorId) {
  */
 export async function fetchAsignacionesGeneral() {
   try {
-    const res = await fetch(BASE_URL, { headers: authHeaders() })
+    const res = await apiFetch(BASE_URL)
     if (!res.ok) return []
     const data = await res.json()
     return data.map(asig => ({ ...asig, id: asig.id_asignacion }))
@@ -52,9 +36,8 @@ export async function fetchAsignacionesGeneral() {
  */
 export async function crearAsignacion(revisorId, manuscritoId) {
   try {
-    const res = await fetch(BASE_URL, {
+    const res = await apiFetch(BASE_URL, {
       method: 'POST',
-      headers: authHeaders(),
       body: JSON.stringify({
         id_revisor: revisorId,
         id_manuscrito_mongo: String(manuscritoId),
@@ -71,14 +54,11 @@ export async function crearAsignacion(revisorId, manuscritoId) {
 
 /**
  * Eliminar una asignación de revisión.
- * Solo se permitirá quitar al revisor si todavía no envió su revisión
- * (la validación de "no completada" se hace antes desde el store).
  */
 export async function eliminarAsignacionApi(idAsignacion) {
   try {
-    const res = await fetch(`${BASE_URL}/${idAsignacion}`, {
+    const res = await apiFetch(`${BASE_URL}/${idAsignacion}`, {
       method: 'DELETE',
-      headers: authHeaders(),
     })
     return res.ok
   } catch {
@@ -88,19 +68,17 @@ export async function eliminarAsignacionApi(idAsignacion) {
 
 /**
  * Enviar una revisión al backend.
- * @returns {Promise<Object|null>}
  */
 export async function enviarRevisionApi(articuloId, revision) {
   try {
-    const res = await fetch(`${BASE_URL}/${articuloId}/enviar`, {
+    const res = await apiFetch(`${BASE_URL}/${articuloId}/enviar`, {
       method: 'POST',
-      headers: authHeaders(),
       body: JSON.stringify(revision),
     })
     if (!res.ok) return null
     return await res.json()
   } catch {
-    console.warn('[Revisión] Backend no disponible, guardando solo en mock')
     return null
   }
 }
+

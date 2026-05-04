@@ -21,7 +21,7 @@ export class RevisionService {
     });
   }
 
-  async obtenerPorManuscrito(manuscritoId: number) {
+  async obtenerPorManuscrito(manuscritoId: string) {
     return this.asignacionRepo.find({
       where: { id_manuscrito_mongo: manuscritoId.toString() },
     });
@@ -55,24 +55,26 @@ export class RevisionService {
 
     try {
       const idManuscrito = asignacionActualizada.id_manuscrito_mongo;
-      const todasLasAsignaciones = await this.obtenerPorManuscrito(Number(idManuscrito));
+      const todasLasAsignaciones = await this.obtenerPorManuscrito(idManuscrito);
       
       const asignacionesActivas = todasLasAsignaciones.filter(a => a.estado !== 'DECLINADO' && a.estado !== 'EXPIRADA');
       const todasCompletadas = asignacionesActivas.length > 0 && asignacionesActivas.every(a => a.estado === 'COMPLETADA');
 
       if (todasCompletadas) {
-        const resManuscrito = await fetch(`http://manuscritos:3000/manuscritos/${idManuscrito}`);
+        const urlManuscritos = process.env.MS_MANUSCRITOS_URL || 'http://manuscritos:3000';
+        const resManuscrito = await fetch(`${urlManuscritos}/manuscritos/${idManuscrito}`);
         if (resManuscrito.ok) {
           const manuscrito = await resManuscrito.json();
           
-          await fetch(`http://manuscritos:3000/manuscritos/${idManuscrito}`, {
+          await fetch(`${urlManuscritos}/manuscritos/${idManuscrito}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ estado: 'LISTO_PARA_DECISION' })
           });
 
           if (manuscrito.editorId) {
-            await fetch(`http://notificaciones:3000/notificaciones`, {
+            const urlNotificaciones = process.env.MS_NOTIFICACIONES_URL || 'http://notificaciones:3000';
+            await fetch(`${urlNotificaciones}/notificaciones`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({

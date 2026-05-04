@@ -1,13 +1,40 @@
-﻿<template>
+<template>
   <div style="max-width:800px; padding:20px">
 
     <div style="font-size:13px; font-weight:700; color:#8B5A2B; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:14px">
       Artículos asignados para revisión
     </div>
 
+    <!-- Barra de búsqueda y filtros -->
+    <v-card border elevation="0" rounded="lg" class="pa-4 mb-6 bg-white">
+      <v-row density="compact">
+        <v-col cols="12" md="7">
+          <v-text-field
+            v-model="busqueda"
+            prepend-inner-icon="mdi-magnify"
+            label="Buscar por título o autor..."
+            variant="outlined"
+            density="compact"
+            hide-details
+            clearable
+          ></v-text-field>
+        </v-col>
+        <v-col cols="12" md="5">
+          <v-select
+            v-model="filtroEstado"
+            :items="opcionesEstado"
+            label="Filtrar por estado"
+            variant="outlined"
+            density="compact"
+            hide-details
+          ></v-select>
+        </v-col>
+      </v-row>
+    </v-card>
+
     <!-- Tarjetas de asignación -->
     <div
-      v-for="a in revisorStore.articulosAsignados"
+      v-for="a in articulosFiltrados"
       :key="a.id"
       style="background:#FFFFFF; border:1px solid #D3E0D7; border-radius:12px; margin-bottom:12px; overflow:hidden"
     >
@@ -62,18 +89,41 @@
     </div>
 
     <!-- Vacío -->
-    <div v-if="revisorStore.articulosAsignados.length === 0" style="text-align:center; padding:48px 0; color:#8B5A2B">
+    <div v-if="articulosFiltrados.length === 0" style="text-align:center; padding:48px 0; color:#8B5A2B">
       <v-icon size="44" color="secondary">mdi-clipboard-text-off-outline</v-icon>
-      <p style="font-size:14px; margin-top:10px">No tienes artículos asignados.</p>
+      <p style="font-size:14px; margin-top:10px">
+        {{ busqueda || filtroEstado !== 'TODOS' ? 'No se encontraron artículos con estos filtros.' : 'No tienes artículos asignados.' }}
+      </p>
     </div>
   </div>
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRevisorStore } from '@/store/revisor/index.js'
 
 const revisorStore = useRevisorStore()
+const busqueda = ref('')
+const filtroEstado = ref('TODOS')
+
+const opcionesEstado = [
+  { title: 'Todos los estados', value: 'TODOS' },
+  { title: 'Pendientes', value: 'PENDIENTE' },
+  { title: 'En Progreso', value: 'EN_PROGRESO' },
+  { title: 'Completadas', value: 'COMPLETADA' }
+]
+
+const articulosFiltrados = computed(() => {
+  return revisorStore.articulosAsignados.filter(a => {
+    const matchesBusqueda = !busqueda.value || 
+      a.titulo.toLowerCase().includes(busqueda.value.toLowerCase()) ||
+      a.autores.toLowerCase().includes(busqueda.value.toLowerCase())
+    
+    const matchesEstado = filtroEstado.value === 'TODOS' || a.estado === filtroEstado.value
+    
+    return matchesBusqueda && matchesEstado
+  })
+})
 
 onMounted(() => {
   revisorStore.cargarDashboard()

@@ -59,15 +59,15 @@ export async function actualizarUsuarioApi(id, datos) {
     const res = await fetch(`${BASE_URL}/${id}`, {
       method: 'PATCH',
       headers: authHeaders(),
-      body: JSON.stringify({
-        email: datos.email,
-        nombre: datos.nombre,
-        rol: datos.rol,
-      }),
+      body: JSON.stringify(datos),
     })
-    if (!res.ok) return null
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}))
+      throw new Error(errorData.message || 'Error al actualizar usuario')
+    }
     return await res.json()
-  } catch {
-    return null
+  } catch (err) {
+    console.error(err)
+    throw err
   }
 }

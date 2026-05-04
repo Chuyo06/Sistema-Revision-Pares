@@ -138,8 +138,17 @@
               <div v-for="comentario in comentarios" :key="comentario.id" class="mb-4 pa-4 bg-grey-lighten-4 rounded-lg border">
                 <div class="d-flex align-center justify-space-between mb-2">
                   <div class="font-weight-bold" style="color:#8B5A2B">Revisor #{{ comentario.id }}</div>
-                  <div class="d-flex align-center" v-if="comentario.puntuacion">
-                    <v-rating :model-value="comentario.puntuacion" color="amber" density="compact" size="small" readonly></v-rating>
+                  <div v-if="comentario.puntuacion" class="mb-2">
+                    <div class="d-flex align-center">
+                      <v-rating :model-value="comentario.puntuacion" color="amber" density="compact" size="small" readonly></v-rating>
+                      <span class="ml-2 font-weight-bold text-brown">{{ comentario.puntuacion }}/5</span>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2 mt-1" v-if="comentario.originalidad" style="font-size: 11px; color: #546e7a;">
+                      <v-chip size="x-small" variant="outlined" color="primary">Originalidad: {{ comentario.originalidad }}</v-chip>
+                      <v-chip size="x-small" variant="outlined" color="info">Metodología: {{ comentario.metodologia }}</v-chip>
+                      <v-chip size="x-small" variant="outlined" color="success">Claridad: {{ comentario.claridad }}</v-chip>
+                      <v-chip size="x-small" variant="outlined" color="warning">Relevancia: {{ comentario.relevancia }}</v-chip>
+                    </div>
                   </div>
                 </div>
                 <div style="color:#1B4332; white-space: pre-wrap; font-size: 14px;">{{ comentario.comentarios }}</div>

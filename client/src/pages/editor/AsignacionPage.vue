@@ -58,14 +58,27 @@
                   </v-list-item-title>
 
                   <v-list-item-subtitle class="mt-1">
-                    <div v-if="asig.puntuacion" class="d-flex align-center mb-1">
-                      <v-rating :model-value="asig.puntuacion" color="amber" density="compact" size="small" readonly></v-rating>
-                      <span class="ml-2 font-weight-bold text-brown">{{ asig.puntuacion }}/5</span>
+                    <div v-if="asig.puntuacion" class="mb-2">
+                      <div class="d-flex align-center">
+                        <span class="font-weight-bold text-brown mr-2">Global: {{ asig.puntuacion }}/5</span>
+                        <v-rating :model-value="asig.puntuacion" color="amber" density="compact" size="small" readonly></v-rating>
+                      </div>
+                      <div class="d-flex flex-wrap gap-2 mt-1" v-if="asig.originalidad" style="font-size: 11px; color: #546e7a;">
+                        <v-chip size="x-small" variant="outlined" color="primary">Originalidad: {{ asig.originalidad }}</v-chip>
+                        <v-chip size="x-small" variant="outlined" color="info">Metodología: {{ asig.metodologia }}</v-chip>
+                        <v-chip size="x-small" variant="outlined" color="success">Claridad: {{ asig.claridad }}</v-chip>
+                        <v-chip size="x-small" variant="outlined" color="warning">Relevancia: {{ asig.relevancia }}</v-chip>
+                      </div>
                     </div>
-                    <div v-if="asig.comentarios" class="bg-brown-lighten-5 pa-3 rounded-lg border text-italic mt-2" style="white-space: normal; color: #1B4332">
-                       "{{ asig.comentarios }}"
+                    <div v-if="asig.comentarios" class="bg-brown-lighten-5 pa-3 rounded-lg border mt-2" style="white-space: pre-wrap; font-size: 13px; color: #1B4332">
+                       <strong style="color: #8B5A2B">Para el Autor:</strong><br/>
+                       {{ asig.comentarios }}
                     </div>
-                    <div v-else-if="asig.estado !== 'COMPLETADA'" class="text-caption text-grey">Esperando respuesta del revisor...</div>
+                    <div v-if="asig.comentarios_editor" class="bg-red-lighten-5 pa-3 rounded-lg border mt-2" style="white-space: pre-wrap; font-size: 13px; color: #c62828">
+                       <strong style="color: #b71c1c"><v-icon size="14" class="mr-1">mdi-lock</v-icon>Confidencial para Editor:</strong><br/>
+                       {{ asig.comentarios_editor }}
+                    </div>
+                    <div v-else-if="asig.estado !== 'COMPLETADA'" class="text-caption text-grey mt-2">Esperando respuesta del revisor...</div>
                   </v-list-item-subtitle>
 
                   <template v-slot:append>
@@ -171,6 +184,14 @@
                     <div class="font-weight-bold text-brown">{{ sug.revisor }}</div>
                     <v-chip size="x-small" color="purple" variant="flat">{{ sug.afinidad }}% afinidad</v-chip>
                   </div>
+                  <div v-if="getRevisorCompleto(sug.id)?.especialidad" class="text-caption text-brown-darken-2 mb-1 font-weight-medium">
+                    <v-icon size="12" class="mr-1">mdi-school</v-icon> {{ getRevisorCompleto(sug.id).especialidad }}
+                  </div>
+                  <div v-if="getRevisorCompleto(sug.id)?.palabras_clave" class="mb-2 d-flex flex-wrap">
+                    <v-chip v-for="keyword in getRevisorCompleto(sug.id).palabras_clave.split(',').slice(0,3)" :key="keyword" size="x-small" variant="outlined" color="brown" class="mr-1 mb-1">
+                      {{ keyword.trim() }}
+                    </v-chip>
+                  </div>
                   <div class="text-caption text-grey-darken-1 mb-2 line-height-1">
                     <v-icon size="14" color="purple" class="mr-1">mdi-robot-outline</v-icon>
                     {{ sug.justificacion }}
@@ -214,7 +235,21 @@
                   <div class="font-weight-bold text-brown">{{ revisor.nombre }}</div>
                   <v-chip size="x-small" color="success" variant="flat">{{ revisor.matching }}% match</v-chip>
                 </div>
-                <div class="text-caption text-grey-darken-1 mb-3 line-height-1">{{ revisor.institucion }}</div>
+                <div class="text-caption text-grey-darken-1 mb-1 line-height-1">
+                  <v-icon size="12" class="mr-1">mdi-bank</v-icon> {{ revisor.institucion || 'Sin institución' }}
+                </div>
+                <div v-if="revisor.especialidad" class="text-caption text-brown-darken-2 mb-1 font-weight-medium">
+                  <v-icon size="12" class="mr-1">mdi-school</v-icon> {{ revisor.especialidad }}
+                </div>
+                <div v-if="revisor.palabras_clave" class="mb-2 d-flex flex-wrap">
+                  <v-chip v-for="keyword in revisor.palabras_clave.split(',').slice(0,5)" :key="keyword" size="x-small" variant="outlined" color="brown" class="mr-1 mb-1">
+                    {{ keyword.trim() }}
+                  </v-chip>
+                </div>
+                <div v-if="revisor.experiencia" class="text-caption text-grey-darken-1 mb-3 line-height-1 font-italic text-truncate">
+                  "{{ revisor.experiencia }}"
+                </div>
+                <div v-else class="mb-3"></div>
                 <v-btn
                   block
                   size="small"
@@ -386,6 +421,10 @@ async function sugerirRevisoresIA() {
 function nombreRevisor(id) {
   const r = (editorStore.revisoresDisponibles || []).find(x => Number(x.id) === Number(id))
   return r?.nombre || `Revisor #${id}`
+}
+
+function getRevisorCompleto(id) {
+  return (editorStore.revisoresDisponibles || []).find(x => Number(x.id) === Number(id)) || null
 }
 
 const asignacionesDelArticulo = computed(() => {

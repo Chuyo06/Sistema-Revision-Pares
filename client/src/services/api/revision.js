@@ -104,3 +104,19 @@ export async function enviarRevisionApi(articuloId, revision) {
     return null
   }
 }
+
+/**
+ * Actualizar el estado de una asignación.
+ */
+export async function actualizarEstadoRevisionApi(idAsignacion, nuevoEstado) {
+  try {
+    const res = await fetch(`${BASE_URL}/${idAsignacion}/estado`, {
+      method: 'PATCH',
+      headers: authHeaders(),
+      body: JSON.stringify({ estado: nuevoEstado }),
+    })
+    return res.ok
+  } catch {
+    return false
+  }
+}

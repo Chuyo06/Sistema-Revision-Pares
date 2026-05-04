@@ -57,9 +57,9 @@
 
     <!-- â”€â”€ Contenido principal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
     <v-main style="background:#F6F8F6">
-      <!-- Barra superior con notificaciones (solo editor) -->
+      <!-- Barra superior con notificaciones -->
       <div
-        v-if="smAndUp && auth.rol === 'editor'"
+        v-if="smAndUp && auth.estaAutenticado"
         style="background:#FFFFFF; border-bottom:1px solid #D3E0D7; display:flex; align-items:center; padding:8px 16px; gap:12px"
       >
         <span style="font-size:16px; font-weight:700; color:#1B4332; flex:1">{{ titulo }}</span>
@@ -92,7 +92,7 @@
         <span style="font-size:16px; font-weight:700; color:#1B4332">{{ titulo }}</span>
         <v-spacer />
         <v-btn
-          v-if="auth.rol === 'editor'"
+          v-if="auth.estaAutenticado"
           icon
           variant="text"
           size="small"
@@ -141,11 +141,11 @@
             >
               <template #prepend>
                 <v-avatar
-                  :color="n.tipo === 'REVISION_COMPLETADA' ? 'success' : n.tipo === 'DECISION_EDITORIAL' ? 'warning' : 'info'"
+                  :color="n.tipo === 'REVISION_COMPLETADA' ? 'success' : n.tipo === 'INVITACION_RECHAZADA' ? 'error' : n.tipo === 'DECISION_EDITORIAL' ? 'warning' : 'info'"
                   size="36"
                 >
                   <v-icon color="white" size="18">
-                    {{ n.tipo === 'REVISION_COMPLETADA' ? 'mdi-check-circle' : 'mdi-gavel' }}
+                    {{ n.tipo === 'REVISION_COMPLETADA' ? 'mdi-check-circle' : n.tipo === 'INVITACION_RECHAZADA' ? 'mdi-account-cancel' : n.tipo === 'DECISION_EDITORIAL' ? 'mdi-gavel' : 'mdi-bell' }}
                   </v-icon>
                 </v-avatar>
               </template>
@@ -167,7 +167,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDisplay } from 'vuetify'
 import { useAuthStore } from '@/store/auth.js'
@@ -182,6 +182,12 @@ const { smAndUp } = useDisplay()
 const drawer = ref(true)
 const notifStore = useNotificacionesStore()
 const mostrarNotificaciones = ref(false)
+
+onMounted(() => {
+  if (auth.usuario?.id) {
+    notifStore.cargarNotificacionesBackend(auth.usuario.id)
+  }
+})
 
 function formatTime(ts) {
   const d = new Date(ts)

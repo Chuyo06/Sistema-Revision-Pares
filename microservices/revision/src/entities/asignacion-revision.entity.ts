@@ -21,10 +21,25 @@ export class AsignacionRevision {
   fecha_limite: Date;
 
   @Column({ type: 'int', nullable: true })
+  originalidad: number;
+
+  @Column({ type: 'int', nullable: true })
+  metodologia: number;
+
+  @Column({ type: 'int', nullable: true })
+  claridad: number;
+
+  @Column({ type: 'int', nullable: true })
+  relevancia: number;
+
+  @Column({ type: 'int', nullable: true })
   puntuacion: number;
 
   @Column({ type: 'text', nullable: true })
   comentarios: string;
+
+  @Column({ type: 'text', nullable: true })
+  comentarios_editor: string;
 
   @Column({ type: 'varchar', length: 50, nullable: true })
   recomendacion: string;

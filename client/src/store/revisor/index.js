@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { fetchAsignaciones, enviarRevisionApi } from '@/services/api/revision.js'
+import { fetchAsignaciones, enviarRevisionApi, actualizarEstadoRevisionApi } from '@/services/api/revision.js'
 import { fetchManuscritos } from '@/services/api/manuscritos.js'
 import { useAuthStore } from '../auth.js'
 
@@ -41,12 +41,18 @@ export const useRevisorStore = defineStore('revisor', () => {
           if (estadoUI === 'INVITADO') estadoUI = 'PENDIENTE'
           if (estadoUI === 'ACEPTADO') estadoUI = 'EN_PROGRESO'
 
+          const fechaInvitacion = asig.fecha_invitacion ? new Date(asig.fecha_invitacion) : new Date()
+          const limiteRespuesta = new Date(fechaInvitacion.getTime() + 3 * 24 * 60 * 60 * 1000) // 3 días para responder
+          const diasRestantesRespuesta = Math.max(0, Math.ceil((limiteRespuesta - new Date()) / (1000 * 60 * 60 * 24)))
+
           return {
             id: asig.id_asignacion, // ID numérico de MariaDB
             id_manuscrito: asig.id_manuscrito_mongo,
             titulo: manuscrito.titulo || 'Manuscrito Desconocido',
             autores: manuscrito.autores || 'Desconocido',
             convocatoria: manuscrito.convocatoria || 'General',
+            fecha_invitacion: asig.fecha_invitacion,
+            diasRestantesRespuesta,
             deadline: asig.fecha_limite ? asig.fecha_limite.split('T')[0] : 'Sin fecha',
             estado: estadoUI,
             resumen: manuscrito.resumen || 'Sin resumen disponible'
@@ -73,5 +79,18 @@ export const useRevisorStore = defineStore('revisor', () => {
     }
   }
 
-  return { articulosAsignados, cargando, borradores, guardarBorrador, cargarBorrador, cargarDashboard, enviarRevision }
+  async function responderInvitacion(idAsignacion, aceptar) {
+    const nuevoEstado = aceptar ? 'ACEPTADO' : 'DECLINADO'
+    const res = await actualizarEstadoRevisionApi(idAsignacion, nuevoEstado)
+    if (res) {
+      const asig = articulosAsignados.value.find(a => a.id === idAsignacion)
+      if (asig) {
+        asig.estado = aceptar ? 'EN_PROGRESO' : 'DECLINADO'
+      }
+      // Opcionalmente podemos recargar dashboard: await cargarDashboard()
+    }
+    return res
+  }
+
+  return { articulosAsignados, cargando, borradores, guardarBorrador, cargarBorrador, cargarDashboard, enviarRevision, responderInvitacion }
 })

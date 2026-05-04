@@ -157,7 +157,11 @@ export const useAutorStore = defineStore('autor', () => {
             return {
               id: index + 1,
               comentarios: texto,
-              puntuacion: a.puntuacion
+              puntuacion: a.puntuacion,
+              originalidad: a.originalidad,
+              metodologia: a.metodologia,
+              claridad: a.claridad,
+              relevancia: a.relevancia
             };
           })
         return { comentarios: comentariosParseados, asignaciones }

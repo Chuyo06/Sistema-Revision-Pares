@@ -33,19 +33,72 @@ export class RevisionService {
 
   async crear(datos: Partial<AsignacionRevision>) {
     const nueva = this.asignacionRepo.create(datos);
-    return this.asignacionRepo.save(nueva);
+    const guardada = await this.asignacionRepo.save(nueva);
+
+    try {
+      const resManuscrito = await fetch(`http://manuscritos:3000/manuscritos/${datos.id_manuscrito_mongo}`);
+      let titulo = 'un artículo';
+      if (resManuscrito.ok) {
+        const manuscrito = await resManuscrito.json();
+        titulo = manuscrito.titulo || manuscrito.referencia;
+      }
+
+      await fetch(`http://notificaciones:3000/notificaciones`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          destinatarioId: datos.id_revisor,
+          tipo: 'NUEVA_INVITACION',
+          mensaje: `Has sido invitado a revisar el artículo: "${titulo}".`
+        })
+      });
+    } catch (e) {
+      console.error('Error enviando notificación al revisor', e);
+    }
+
+    return guardada;
   }
 
   async actualizarEstado(id: number, estado: string) {
     await this.asignacionRepo.update(id, { estado });
-    return this.obtenerPorId(id);
+    const asignacionActualizada = await this.obtenerPorId(id);
+
+    if (estado === 'DECLINADO' && asignacionActualizada) {
+      try {
+        const idManuscrito = asignacionActualizada.id_manuscrito_mongo;
+        const resManuscrito = await fetch(`http://manuscritos:3000/manuscritos/${idManuscrito}`);
+        if (resManuscrito.ok) {
+          const manuscrito = await resManuscrito.json();
+          const destinatario = manuscrito.editorId || manuscrito.editorSeccionId || 1;
+          
+          await fetch(`http://notificaciones:3000/notificaciones`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              destinatarioId: destinatario,
+              tipo: 'INVITACION_RECHAZADA',
+              mensaje: `Un revisor ha declinado la invitación para revisar "${manuscrito.titulo || manuscrito.referencia}". Por favor, asigna a alguien más.`
+            })
+          });
+        }
+      } catch (error) {
+        console.error('Error enviando notificación de rechazo:', error);
+      }
+    }
+
+    return asignacionActualizada;
   }
 
   async enviarRevision(id: number, revision: Partial<AsignacionRevision>) {
     await this.asignacionRepo.update(id, {
       estado: 'COMPLETADA',
+      originalidad: revision.originalidad,
+      metodologia: revision.metodologia,
+      claridad: revision.claridad,
+      relevancia: revision.relevancia,
       puntuacion: revision.puntuacion,
       comentarios: revision.comentarios,
+      comentarios_editor: revision.comentarios_editor,
       recomendacion: revision.recomendacion,
       fecha_completada: new Date(),
     });

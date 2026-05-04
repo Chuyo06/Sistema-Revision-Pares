@@ -1,76 +1,103 @@
 import { defineStore } from 'pinia'
-import { ref, computed, onBeforeUnmount } from 'vue'
-import { fetchNotificaciones, marcarNotificacionLeida, crearNotificacionApi } from '@/services/api/notificaciones.js'
+import { ref, computed } from 'vue'
+import { fetchNotificaciones, marcarNotificacionLeida as marcarLeidaApi } from '@/services/api/notificaciones.js'
+
+const STORAGE_KEY = 'rpp_notificaciones'
+
+function cargarPersistidas() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    return raw ? JSON.parse(raw) : []
+  } catch {
+    return []
+  }
+}
+
+function persistir(lista) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(lista))
+}
 
 export const useNotificacionesStore = defineStore('notificaciones', () => {
-  const notificaciones = ref([])
-  const cargando = ref(false)
-  let pollingInterval = null
+  const notificaciones = ref(cargarPersistidas())
 
   const sinLeer = computed(() => notificaciones.value.filter(n => !n.leida))
+
   const count = computed(() => sinLeer.value.length)
 
-  async function cargar() {
-    cargando.value = true
-    const data = await fetchNotificaciones()
-    if (data) {
-      notificaciones.value = data
+  function agregar(notificacion) {
+    const nueva = {
+      id: Date.now(),
+      leida: false,
+      timestamp: new Date().toISOString(),
+      ...notificacion
     }
-    cargando.value = false
+    notificaciones.value.unshift(nueva)
+    persistir(notificaciones.value.slice(0, 50))
   }
 
-  function iniciarPolling() {
-    if (pollingInterval) return
-    cargar() // Primera carga
-    pollingInterval = setInterval(cargar, 30000) // Cada 30 segundos
-  }
-
-  function detenerPolling() {
-    if (pollingInterval) {
-      clearInterval(pollingInterval)
-      pollingInterval = null
-    }
-  }
-
-  async function agregar(notificacion) {
-    // Si queremos persistir en el backend inmediatamente
-    const exito = await crearNotificacionApi(notificacion)
-    if (exito) {
-      await cargar()
-    } else {
-      // Fallback local si el backend falla
-      const nueva = {
-        id: Date.now(),
-        leida: false,
-        timestamp: new Date().toISOString(),
-        ...notificacion
+  function marcarLeida(id) {
+    const notif = notificaciones.value.find(n => n.id === id)
+    if (notif) {
+      notif.leida = true
+      if (notif.backendId) {
+        marcarLeidaApi(notif.backendId)
       }
-      notificaciones.value.unshift(nueva)
+      persistir(notificaciones.value)
     }
   }
 
-  async function marcarLeida(id) {
-    const exito = await marcarNotificacionLeida(id)
-    if (exito) {
-      const notif = notificaciones.value.find(n => String(n.id) === String(id))
-      if (notif) notif.leida = true
-    }
+  async function cargarNotificacionesBackend(usuarioId) {
+    if (!usuarioId) return
+    const delBackend = await fetchNotificaciones(usuarioId)
+    
+    const nuevas = delBackend.map(b => {
+      let titulo = b.tipo.replace('_', ' ')
+      let ruta = '/editor/manuscritos'
+
+      if (b.tipo === 'NUEVA_INVITACION') {
+        titulo = 'Nueva Invitación'
+        ruta = '/revisor/asignados'
+      } else if (b.tipo === 'INVITACION_RECHAZADA') {
+        titulo = 'Invitación Declinada'
+      }
+
+      return {
+        id: `backend_${b.id}`,
+        backendId: b.id,
+        tipo: b.tipo,
+        titulo,
+        mensaje: b.mensaje,
+        leida: b.leida,
+        timestamp: b.fechaCreacion,
+        ruta
+      }
+    })
+
+    // Conservar las locales para no romper la maqueta del editor
+    const locals = notificaciones.value.filter(n => !n.backendId)
+    
+    // Fusionar y ordenar
+    const todas = [...locals, ...nuevas].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp))
+    
+    // Para evitar duplicados en la interfaz si se llama varias veces:
+    const unicas = Array.from(new Map(todas.map(item => [item.id, item])).values())
+    
+    notificaciones.value = unicas
+    persistir(notificaciones.value)
   }
 
-  async function marcarTodasLeidas() {
-    // Implementación simple: marcar una por una o un endpoint bulk si existiera
-    for (const n of sinLeer.value) {
-      await marcarLeida(n.id)
-    }
+  function marcarTodasLeidas() {
+    notificaciones.value.forEach(n => n.leida = true)
+    persistir(notificaciones.value)
   }
 
   function limpiar() {
     notificaciones.value = []
+    persistir([])
   }
 
   function agregarNotificacionRevision(manuscrito, revisor) {
     agregar({
-      destinatarioId: manuscrito.autorId, // Notificar al autor o al editor?
       tipo: 'REVISION_COMPLETADA',
       titulo: 'Revisión completada',
       mensaje: `${revisor.nombre} completó la revisión de "${manuscrito.titulo}"`,
@@ -79,13 +106,12 @@ export const useNotificacionesStore = defineStore('notificaciones', () => {
   }
 
   function agregarNotificacionDecision(manuscrito, decision) {
-    const estadoLimpio = decision === 'REQUERIDAS_REVISIONES' ? 'requiere revisiones' : decision.toLowerCase();
+    const labels = { ACEPTADO: 'aceptado', RECHAZADO: 'rechazado', EN_REVISION: 'enviado a revisión' }
     agregar({
-      destinatarioId: manuscrito.autorId,
       tipo: 'DECISION_EDITORIAL',
-      titulo: 'Decisión Editorial',
-      mensaje: `El editor ha tomado una decisión sobre su manuscrito "${manuscrito.titulo}": ${estadoLimpio}`,
-      ruta: `/autor/manuscrito/${manuscrito.id}`
+      titulo: 'Decisión editorial tomada',
+      mensaje: `El manuscrito "${manuscrito.titulo}" fue ${labels[decision] || decision}`,
+      ruta: `/editor/asignacion/${manuscrito.id}`
     })
   }
 
@@ -93,15 +119,12 @@ export const useNotificacionesStore = defineStore('notificaciones', () => {
     notificaciones,
     sinLeer,
     count,
-    cargando,
-    cargar,
-    iniciarPolling,
-    detenerPolling,
     agregar,
     marcarLeida,
     marcarTodasLeidas,
     limpiar,
     agregarNotificacionRevision,
-    agregarNotificacionDecision
+    agregarNotificacionDecision,
+    cargarNotificacionesBackend
   }
-})
+})

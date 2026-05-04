@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Usuario } from '../entities/usuario.entity';
 import { PerfilProfesional } from '../entities/perfil-profesional.entity';
+import { Rol } from '../entities/rol.entity';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 
@@ -13,31 +14,43 @@ export class AuthService {
     private usuarioRepository: Repository<Usuario>,
     @InjectRepository(PerfilProfesional)
     private perfilRepository: Repository<PerfilProfesional>,
+    @InjectRepository(Rol)
+    private rolRepository: Repository<Rol>,
     private jwtService: JwtService,
   ) {}
 
-  async register(email: string, passwordPlain: string, nombre: string) {
+  async register(body: any) {
+    const { email, password, nombre, rol, especialidad, palabras_clave, experiencia } = body;
     // 1. Verificar si el usuario ya existe
     const userExists = await this.usuarioRepository.findOne({ where: { email } });
     if (userExists) throw new BadRequestException('El correo ya está registrado');
 
     // 2. Encriptar la contraseña
     const salt = await bcrypt.genSalt(10);
-    const passwordHash = await bcrypt.hash(passwordPlain, salt);
+    const passwordHash = await bcrypt.hash(password, salt);
 
-    // 3. Guardar usuario en MariaDB con rol por defecto
+    // Buscar rol, si no se envía o no existe, default a AUTOR
+    const nombreRol = rol || 'AUTOR';
+    let rolDb = await this.rolRepository.findOne({ where: { nombre: nombreRol } });
+    if (!rolDb) {
+      rolDb = await this.rolRepository.findOne({ where: { nombre: 'AUTOR' } });
+    }
+
+    // 3. Guardar usuario en MariaDB con rol
     const nuevoUsuario = this.usuarioRepository.create({
       email,
       password_hash: passwordHash,
-      // Nota: Aquí se debería asignar el Rol AUTOR recuperándolo de base de datos
-      // Asumiremos que el servicio de usuarios se encarga o lo simplificamos aquí
+      roles: rolDb ? [rolDb] : [],
     });
     const guardado = await this.usuarioRepository.save(nuevoUsuario);
 
-    // 4. Crear perfil profesional con el nombre
+    // 4. Crear perfil profesional
     const perfil = this.perfilRepository.create({
       usuario: guardado,
       nombre_completo: nombre || email.split('@')[0],
+      especialidad_academica: rol === 'REVISOR' ? especialidad : null,
+      palabras_clave: rol === 'REVISOR' ? palabras_clave : null,
+      experiencia: rol === 'REVISOR' ? experiencia : null,
     });
     await this.perfilRepository.save(perfil);
     

@@ -35,6 +35,8 @@ CREATE TABLE perfiles_profesionales (
     institucion VARCHAR(200),
     orcid VARCHAR(50) UNIQUE, -- Identificador estándar para investigadores
     especialidad_academica VARCHAR(200),
+    palabras_clave VARCHAR(255),
+    experiencia TEXT,
     avatar LONGTEXT NULL,
     FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario) ON DELETE CASCADE
 );
@@ -51,8 +53,13 @@ CREATE TABLE asignaciones_revision (
     estado ENUM('INVITADO', 'ACEPTADO', 'DECLINADO', 'COMPLETADA', 'EXPIRADA') DEFAULT 'INVITADO',
     fecha_invitacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     fecha_limite DATE NOT NULL,
+    originalidad INT NULL,
+    metodologia INT NULL,
+    claridad INT NULL,
+    relevancia INT NULL,
     puntuacion INT NULL,
     comentarios TEXT NULL,
+    comentarios_editor TEXT NULL,
     recomendacion VARCHAR(50) NULL,
     fecha_completada TIMESTAMP NULL,
     FOREIGN KEY (id_revisor) REFERENCES usuarios(id_usuario) ON DELETE RESTRICT

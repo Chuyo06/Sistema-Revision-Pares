@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Param, Query, Patch } from '@nestjs/common';
 import { RevisionService } from '../services/revision.service';
 import { AsignacionRevision } from '../entities/asignacion-revision.entity';
 
@@ -58,5 +58,12 @@ export class RevisionController {
       throw new Error('ID de asignación inválido');
     }
     return this.revisionService.eliminar(numId);
+  }
+
+  @Patch(':id/estado')
+  async actualizarEstado(@Param('id') id: string, @Body('estado') estado: string) {
+    const numId = Number(id);
+    if (isNaN(numId)) return null;
+    return this.revisionService.actualizarEstado(numId, estado);
   }
 }

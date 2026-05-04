@@ -82,3 +82,17 @@ export async function enviarRevisionApi(articuloId, revision) {
   }
 }
 
+/**
+ * Actualizar el estado de una asignación (Aceptar/Declinar).
+ */
+export async function actualizarEstadoRevisionApi(idAsignacion, nuevoEstado) {
+  try {
+    const res = await apiFetch(`${BASE_URL}/${idAsignacion}/estado`, {
+      method: 'PATCH',
+      body: JSON.stringify({ estado: nuevoEstado }),
+    })
+    return res.ok
+  } catch {
+    return false
+  }
+}

@@ -68,6 +68,9 @@ export class UsuariosService implements OnModuleInit {
       estado: u.estado.toLowerCase(),
       fechaRegistro: u.fecha_registro,
       institucion: u.perfil?.institucion || null,
+      especialidad: u.perfil?.especialidad_academica || null,
+      palabras_clave: u.perfil?.palabras_clave || null,
+      experiencia: u.perfil?.experiencia || null,
     }));
   }
 
@@ -86,6 +89,8 @@ export class UsuariosService implements OnModuleInit {
       fechaRegistro: u.fecha_registro,
       institucion: u.perfil?.institucion || null,
       especialidad: u.perfil?.especialidad_academica || null,
+      palabras_clave: u.perfil?.palabras_clave || null,
+      experiencia: u.perfil?.experiencia || null,
     };
   }
 
@@ -105,7 +110,7 @@ export class UsuariosService implements OnModuleInit {
     return this.obtenerPorId(id);
   }
 
-  async actualizarUsuario(id: number, datos: { nombre?: string; email?: string; institucion?: string; especialidad?: string; estado?: string; rol?: string; roles?: string[] }) {
+  async actualizarUsuario(id: number, datos: { nombre?: string; email?: string; institucion?: string; especialidad?: string; palabras_clave?: string; experiencia?: string; estado?: string; roles?: string[]; rol?: string }) {
     const usuario = await this.usuarioRepo.findOne({ where: { id_usuario: id }, relations: ['perfil', 'roles'] });
     if (!usuario) return null;
 
@@ -116,7 +121,7 @@ export class UsuariosService implements OnModuleInit {
     if (datos.estado) {
       usuario.estado = datos.estado.toUpperCase() as any;
     }
-    
+
     if (datos.roles) {
       usuario.roles = await this.getOrCreateRoles(datos.roles);
     } else if (datos.rol) {
@@ -125,14 +130,16 @@ export class UsuariosService implements OnModuleInit {
 
     await this.usuarioRepo.save(usuario);
 
-    if (datos.nombre !== undefined || datos.institucion !== undefined || datos.especialidad !== undefined) {
-      let perfil = await this.perfilRepo.findOne({ where: { usuario: { id_usuario: id } } });
-      if (!perfil) {
-        perfil = this.perfilRepo.create({ usuario, nombre_completo: datos.nombre || '' });
-      }
-      if (datos.nombre !== undefined) perfil.nombre_completo = datos.nombre;
-      if (datos.institucion !== undefined) perfil.institucion = datos.institucion;
-      if (datos.especialidad !== undefined) perfil.especialidad_academica = datos.especialidad;
+    const perfil = usuario.perfil || this.perfilRepo.create({ usuario, nombre_completo: usuario.email.split('@')[0] });
+    let perfilCambiado = false;
+
+    if (datos.nombre) { perfil.nombre_completo = datos.nombre; perfilCambiado = true; }
+    if (datos.institucion !== undefined) { perfil.institucion = datos.institucion; perfilCambiado = true; }
+    if (datos.especialidad !== undefined) { perfil.especialidad_academica = datos.especialidad; perfilCambiado = true; }
+    if (datos.palabras_clave !== undefined) { perfil.palabras_clave = datos.palabras_clave; perfilCambiado = true; }
+    if (datos.experiencia !== undefined) { perfil.experiencia = datos.experiencia; perfilCambiado = true; }
+
+    if (perfilCambiado || !usuario.perfil) {
       await this.perfilRepo.save(perfil);
     }
 
@@ -165,6 +172,4 @@ export class UsuariosService implements OnModuleInit {
 
     return this.obtenerPorId(guardado.id_usuario);
   }
-
-
 }

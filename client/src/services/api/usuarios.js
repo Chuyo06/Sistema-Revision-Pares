@@ -48,10 +48,13 @@ export async function actualizarUsuarioApi(id, datos) {
       method: 'PATCH',
       body: JSON.stringify(datos),
     })
-    if (!res.ok) return null
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}))
+      throw new Error(errorData.message || 'Error al actualizar usuario')
+    }
     return await res.json()
-  } catch {
-    return null
+  } catch (err) {
+    console.error(err)
+    throw err
   }
 }
-

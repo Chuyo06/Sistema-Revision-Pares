@@ -1,6 +1,6 @@
 <template>
   <v-layout>
-    <!-- â”€â”€ Sidebar estilo X â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+    <!-- ── Sidebar estilo X ─────────────────────────────────── -->
     <v-navigation-drawer
       v-model="drawer"
       :permanent="smAndUp"
@@ -55,11 +55,11 @@
       </template>
     </v-navigation-drawer>
 
-    <!-- â”€â”€ Contenido principal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+    <!-- ── Contenido principal ────────────────────────────── -->
     <v-main style="background:#F6F8F6">
-      <!-- Barra superior con notificaciones (Visible para todos) -->
+      <!-- Barra superior con notificaciones -->
       <div
-        v-if="smAndUp"
+        v-if="smAndUp && auth.estaAutenticado"
         style="background:#FFFFFF; border-bottom:1px solid #D3E0D7; display:flex; align-items:center; padding:8px 16px; gap:12px"
       >
         <span style="font-size:16px; font-weight:700; color:#1B4332; flex:1">{{ titulo }}</span>
@@ -92,6 +92,7 @@
         <span style="font-size:16px; font-weight:700; color:#1B4332">{{ titulo }}</span>
         <v-spacer />
         <v-btn
+          v-if="auth.estaAutenticado"
           icon
           variant="text"
           size="small"
@@ -140,11 +141,11 @@
             >
               <template #prepend>
                 <v-avatar
-                  :color="n.tipo === 'REVISION_COMPLETADA' ? 'success' : n.tipo === 'DECISION_EDITORIAL' ? 'warning' : 'info'"
+                  :color="n.tipo === 'REVISION_COMPLETADA' ? 'success' : n.tipo === 'INVITACION_RECHAZADA' ? 'error' : n.tipo === 'DECISION_EDITORIAL' ? 'warning' : 'info'"
                   size="36"
                 >
                   <v-icon color="white" size="18">
-                    {{ n.tipo === 'REVISION_COMPLETADA' ? 'mdi-check-circle' : 'mdi-gavel' }}
+                    {{ n.tipo === 'REVISION_COMPLETADA' ? 'mdi-check-circle' : n.tipo === 'INVITACION_RECHAZADA' ? 'mdi-account-cancel' : n.tipo === 'DECISION_EDITORIAL' ? 'mdi-gavel' : 'mdi-bell' }}
                   </v-icon>
                 </v-avatar>
               </template>
@@ -183,12 +184,16 @@ const notifStore = useNotificacionesStore()
 const mostrarNotificaciones = ref(false)
 
 onMounted(() => {
-  notifStore.iniciarPolling()
+  if (auth.usuario?.id) {
+    notifStore.cargarNotificacionesBackend(auth.usuario.id)
+  }
+  // Mantener actualizado el polling
+  // notifStore.iniciarPolling() // Descomentar si se desea polling activo
 })
 
-onBeforeUnmount(() => {
-  notifStore.detenerPolling()
-})
+// onBeforeUnmount(() => {
+//   notifStore.detenerPolling()
+// })
 
 function formatTime(ts) {
   const d = new Date(ts)

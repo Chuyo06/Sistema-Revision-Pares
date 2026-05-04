@@ -3,7 +3,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ManuscritosService } from './manuscritos.service';
 
 import { join } from 'path';
-import { Manuscrito } from './entities/manuscrito.entity';
+import { Manuscrito } from './schemas/manuscrito.schema';
 
 @Controller('manuscritos')
 export class ManuscritosController {
@@ -52,22 +52,16 @@ export class ManuscritosController {
 
   @Get(':id')
   obtenerPorId(@Param('id') id: string) {
-    const numId = +id;
-    if (isNaN(numId)) return null;
-    return this.manuscritosService.obtenerPorId(numId);
+    return this.manuscritosService.obtenerPorId(id);
   }
 
   @Patch(':id')
   actualizar(@Param('id') id: string, @Body() datos: Partial<Manuscrito>) {
-    const numId = +id;
-    if (isNaN(numId)) return null;
-    return this.manuscritosService.actualizar(numId, datos);
+    return this.manuscritosService.actualizar(id, datos);
   }
 
   @Delete(':id')
   eliminar(@Param('id') id: string) {
-    const numId = +id;
-    if (isNaN(numId)) return null;
-    return this.manuscritosService.eliminar(numId);
+    return this.manuscritosService.eliminar(id);
   }
 }

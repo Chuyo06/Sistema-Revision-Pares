@@ -1,5 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToOne, ManyToMany, JoinTable } from 'typeorm';
 import { PerfilProfesional } from './perfil-profesional.entity';
+import { Rol } from './rol.entity';
 
 export enum RolUsuario {
   AUTOR = 'AUTOR',
@@ -16,19 +17,24 @@ export enum EstadoUsuario {
   SUSPENDIDO = 'SUSPENDIDO',
 }
 
-@Entity('usuarios') 
+@Entity('usuarios')
 export class Usuario {
   @PrimaryGeneratedColumn({ name: 'id_usuario' })
-  id_usuario!: number; 
+  id_usuario!: number;
 
   @Column({ type: 'varchar', length: 150, unique: true })
-  email!: string; 
+  email!: string;
 
   @Column({ type: 'varchar', length: 255, name: 'password_hash' })
   password_hash!: string;
 
-  @Column({ type: 'simple-array', default: [RolUsuario.AUTOR] })
-  roles!: RolUsuario[];
+  @ManyToMany(() => Rol)
+  @JoinTable({
+    name: 'usuario_roles',
+    joinColumn: { name: 'usuario_id', referencedColumnName: 'id_usuario' },
+    inverseJoinColumn: { name: 'rol_id', referencedColumnName: 'id' }
+  })
+  roles!: Rol[];
 
   @Column({ type: 'enum', enum: EstadoUsuario, default: EstadoUsuario.ACTIVO })
   estado!: EstadoUsuario;

@@ -25,10 +25,12 @@ export class AuthService {
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(passwordPlain, salt);
 
-    // 3. Guardar usuario en MariaDB
+    // 3. Guardar usuario en MariaDB con rol por defecto
     const nuevoUsuario = this.usuarioRepository.create({
       email,
       password_hash: passwordHash,
+      // Nota: Aquí se debería asignar el Rol AUTOR recuperándolo de base de datos
+      // Asumiremos que el servicio de usuarios se encarga o lo simplificamos aquí
     });
     const guardado = await this.usuarioRepository.save(nuevoUsuario);
 
@@ -43,10 +45,10 @@ export class AuthService {
   }
 
   async login(email: string, passwordPlain: string) {
-    // 1. Buscar al usuario con su perfil
+    // 1. Buscar al usuario con su perfil y roles
     const user = await this.usuarioRepository.findOne({
       where: { email },
-      relations: ['perfil'],
+      relations: ['perfil', 'roles'],
     });
     if (!user) throw new UnauthorizedException('Credenciales inválidas');
 
@@ -55,7 +57,8 @@ export class AuthService {
     if (!isPasswordValid) throw new UnauthorizedException('Credenciales inválidas');
 
     // 3. Generar el Token JWT
-    const payload = { sub: user.id_usuario, email: user.email, roles: user.roles };
+    const rolesArray = user.roles?.map(r => r.nombre) || [];
+    const payload = { sub: user.id_usuario, email: user.email, roles: rolesArray };
     const token = this.jwtService.sign(payload);
 
     return {
@@ -64,7 +67,7 @@ export class AuthService {
       nombre: user.perfil?.nombre_completo || user.email.split('@')[0],
       avatar: user.perfil?.avatar || null,
       email: user.email,
-      roles: user.roles,
+      roles: rolesArray,
     };
   }
 

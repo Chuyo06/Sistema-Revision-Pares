@@ -1,24 +1,51 @@
-// @ts-nocheck
-// TODO: Este archivo se usará cuando manuscritos migre a MongoDB
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
-// Esto une nuestra clase con las funciones de documento de MongoDB
 export type ManuscritoDocument = Manuscrito & Document;
 
-@Schema({ timestamps: true }) // Esto crea automáticamente 'createdAt' y 'updatedAt'
+@Schema({ timestamps: { createdAt: 'fechaSubida', updatedAt: false } })
 export class Manuscrito {
   @Prop({ required: true })
   titulo: string;
 
-  @Prop({ required: true })
+  @Prop()
+  resumen: string;
+
+  @Prop()
   contenido: string;
 
   @Prop({ required: true })
   autorId: number;
 
-  @Prop({ default: 'pendiente' })
+  @Prop()
+  editorId: number;
+
+  @Prop()
+  autores: string;
+
+  @Prop({ default: 'BORRADOR' })
   estado: string;
+
+  @Prop()
+  convocatoria: string;
+
+  @Prop()
+  referencia: string;
+
+  @Prop()
+  respuestasRevisores: string;
+
+  @Prop({ default: 0 })
+  revisoresAsignados: number;
+
+  @Prop({ default: 0 })
+  revisionesCompletadas: number;
+
+  @Prop()
+  fechaEnvio: Date;
+
+  @Prop()
+  editorSeccionId: number;
 }
 
 export const ManuscritoSchema = SchemaFactory.createForClass(Manuscrito);

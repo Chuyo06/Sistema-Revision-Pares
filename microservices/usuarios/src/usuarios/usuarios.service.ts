@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Usuario, RolUsuario } from '../entities/usuario.entity';
 import { PerfilProfesional } from '../entities/perfil-profesional.entity';
+import { Rol } from '../entities/rol.entity';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -12,13 +13,29 @@ export class UsuariosService implements OnModuleInit {
     private usuarioRepo: Repository<Usuario>,
     @InjectRepository(PerfilProfesional)
     private perfilRepo: Repository<PerfilProfesional>,
+    @InjectRepository(Rol)
+    private rolRepo: Repository<Rol>,
   ) {}
 
   async onModuleInit() {
     await this.seedSuperUser();
   }
 
-  private async asyncSeed(email: string, nombre: string, roles: RolUsuario[]) {
+  private async getOrCreateRoles(nombres: string[]): Promise<Rol[]> {
+    const rolesEntities: Rol[] = [];
+    for (const nombre of nombres) {
+      const nombreUpper = nombre.toUpperCase();
+      let rolEnt = await this.rolRepo.findOne({ where: { nombre: nombreUpper } });
+      if (!rolEnt) {
+        rolEnt = this.rolRepo.create({ nombre: nombreUpper });
+        await this.rolRepo.save(rolEnt);
+      }
+      rolesEntities.push(rolEnt);
+    }
+    return rolesEntities;
+  }
+
+  private async asyncSeed(email: string, nombre: string, roles: string[]) {
     const exists = await this.usuarioRepo.findOne({ where: { email } });
     if (!exists) {
       console.log(`[Seed] Creando usuario: ${email}`);
@@ -40,14 +57,14 @@ export class UsuariosService implements OnModuleInit {
 
   async obtenerTodos() {
     const usuarios = await this.usuarioRepo.find({
-      relations: ['perfil'],
+      relations: ['perfil', 'roles'],
       order: { fecha_registro: 'DESC' },
     });
     return usuarios.map((u) => ({
       id: u.id_usuario,
       nombre: u.perfil?.nombre_completo || u.email.split('@')[0],
       email: u.email,
-      roles: u.roles.map(r => r.toLowerCase()),
+      roles: u.roles?.map(r => r.nombre.toLowerCase()) || [],
       estado: u.estado.toLowerCase(),
       fechaRegistro: u.fecha_registro,
       institucion: u.perfil?.institucion || null,
@@ -57,14 +74,14 @@ export class UsuariosService implements OnModuleInit {
   async obtenerPorId(id: number) {
     const u = await this.usuarioRepo.findOne({
       where: { id_usuario: id },
-      relations: ['perfil'],
+      relations: ['perfil', 'roles'],
     });
     if (!u) return null;
     return {
       id: u.id_usuario,
       nombre: u.perfil?.nombre_completo || u.email.split('@')[0],
       email: u.email,
-      roles: u.roles.map(r => r.toLowerCase()),
+      roles: u.roles?.map(r => r.nombre.toLowerCase()) || [],
       estado: u.estado.toLowerCase(),
       fechaRegistro: u.fecha_registro,
       institucion: u.perfil?.institucion || null,
@@ -79,7 +96,39 @@ export class UsuariosService implements OnModuleInit {
 
   async actualizarRol(id: number, rol: string | string[]) {
     const rolesArray = Array.isArray(rol) ? rol : [rol];
-    await this.usuarioRepo.update(id, { roles: rolesArray.map(r => r.toUpperCase()) as any });
+    const rolesEntities = await this.getOrCreateRoles(rolesArray);
+    const usuario = await this.usuarioRepo.findOne({ where: { id_usuario: id }, relations: ['roles'] });
+    if (usuario) {
+      usuario.roles = rolesEntities;
+      await this.usuarioRepo.save(usuario);
+    }
+    return this.obtenerPorId(id);
+  }
+
+  async actualizarUsuario(id: number, datos: { nombre?: string; institucion?: string; especialidad?: string; estado?: string; roles?: string[] }) {
+    const usuario = await this.usuarioRepo.findOne({ where: { id_usuario: id }, relations: ['perfil', 'roles'] });
+    if (!usuario) return null;
+
+    if (datos.estado) {
+      usuario.estado = datos.estado.toUpperCase() as any;
+    }
+    
+    if (datos.roles) {
+      usuario.roles = await this.getOrCreateRoles(datos.roles);
+    }
+
+    await this.usuarioRepo.save(usuario);
+
+    if (datos.nombre || datos.institucion || datos.especialidad) {
+      const perfil = await this.perfilRepo.findOne({ where: { usuario: { id_usuario: id } } });
+      if (perfil) {
+        if (datos.nombre) perfil.nombre_completo = datos.nombre;
+        if (datos.institucion !== undefined) perfil.institucion = datos.institucion;
+        if (datos.especialidad !== undefined) perfil.especialidad_academica = datos.especialidad;
+        await this.perfilRepo.save(perfil);
+      }
+    }
+
     return this.obtenerPorId(id);
   }
 
@@ -87,14 +136,16 @@ export class UsuariosService implements OnModuleInit {
     const salt = await bcrypt.genSalt(10);
     const hash = await bcrypt.hash(datos.password, salt);
 
-    const rolesToSave = datos.roles 
-      ? datos.roles.map(r => r.toUpperCase() as any) 
-      : [(datos.rol?.toUpperCase() || 'AUTOR') as any];
+    const rolesToSaveStrings = datos.roles 
+      ? datos.roles 
+      : [(datos.rol || 'AUTOR')];
+
+    const rolesEntities = await this.getOrCreateRoles(rolesToSaveStrings);
 
     const nuevo = this.usuarioRepo.create({
       email: datos.email,
       password_hash: hash,
-      roles: rolesToSave,
+      roles: rolesEntities,
     });
     const guardado = await this.usuarioRepo.save(nuevo);
 

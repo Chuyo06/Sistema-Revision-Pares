@@ -4,6 +4,7 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { redisStore } from 'cache-manager-redis-yet'; 
 import { Usuario } from './entities/usuario.entity';
 import { PerfilProfesional } from './entities/perfil-profesional.entity';
+import { Rol } from './entities/rol.entity';
 import { AuthModule } from './auth/auth.module';
 import { UsuariosModule } from './usuarios/usuarios.module';
 
@@ -17,10 +18,10 @@ import { UsuariosModule } from './usuarios/usuarios.module';
       username: 'root',
       password: 'root_password',
       database: 'mi_base_datos',
-      entities: [Usuario, PerfilProfesional],
+      entities: [Usuario, PerfilProfesional, Rol],
       synchronize: false,
     }),
-    TypeOrmModule.forFeature([Usuario, PerfilProfesional]),
+    TypeOrmModule.forFeature([Usuario, PerfilProfesional, Rol]),
 
     // 2. Auth y Usuarios
     AuthModule,

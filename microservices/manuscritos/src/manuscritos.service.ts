@@ -1,19 +1,18 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Not } from 'typeorm';
-import { Manuscrito } from './entities/manuscrito.entity';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { Manuscrito, ManuscritoDocument } from './schemas/manuscrito.schema';
 import * as fs from 'fs';
 import * as path from 'path';
 
 @Injectable()
 export class ManuscritosService {
   constructor(
-    @InjectRepository(Manuscrito)
-    private manuscritoRepository: Repository<Manuscrito>,
+    @InjectModel(Manuscrito.name) private manuscritoModel: Model<ManuscritoDocument>,
   ) {}
 
   async guardarArchivo(archivo: Express.Multer.File) {
-    const count = await this.manuscritoRepository.count();
+    const count = await this.manuscritoModel.countDocuments();
     const referencia = `RPP-${new Date().getFullYear()}-${String(count + 1).padStart(4, '0')}`;
 
     const uploadDir = path.join(process.cwd(), 'uploads');
@@ -32,43 +31,36 @@ export class ManuscritosService {
   }
 
   async crear(datos: Partial<Manuscrito>): Promise<Manuscrito> {
-    const count = await this.manuscritoRepository.count();
+    const count = await this.manuscritoModel.countDocuments();
     const ref = datos.referencia || `RPP-${new Date().getFullYear()}-${String(count + 1).padStart(4, '0')}`;
 
-    const nuevo = this.manuscritoRepository.create({
+    const nuevoManuscrito = new this.manuscritoModel({
       ...datos,
       referencia: ref,
       estado: datos.estado || 'ENVIADO',
       fechaEnvio: datos.fechaEnvio || new Date(),
     });
-    return await this.manuscritoRepository.save(nuevo);
+    return await nuevoManuscrito.save();
   }
 
   async obtenerTodos(): Promise<Manuscrito[]> {
-    return await this.manuscritoRepository.find({
-      where: { estado: Not('BORRADOR') },
-      order: { fechaSubida: 'DESC' },
-    });
+    return await this.manuscritoModel.find({ estado: { $ne: 'BORRADOR' } }).sort({ fechaSubida: -1 }).exec();
   }
 
   async obtenerPorAutor(autorId: number): Promise<Manuscrito[]> {
-    return await this.manuscritoRepository.find({
-      where: { autorId },
-      order: { fechaSubida: 'DESC' },
-    });
+    return await this.manuscritoModel.find({ autorId }).sort({ fechaSubida: -1 }).exec();
   }
 
-  async obtenerPorId(id: number): Promise<Manuscrito | null> {
-    return await this.manuscritoRepository.findOne({ where: { id } });
+  async obtenerPorId(id: string): Promise<Manuscrito | null> {
+    return await this.manuscritoModel.findById(id).exec();
   }
 
-  async actualizar(id: number, datos: Partial<Manuscrito>): Promise<Manuscrito | null> {
-    await this.manuscritoRepository.update(id, datos);
-    return this.obtenerPorId(id);
+  async actualizar(id: string, datos: Partial<Manuscrito>): Promise<Manuscrito | null> {
+    return await this.manuscritoModel.findByIdAndUpdate(id, datos, { new: true }).exec();
   }
 
-  async eliminar(id: number): Promise<boolean> {
-    const result = await this.manuscritoRepository.delete(id);
-    return (result.affected ?? 0) > 0;
+  async eliminar(id: string): Promise<boolean> {
+    const result = await this.manuscritoModel.findByIdAndDelete(id).exec();
+    return result !== null;
   }
 }

@@ -20,7 +20,7 @@
             :style="avatarImage ? `background: url(${avatarImage}) center/cover no-repeat;` : ''"
           >
             <span v-if="!avatarImage" style="font-size: 38px; font-weight: 700; color: white;">
-              {{ auth.usuario?.avatar?.length <= 2 ? auth.usuario.avatar : (auth.usuario?.nombre?.substring(0,2)?.toUpperCase() || 'US') }}
+              {{ (auth.usuario?.nombre?.substring(0,2)?.toUpperCase() || 'US') }}
             </span>
             
             <!-- Overlay Hover para cambiar foto -->
@@ -132,23 +132,55 @@
       </v-card-title>
       <v-card-text class="px-8 pb-8 pt-4">
         <p style="font-size: 14px; color: #8B5A2B; margin-bottom: 24px;">
-          Selecciona tus áreas de experiencia. Esta información ayudará al sistema de asignación inteligente a recomendarte manuscritos relevantes.
+          Completa tus áreas de experiencia, palabras clave y un breve resumen de tu trayectoria para ayudar al sistema de asignación inteligente a recomendarte manuscritos relevantes.
         </p>
         
-        <v-combobox
-          v-model="especialidadesSeleccionadas"
-          :items="adminStore.areasTematicas"
-          label="Tus especialidades"
-          hint="Selecciona áreas existentes o escribe y presiona Enter para crear nuevas"
-          persistent-hint
-          multiple
-          chips
-          closable-chips
-          variant="outlined"
-          density="comfortable"
-          class="custom-input"
-          @update:modelValue="guardarEspecialidades"
-        ></v-combobox>
+        <v-form @submit.prevent="guardarPerfilEspecialidad">
+          <v-text-field
+            v-model="perfilProfesional.especialidad"
+            label="Área principal de especialidad"
+            variant="outlined"
+            density="compact"
+            class="mb-4 custom-input"
+            hide-details="auto"
+          ></v-text-field>
+
+          <v-combobox
+            v-model="perfilProfesional.palabrasClave"
+            label="Palabras clave de tus temas de interés"
+            hint="Escribe y presiona Enter para añadir una palabra clave"
+            persistent-hint
+            multiple
+            chips
+            closable-chips
+            variant="outlined"
+            density="comfortable"
+            class="mb-4 custom-input"
+          ></v-combobox>
+
+          <v-textarea
+            v-model="perfilProfesional.experiencia"
+            label="Breve experiencia profesional"
+            variant="outlined"
+            density="compact"
+            rows="3"
+            class="mb-6 custom-input"
+            hide-details="auto"
+          ></v-textarea>
+
+          <div class="d-flex justify-end">
+            <v-btn
+              type="submit"
+              color="#558b2f"
+              rounded="pill"
+              class="px-8 text-none font-weight-bold elevation-2"
+              height="44"
+              :loading="isSubmittingPerfil"
+            >
+              Guardar Perfil
+            </v-btn>
+          </div>
+        </v-form>
       </v-card-text>
     </v-card>
 
@@ -166,27 +198,50 @@
 import { ref, computed } from 'vue'
 import { useAuthStore } from '@/store/auth.js'
 import { updateAvatarApi, cambiarPasswordApi } from '@/services/api/auth.js'
-import { useAdminStore } from '@/store/administrador/index.js'
 
 const auth = useAuthStore()
-const adminStore = useAdminStore()
 
 const formValid = ref(false)
 const isSubmitting = ref(false)
+const isSubmittingPerfil = ref(false)
 
-const especialidadesSeleccionadas = ref(auth.usuario?.especialidades || [])
+const palabrasClaveArray = auth.usuario?.palabras_clave 
+  ? auth.usuario.palabras_clave.split(',').map(s => s.trim()).filter(Boolean)
+  : []
 
-function guardarEspecialidades() {
-  auth.actualizarPerfil({ especialidades: especialidadesSeleccionadas.value })
-  snackbar.value = {
-    show: true,
-    text: 'Especialidades actualizadas. Esto ayudará al Matching Inteligente.',
-    color: 'success'
+const perfilProfesional = ref({
+  especialidad: auth.usuario?.especialidad || '',
+  palabrasClave: palabrasClaveArray,
+  experiencia: auth.usuario?.experiencia || ''
+})
+
+async function guardarPerfilEspecialidad() {
+  isSubmittingPerfil.value = true
+  try {
+    const datosParaGuardar = {
+      especialidad: perfilProfesional.value.especialidad,
+      palabras_clave: perfilProfesional.value.palabrasClave.join(', '),
+      experiencia: perfilProfesional.value.experiencia
+    }
+    await auth.guardarPerfilBackend(datosParaGuardar)
+    snackbar.value = {
+      show: true,
+      text: 'Perfil de especialidad actualizado exitosamente en el servidor.',
+      color: 'success'
+    }
+  } catch (error) {
+    snackbar.value = {
+      show: true,
+      text: 'Error al actualizar el perfil',
+      color: 'error'
+    }
+  } finally {
+    isSubmittingPerfil.value = false
   }
 }
 
 const fileInput = ref(null)
-const avatarImage = ref(null)
+const avatarImage = ref(auth.usuario?.avatar?.length > 10 ? auth.usuario.avatar : null)
 const isUploadingPhoto = ref(false)
 
 const passwords = ref({

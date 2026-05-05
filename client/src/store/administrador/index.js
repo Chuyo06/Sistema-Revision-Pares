@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { fetchUsuarios, toggleEstadoUsuarioApi, crearUsuarioApi, actualizarUsuarioApi } from '@/services/api/usuarios.js'
 import { fetchManuscritos } from '@/services/api/manuscritos.js'
+import { apiFetch } from '@/services/api/client.js'
 
 export const useAdminStore = defineStore('administrador', () => {
   const usuarios = ref([])
@@ -17,20 +18,41 @@ export const useAdminStore = defineStore('administrador', () => {
     generacionCartasActiva: true,
   })
 
-  // Cargar áreas desde localStorage o usar valores por defecto
-  const savedAreas = JSON.parse(localStorage.getItem('rpp_areas') || 'null')
-  const areasTematicas = ref(savedAreas || [
-    'Inteligencia Artificial',
-    'Machine Learning',
-    'NLP',
-    'Ciberseguridad',
-    'IoT',
-    'Ingeniería de Software',
-    'DevOps'
-  ])
+  const areasTematicas = ref([])
 
-  function guardarAreas() {
-    localStorage.setItem('rpp_areas', JSON.stringify(areasTematicas.value))
+  async function cargarConfiguraciones() {
+    try {
+      const resAreas = await apiFetch('/api/usuarios/config/areas')
+      if (resAreas.ok) {
+        const data = await resAreas.json()
+        if (data) areasTematicas.value = data
+      } else {
+        // Fallback default si no hay en DB
+        areasTematicas.value = ['Inteligencia Artificial', 'Machine Learning', 'Ciberseguridad', 'Ingeniería de Software']
+      }
+
+      const resIA = await apiFetch('/api/usuarios/config/ia')
+      if (resIA.ok) {
+        const data = await resIA.json()
+        if (data) configuracionIA.value = data
+      }
+    } catch (e) {
+      console.error("Error cargando configuraciones:", e)
+    }
+  }
+
+  async function guardarAreas() {
+    await apiFetch('/api/usuarios/config/areas', {
+      method: 'POST',
+      body: JSON.stringify({ valor: areasTematicas.value })
+    })
+  }
+
+  async function guardarConfiguracionIA() {
+    await apiFetch('/api/usuarios/config/ia', {
+      method: 'POST',
+      body: JSON.stringify({ valor: configuracionIA.value })
+    })
   }
 
   function agregarArea(area) {
@@ -79,6 +101,7 @@ export const useAdminStore = defineStore('administrador', () => {
   }))
 
   async function cargarDatosGlobales() {
+    await cargarConfiguraciones()
     const [uData, mData] = await Promise.all([
       fetchUsuarios(),
       fetchManuscritos()
@@ -88,7 +111,7 @@ export const useAdminStore = defineStore('administrador', () => {
   }
 
   async function toggleEstadoUsuario(id) {
-    const usuario = usuarios.value.find(u => u.id === id)
+    const usuario = usuarios.value.find(u => Number(u.id) === Number(id))
     if (usuario) {
       const exitoso = await toggleEstadoUsuarioApi(id, usuario.estado)
       if (exitoso) {
@@ -114,6 +137,7 @@ export const useAdminStore = defineStore('administrador', () => {
   return { 
     usuarios, manuscritos, configuracionIA, metricas, areasTematicas, erroresSistema,
     cargarUsuarios: cargarDatosGlobales, toggleEstadoUsuario, agregarUsuario, editarUsuario,
-    agregarArea, eliminarArea, registrarError
+    agregarArea, eliminarArea, registrarError, guardarConfiguracionIA
   }
 })
+

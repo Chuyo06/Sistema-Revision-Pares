@@ -2,9 +2,14 @@ import { Controller, Get, Post, Body, Param, Patch } from '@nestjs/common';
 import { NotificacionesService } from '../services/notificaciones.service';
 import { Notificacion } from '../entities/notificacion.entity';
 
-@Controller('notificaciones')
+@Controller()
 export class NotificacionesController {
   constructor(private readonly notificacionesService: NotificacionesService) {}
+  
+  @Get('health')
+  healthCheck() {
+    return { status: 'ok', service: 'notificaciones', timestamp: new Date().toISOString() };
+  }
 
   @Post()
   async crear(@Body() datos: Partial<Notificacion>) {

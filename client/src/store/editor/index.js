@@ -33,7 +33,7 @@ const PLANTILLAS_DECISION = {
     { id: 2, texto: 'Después de cuidadosa revisión, el comité editorial ha decidido no proceder con la publicación de "{titulo}". Agradecemos su interés en nuestra revista.' },
     { id: 3, texto: 'Su trabajo "{titulo}" no ha sido aceptado. Los revisores señalan limitaciones en la metodología y contribución al campo que impiden su publicación.' }
   ],
-  EN_REVISION: [
+  REQUERIDAS_REVISIONES: [
     { id: 1, texto: 'Solicitamos revisiones menores para "{titulo}". Por favor, considere los comentarios adjuntos y envíe una versión corregida en un plazo de 30 días.' },
     { id: 2, texto: 'El manuscrito "{titulo}" requiere revisiones sustanciales. Los revisores han proporcionado comentarios detallados que deberá abordar para una nueva evaluación.' },
     { id: 3, texto: 'Su artículo "{titulo}" necesita modificaciones antes de una decisión final. Por favor, revise los comentarios de los revisores y someta una versión revisada.' }
@@ -79,9 +79,9 @@ export const useEditorStore = defineStore('editor', () => {
   const manuscritosFiltrados = computed(() => {
     return manuscritos.value.filter(m => {
       if (filtros.value.convocatoria !== 'TODAS' && m.convocatoria !== filtros.value.convocatoria) return false
-      const fecha = m.fechaEnvio || m.fechaSubida
+      const fecha = (m.fechaEnvio || m.fechaSubida || '').split('T')[0]
       if (filtros.value.desde && fecha && fecha < filtros.value.desde) return false
-      if (filtros.value.hasta && fecha && fecha > filtros.value.hasta + 'T23:59:59') return false
+      if (filtros.value.hasta && fecha && fecha > filtros.value.hasta) return false
       return true
     })
   })
@@ -142,9 +142,11 @@ export const useEditorStore = defineStore('editor', () => {
 
       if (listManuscritos) {
         manuscritosRaw.value = listManuscritos.map(m => {
-          const asigsDelArticulo = (listAsig || []).filter(a => String(a.id_manuscrito_mongo) === String(m.id))
+          const realId = m._id || m.id;
+          const asigsDelArticulo = (listAsig || []).filter(a => String(a.id_manuscrito_mongo) === String(realId))
           return {
             ...m,
+            id: realId,
             revisoresAsignados: asigsDelArticulo.length,
             revisionesCompletadas: asigsDelArticulo.filter(a => a.estado === 'COMPLETADA').length,
             alertas: asigsDelArticulo.length === 0 && m.estado === 'ENVIADO' ? ['Requiere asignación de revisores'] : []
@@ -156,7 +158,7 @@ export const useEditorStore = defineStore('editor', () => {
         const manuscritosConAreas = listManuscritos || []
 
         revisoresDisponibles.value = listUsuarios
-          .filter(u => u.roles?.includes('revisor'))
+          .filter(u => u.roles?.includes('revisor') && (u.estado?.toUpperCase() === 'ACTIVO' || u.estado === 'ACTIVO'))
           .map(u => {
             const matching = calcularMatchingReal(u, manuscritosConAreas)
             return {
@@ -261,7 +263,7 @@ export const useEditorStore = defineStore('editor', () => {
       console.warn('[Editor] Solo el editor jefe puede tomar decisiones finales')
       return false
     }
-    const exito = await actualizarEstadoManuscrito(manuscritoId, decision)
+    const exito = await actualizarEstadoManuscrito(manuscritoId, decision, extras.comentario)
     if (exito) {
       // Registrar en historial editorial.
       const auth = useAuthStore()

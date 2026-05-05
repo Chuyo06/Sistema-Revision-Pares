@@ -1,120 +1,173 @@
-<template>
-  <div>
+  <div style="max-width: 1400px; margin: 0 auto; padding: 20px;">
     <v-btn variant="text" color="primary" prepend-icon="mdi-arrow-left" to="/revisor/asignados" class="mb-4">
       Volver a asignados
     </v-btn>
 
     <div v-if="articulo">
-      <!-- Info del artículo -->
-      <v-card class="mb-4" color="surface" border>
-        <div style="background:#546e7a; height:6px; border-radius:8px 8px 0 0" />
-        <v-card-text class="pa-4">
-          <div class="text-h6 font-weight-bold mb-1" style="color:#1B4332">{{ articulo.titulo }}</div>
-          <div class="text-caption mb-3" style="color:#8B5A2B">
-            {{ articulo.autores }} Â· {{ articulo.convocatoria }}
-          </div>
-          <p class="text-body-2" style="color:#4CAF50">{{ articulo.resumen }}</p>
-          
-          <v-btn
-            v-if="articulo.referencia"
-            color="primary"
-            variant="outlined"
-            size="small"
-            class="mt-4"
-            prepend-icon="mdi-file-pdf-box"
-            :href="`/api/manuscritos/download/${articulo.referencia}`"
-            target="_blank"
-          >
-            Ver PDF Adjunto
-          </v-btn>
-        </v-card-text>
-      </v-card>
-
-      <!-- Formulario de revisión -->
-      <v-card color="surface" border>
-        <div style="background:#4CAF50; height:6px; border-radius:8px 8px 0 0" />
-        <v-card-title class="pa-4 pb-2" style="color:#1B4332">
-          <v-icon start color="primary">mdi-clipboard-edit-outline</v-icon>
-          Formulario de revisión
-        </v-card-title>
-        <v-divider />
-
-        <v-card-text class="pa-5">
-          <v-form ref="form" v-model="valido" @submit.prevent="enviarRevision">
-
-            <!-- Evaluación -->
-            <p class="text-caption font-weight-bold mb-3" style="color:#8B5A2B; text-transform:uppercase; letter-spacing:0.05em">
-              Evaluación general
-            </p>
-            <v-row class="mb-3">
-              <v-col v-for="dim in dimensiones" :key="dim.campo" cols="12" sm="6">
-                <div class="text-body-2 mb-1" style="color:#1B4332">{{ dim.label }}</div>
-                <v-rating
-                  v-model="revision[dim.campo]"
-                  :length="5"
-                  density="compact"
-                  color="warning"
-                  active-color="warning"
-                />
-              </v-col>
-            </v-row>
-
-            <v-divider class="my-4" />
-
-            <p class="text-caption font-weight-bold mb-3" style="color:#8B5A2B; text-transform:uppercase; letter-spacing:0.05em">
-              Dictamen
-            </p>
-
-            <v-select
-              v-model="revision.recomendacion"
-              :items="recomendaciones"
-              item-title="label"
-              item-value="value"
-              label="Recomendación *"
-              prepend-inner-icon="mdi-gavel"
-              :rules="[r => !!r || 'Seleccione una recomendación']"
-              class="mb-3"
-            />
-            <v-textarea
-              v-model="revision.comentariosAutor"
-              label="Comentarios para el autor *"
-              prepend-inner-icon="mdi-comment-text-outline"
-              :rules="[r => !!r || 'Los comentarios son requeridos', r => r.length >= 50 || 'Mínimo 50 caracteres']"
-              rows="5"
-              class="mb-3"
-            />
-            <v-textarea
-              v-model="revision.comentariosEditor"
-              label="Comentarios confidenciales para el editor"
-              prepend-inner-icon="mdi-comment-lock-outline"
-              rows="3"
-              class="mb-4"
-            />
-
-            <div class="d-flex justify-space-between align-center">
-              <v-btn
-                color="secondary"
-                variant="tonal"
-                @click="solicitarFeedbackIA"
-                :loading="cargandoIA"
-                :disabled="!revision.comentariosAutor || revision.comentariosAutor.length < 20"
-                prepend-icon="mdi-robot-outline"
-              >
-                Asistente de Calidad IA
-              </v-btn>
-              <v-btn
-                type="submit"
-                color="primary"
-                :loading="enviando"
-                :disabled="!valido"
-                prepend-icon="mdi-send"
-              >
-                Enviar revisión
-              </v-btn>
+      <v-row>
+        <!-- Visor del PDF -->
+        <v-col cols="12" md="7" lg="8">
+          <v-card class="fill-height d-flex flex-column" color="surface" border>
+            <div style="background:#546e7a; height:6px; border-radius:8px 8px 0 0" />
+            
+            <div class="pa-4 bg-grey-lighten-4 border-b">
+              <div class="text-h6 font-weight-bold mb-1" style="color:#1B4332">{{ articulo.titulo }}</div>
+              <div class="text-caption mb-2" style="color:#8B5A2B">
+                {{ articulo.convocatoria }}
+              </div>
+              <p class="text-caption" style="color:#4CAF50; line-height:1.4">{{ articulo.resumen }}</p>
             </div>
-          </v-form>
-        </v-card-text>
-      </v-card>
+
+            <div class="flex-grow-1" style="min-height: 800px; display:flex; flex-direction:column">
+              <iframe
+                v-if="articulo.referencia"
+                :src="`/api/manuscritos/download/${articulo.referencia}#toolbar=1&navpanes=0&scrollbar=1`"
+                style="width:100%; height:100%; border:none; flex-grow:1"
+                title="Visor PDF del Manuscrito"
+              ></iframe>
+              <div v-else class="pa-8 text-center text-medium-emphasis flex-grow-1 d-flex flex-column justify-center align-center">
+                <v-icon size="48" color="grey-lighten-1" class="mb-2">mdi-file-hidden</v-icon>
+                <div>No hay documento PDF disponible para visualizar.</div>
+              </div>
+            </div>
+          </v-card>
+        </v-col>
+
+        <!-- Formulario de revisión -->
+        <v-col cols="12" md="5" lg="4">
+          <v-card color="surface" border class="fill-height">
+            <div style="background:#4CAF50; height:6px; border-radius:8px 8px 0 0" />
+            <v-card-title class="pa-4 pb-2" style="color:#1B4332; font-size:16px;">
+              <v-icon start color="primary" size="20">mdi-clipboard-edit-outline</v-icon>
+              Formulario de revisión
+            </v-card-title>
+            <v-divider />
+
+            <v-card-text class="pa-4" style="max-height: 850px; overflow-y: auto;">
+              <v-form ref="form" v-model="valido" @submit.prevent="enviarRevision">
+
+                <!-- Evaluación -->
+                <p class="text-caption font-weight-bold mb-2" style="color:#8B5A2B; text-transform:uppercase; letter-spacing:0.05em">
+                  Evaluación general
+                </p>
+                <v-row class="mb-1" dense>
+                  <v-col v-for="dim in dimensiones" :key="dim.campo" cols="12" sm="6">
+                    <div class="text-caption font-weight-medium mb-1" style="color:#1B4332">{{ dim.label }}</div>
+                    <v-rating
+                      v-model="revision[dim.campo]"
+                      :length="5"
+                      density="compact"
+                      size="small"
+                      color="warning"
+                      active-color="warning"
+                    />
+                  </v-col>
+                </v-row>
+
+                <v-divider class="my-4" />
+
+                <p class="text-caption font-weight-bold mb-2" style="color:#8B5A2B; text-transform:uppercase; letter-spacing:0.05em">
+                  Dictamen
+                </p>
+
+                <v-select
+                  v-model="revision.recomendacion"
+                  :items="recomendaciones"
+                  item-title="label"
+                  item-value="value"
+                  label="Recomendación *"
+                  density="compact"
+                  prepend-inner-icon="mdi-gavel"
+                  :rules="[r => !!r || 'Seleccione una recomendación']"
+                  class="mb-3"
+                />
+                
+                <!-- Comentarios por sección -->
+                <div class="mb-4">
+                  <div class="d-flex justify-space-between align-center mb-2">
+                    <span class="text-caption font-weight-bold" style="color:#1B4332">Comentarios Específicos</span>
+                    <v-btn size="x-small" color="primary" variant="tonal" prepend-icon="mdi-plus" @click="agregarSeccion">
+                      Añadir sección
+                    </v-btn>
+                  </div>
+                  <v-card v-for="(item, index) in comentariosPorSeccion" :key="index" variant="outlined" class="mb-2 pa-2 bg-grey-lighten-4">
+                    <div class="d-flex align-center mb-1">
+                      <v-text-field
+                        v-model="item.seccion"
+                        placeholder="Sección (Ej. Introducción)"
+                        density="compact"
+                        hide-details
+                        variant="underlined"
+                        class="flex-grow-1"
+                      />
+                      <v-btn icon="mdi-delete" color="error" variant="text" size="small" @click="eliminarSeccion(index)" />
+                    </div>
+                    <v-textarea
+                      v-model="item.comentario"
+                      placeholder="Escribe tu comentario detallado..."
+                      rows="2"
+                      auto-grow
+                      density="compact"
+                      hide-details
+                      variant="plain"
+                    />
+                  </v-card>
+                </div>
+
+                <v-textarea
+                  v-model="revision.comentariosAutor"
+                  label="Comentarios generales (Autor)"
+                  prepend-inner-icon="mdi-comment-text-outline"
+                  :rules="[() => cumpleMinimoComentarios() || 'Requiere mín. 50 caracteres']"
+                  rows="3"
+                  density="compact"
+                  class="mb-3"
+                />
+                <v-textarea
+                  v-model="revision.comentariosEditor"
+                  label="Confidencial para Editor"
+                  prepend-inner-icon="mdi-comment-lock-outline"
+                  rows="2"
+                  density="compact"
+                  class="mb-4"
+                />
+
+                <div class="d-flex justify-space-between align-center mt-2">
+                  <div class="d-flex align-center">
+                    <v-btn
+                      color="secondary"
+                      variant="tonal"
+                      size="small"
+                      @click="solicitarFeedbackIA"
+                      :loading="cargandoIA"
+                      :disabled="!cumpleMinimoComentariosIA()"
+                      prepend-icon="mdi-robot-outline"
+                    >
+                      Asistente IA
+                    </v-btn>
+                    <span v-if="autoGuardando" class="text-caption text-grey ml-3 d-flex align-center">
+                      <v-progress-circular indeterminate size="12" width="2" color="grey" class="mr-1"/> Guardando borrador...
+                    </span>
+                    <span v-else-if="ultimoGuardado" class="text-caption text-grey ml-3 d-flex align-center">
+                      <v-icon size="14" color="success" class="mr-1">mdi-cloud-check</v-icon> Borrador guardado a las {{ ultimoGuardado }}
+                    </span>
+                  </div>
+                  <v-btn
+                    type="submit"
+                    color="primary"
+                    size="small"
+                    :loading="enviando"
+                    :disabled="!valido"
+                    prepend-icon="mdi-send"
+                  >
+                    Enviar revisión
+                  </v-btn>
+                </div>
+              </v-form>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
 
       <!-- Confirmación -->
       <v-dialog v-model="dialogoConfirmacion" max-width="380">
@@ -172,7 +225,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useRevisorStore } from '@/store/revisor/index.js'
 
@@ -180,12 +233,19 @@ const route = useRoute()
 const router = useRouter()
 const revisorStore = useRevisorStore()
 
-const articuloId = Number(route.params.id)
-const articulo = computed(() => revisorStore.articulosAsignados.find(a => a.id === articuloId))
+const articuloId = route.params.id
+const articulo = computed(() => revisorStore.articulosAsignados.find(a => String(a.id) === String(articuloId)))
 
 onMounted(() => {
   if (revisorStore.articulosAsignados.length === 0) {
     revisorStore.cargarDashboard()
+  }
+
+  // Cargar borrador local si existe
+  const borrador = revisorStore.cargarBorrador(articuloId)
+  if (borrador) {
+    if (borrador.revision) Object.assign(revision, borrador.revision)
+    if (borrador.comentariosPorSeccion) comentariosPorSeccion.value = borrador.comentariosPorSeccion
   }
 })
 
@@ -202,6 +262,58 @@ const revision = reactive({
   recomendacion: '', comentariosAutor: '', comentariosEditor: '',
 })
 
+const comentariosPorSeccion = ref([])
+
+const autoGuardando = ref(false)
+const ultimoGuardado = ref(null)
+let timeoutBorrador = null
+
+watch(
+  [revision, comentariosPorSeccion],
+  () => {
+    autoGuardando.value = true
+    if (timeoutBorrador) clearTimeout(timeoutBorrador)
+    
+    timeoutBorrador = setTimeout(() => {
+      revisorStore.guardarBorrador(articuloId, {
+        revision: { ...revision },
+        comentariosPorSeccion: [...comentariosPorSeccion.value]
+      })
+      autoGuardando.value = false
+      ultimoGuardado.value = new Date().toLocaleTimeString()
+    }, 1500)
+  },
+  { deep: true }
+)
+
+function agregarSeccion() {
+  comentariosPorSeccion.value.push({ seccion: '', comentario: '' })
+}
+function eliminarSeccion(index) {
+  comentariosPorSeccion.value.splice(index, 1)
+}
+
+const textoCombinadoAutor = computed(() => {
+  let texto = ''
+  comentariosPorSeccion.value.forEach(item => {
+    if (item.seccion || item.comentario) {
+      texto += `[Sección: ${item.seccion || 'Sin título'}]\n${item.comentario}\n\n`
+    }
+  })
+  if (revision.comentariosAutor) {
+    texto += `[General]\n${revision.comentariosAutor}`
+  }
+  return texto.trim()
+})
+
+function cumpleMinimoComentarios() {
+  return textoCombinadoAutor.value.length >= 50
+}
+
+function cumpleMinimoComentariosIA() {
+  return textoCombinadoAutor.value.length >= 20
+}
+
 const dimensiones = [
   { campo: 'originalidad', label: 'Originalidad' },
   { campo: 'metodologia',  label: 'Metodología' },
@@ -217,13 +329,14 @@ const recomendaciones = [
 ]
 
 async function solicitarFeedbackIA() {
-  if (!revision.comentariosAutor) return;
+  const texto = textoCombinadoAutor.value;
+  if (!texto) return;
   cargandoIA.value = true;
   try {
     const res = await fetch('/api/analisis/evaluate-review', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ comentarios: revision.comentariosAutor })
+      body: JSON.stringify({ comentarios: texto })
     });
     if (res.ok) {
       feedbackIA.value = await res.json();
@@ -245,11 +358,17 @@ async function enviarRevision() {
   )
 
   // Consolidar comentarios
-  const comentarios = `PARA EL AUTOR: ${revision.comentariosAutor}\n\nPARA EL EDITOR: ${revision.comentariosEditor}`
+  const comentarios = textoCombinadoAutor.value;
+  const comentarios_editor = revision.comentariosEditor;
 
   const dataParaBackend = {
+    originalidad: revision.originalidad,
+    metodologia: revision.metodologia,
+    claridad: revision.claridad,
+    relevancia: revision.relevancia,
     puntuacion,
     comentarios,
+    comentarios_editor,
     recomendacion: revision.recomendacion
   }
 

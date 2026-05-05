@@ -53,6 +53,7 @@ export class UsuariosService implements OnModuleInit {
     await this.asyncSeed('editor@demo.com', 'Dr. Martínez (Editor)', [RolUsuario.EDITOR, RolUsuario.REVISOR]);
     await this.asyncSeed('revisor@demo.com', 'Carlos López (Revisor)', [RolUsuario.REVISOR, RolUsuario.AUTOR]);
     await this.asyncSeed('autor@demo.com', 'Ana García (Autor)', [RolUsuario.AUTOR]);
+    await this.asyncSeed('super@demo.com', 'Super Usuario Multi-Rol', [RolUsuario.ADMIN, RolUsuario.EDITOR, RolUsuario.REVISOR, RolUsuario.AUTOR, RolUsuario.EDITOR_JEFE]);
   }
 
   async obtenerTodos() {
@@ -68,6 +69,9 @@ export class UsuariosService implements OnModuleInit {
       estado: u.estado.toLowerCase(),
       fechaRegistro: u.fecha_registro,
       institucion: u.perfil?.institucion || null,
+      especialidad: u.perfil?.especialidad_academica || null,
+      palabras_clave: u.perfil?.palabras_clave || null,
+      experiencia: u.perfil?.experiencia || null,
     }));
   }
 
@@ -86,6 +90,8 @@ export class UsuariosService implements OnModuleInit {
       fechaRegistro: u.fecha_registro,
       institucion: u.perfil?.institucion || null,
       especialidad: u.perfil?.especialidad_academica || null,
+      palabras_clave: u.perfil?.palabras_clave || null,
+      experiencia: u.perfil?.experiencia || null,
     };
   }
 
@@ -105,28 +111,37 @@ export class UsuariosService implements OnModuleInit {
     return this.obtenerPorId(id);
   }
 
-  async actualizarUsuario(id: number, datos: { nombre?: string; institucion?: string; especialidad?: string; estado?: string; roles?: string[] }) {
+  async actualizarUsuario(id: number, datos: { nombre?: string; email?: string; institucion?: string; especialidad?: string; palabras_clave?: string; experiencia?: string; estado?: string; roles?: string[]; rol?: string }) {
     const usuario = await this.usuarioRepo.findOne({ where: { id_usuario: id }, relations: ['perfil', 'roles'] });
     if (!usuario) return null;
+
+    if (datos.email) {
+      usuario.email = datos.email;
+    }
 
     if (datos.estado) {
       usuario.estado = datos.estado.toUpperCase() as any;
     }
-    
+
     if (datos.roles) {
       usuario.roles = await this.getOrCreateRoles(datos.roles);
+    } else if (datos.rol) {
+      usuario.roles = await this.getOrCreateRoles([datos.rol]);
     }
 
     await this.usuarioRepo.save(usuario);
 
-    if (datos.nombre || datos.institucion || datos.especialidad) {
-      const perfil = await this.perfilRepo.findOne({ where: { usuario: { id_usuario: id } } });
-      if (perfil) {
-        if (datos.nombre) perfil.nombre_completo = datos.nombre;
-        if (datos.institucion !== undefined) perfil.institucion = datos.institucion;
-        if (datos.especialidad !== undefined) perfil.especialidad_academica = datos.especialidad;
-        await this.perfilRepo.save(perfil);
-      }
+    const perfil = usuario.perfil || this.perfilRepo.create({ usuario, nombre_completo: usuario.email.split('@')[0] });
+    let perfilCambiado = false;
+
+    if (datos.nombre) { perfil.nombre_completo = datos.nombre; perfilCambiado = true; }
+    if (datos.institucion !== undefined) { perfil.institucion = datos.institucion; perfilCambiado = true; }
+    if (datos.especialidad !== undefined) { perfil.especialidad_academica = datos.especialidad; perfilCambiado = true; }
+    if (datos.palabras_clave !== undefined) { perfil.palabras_clave = datos.palabras_clave; perfilCambiado = true; }
+    if (datos.experiencia !== undefined) { perfil.experiencia = datos.experiencia; perfilCambiado = true; }
+
+    if (perfilCambiado || !usuario.perfil) {
+      await this.perfilRepo.save(perfil);
     }
 
     return this.obtenerPorId(id);
@@ -157,43 +172,5 @@ export class UsuariosService implements OnModuleInit {
     await this.perfilRepo.save(perfil);
 
     return this.obtenerPorId(guardado.id_usuario);
-  }
-
-  async actualizarUsuario(id: number, datos: { nombre?: string; email?: string; rol?: string; roles?: string[] }) {
-    // Buscar usuario con su perfil
-    const u = await this.usuarioRepo.findOne({
-      where: { id_usuario: id },
-      relations: ['perfil'],
-    });
-
-    if (!u) return null;
-
-    // Actualizar campos base
-    if (datos.email) u.email = datos.email;
-    
-    // Actualizar roles
-    if (datos.roles) {
-      u.roles = datos.roles.map(r => r.toUpperCase()) as any;
-    } else if (datos.rol) {
-      // Si pasan un solo rol nuevo pero queremos mantener array de 1 rol
-      u.roles = [datos.rol.toUpperCase()] as any;
-    }
-
-    await this.usuarioRepo.save(u);
-
-    // Actualizar perfil si se proporcionó un nombre
-    if (datos.nombre && u.perfil) {
-      u.perfil.nombre_completo = datos.nombre;
-      await this.perfilRepo.save(u.perfil);
-    } else if (datos.nombre && !u.perfil) {
-      // En caso de que no tenga perfil, lo creamos
-      const nuevoPerfil = this.perfilRepo.create({
-        usuario: u,
-        nombre_completo: datos.nombre,
-      });
-      await this.perfilRepo.save(nuevoPerfil);
-    }
-
-    return this.obtenerPorId(id);
   }
 }

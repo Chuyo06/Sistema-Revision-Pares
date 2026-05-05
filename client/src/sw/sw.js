@@ -41,17 +41,22 @@ registerRoute(
   cacheFirstStrategy
 )
 
-// Llamadas a la API REST / GraphQL → Network First (con fallback a caché)
+// IMPORTANTE: registerRoute es FIFO — la primera regla que matchea gana.
+// Por eso las reglas más específicas van ANTES de las genéricas.
+
+// PDFs descargados (binarios estáticos) → Stale While Revalidate (sí cacheable).
+registerRoute(
+  ({ url, request }) => request.method === 'GET' && url.pathname.endsWith('.pdf'),
+  staleWhileRevalidateStrategy
+)
+
+// API REST: SIEMPRE pasar por la red (sin cachear) para que GET refleje
+// inmediatamente lo que se acaba de crear/modificar en POST/PATCH/DELETE.
+// Bug detectado antes: SWR sobre /api/manuscritos servía la lista vieja
+// y los nuevos manuscritos NO aparecían tras subirlos.
 registerRoute(
   ({ url }) => url.pathname.startsWith('/api') || url.pathname.startsWith('/graphql'),
   networkFirstStrategy
-)
-
-// Manuscritos (PDFs y metadatos) → Stale While Revalidate
-registerRoute(
-  ({ url }) => url.pathname.startsWith('/api/manuscritos') ||
-               url.pathname.endsWith('.pdf'),
-  staleWhileRevalidateStrategy
 )
 
 // SPA fallback: todas las rutas de navegación sirven index.html
@@ -82,7 +87,13 @@ self.addEventListener('install', (event) => {
 
 self.addEventListener('activate', (event) => {
   console.log('[SW] Activado')
-  event.waitUntil(self.clients.claim())
+  event.waitUntil(
+    Promise.all([
+      self.clients.claim(),
+      // Eliminar cachés obsoletos de versiones anteriores
+      caches.delete('api-responses-v1'),
+    ])
+  )
 })
 
 // ─── 6. INTERFAZ postMessage (Fachada hacia la app Vue) ──────────────────────

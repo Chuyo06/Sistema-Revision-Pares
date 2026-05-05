@@ -46,6 +46,9 @@ export class Manuscrito {
 
   @Prop()
   editorSeccionId: number;
+
+  @Prop()
+  motivoRechazo: string;
 }
 
 export const ManuscritoSchema = SchemaFactory.createForClass(Manuscrito);

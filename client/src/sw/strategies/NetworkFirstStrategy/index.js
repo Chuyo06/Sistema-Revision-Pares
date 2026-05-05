@@ -9,13 +9,13 @@ import { ExpirationPlugin } from 'workbox-expiration'
  * (estado de artículos, asignaciones, decisiones del editor).
  */
 export const networkFirstStrategy = new NetworkFirst({
-  cacheName: 'api-responses-v1',
-  networkTimeoutSeconds: 5,
+  cacheName: 'api-responses-v2',
+  networkTimeoutSeconds: 10,
   plugins: [
     new CacheableResponsePlugin({ statuses: [0, 200] }),
     new ExpirationPlugin({
       maxEntries: 200,
-      maxAgeSeconds: 24 * 60 * 60, // 1 día
+      maxAgeSeconds: 5 * 60, // 5 minutos — datos dinámicos no deben vivir 1 día
     }),
   ],
 })

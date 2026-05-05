@@ -80,9 +80,11 @@
             <v-text-field v-model="nuevoUsuario.nombre" label="Nombre completo *" :rules="[r => !!r || 'Requerido']" class="mb-2" />
             <v-text-field v-model="nuevoUsuario.email" label="Email *" type="email" :rules="[r => !!r || 'Requerido']" class="mb-2" :disabled="!!editandoId" />
             <v-select
-              v-model="nuevoUsuario.rol"
+              v-model="nuevoUsuario.roles"
               :items="['autor', 'revisor', 'editor', 'administrador']"
-              label="Rol *"
+              label="Roles *"
+              multiple
+              chips
               :rules="[r => !!r || 'Requerido']"
             />
           </v-form>
@@ -112,7 +114,7 @@ const snackbar = ref(false)
 const mensajeSnackbar = ref('')
 const editandoId = ref(null)
 
-const nuevoUsuario = ref({ nombre: '', email: '', rol: '' })
+const nuevoUsuario = ref({ nombre: '', email: '', roles: [] })
 
 onMounted(() => {
   adminStore.cargarUsuarios()
@@ -137,7 +139,7 @@ const headers = [
 
 function abrirNuevo() {
   editandoId.value = null
-  nuevoUsuario.value = { nombre: '', email: '', rol: '' }
+  nuevoUsuario.value = { nombre: '', email: '', roles: [] }
   dialogoNuevo.value = true
 }
 
@@ -146,7 +148,7 @@ function abrirEditar(usuario) {
   nuevoUsuario.value = { 
     nombre: usuario.nombre, 
     email: usuario.email, 
-    rol: usuario.roles[0] || 'autor' 
+    roles: usuario.roles || [] 
   }
   dialogoNuevo.value = true
 }
@@ -154,7 +156,7 @@ function abrirEditar(usuario) {
 function cerrarDialogo() {
   dialogoNuevo.value = false
   editandoId.value = null
-  nuevoUsuario.value = { nombre: '', email: '', rol: '' }
+  nuevoUsuario.value = { nombre: '', email: '', roles: [] }
 }
 
 async function guardarUsuario() {

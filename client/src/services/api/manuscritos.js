@@ -1,51 +1,44 @@
-// ─────────────────────────────────────────────────────────────
-// Servicio de manuscritos
-//
-// Proxy definido en vite.config.js → http://localhost:3002
-// Fallback: no modifica los datos mock de los stores Pinia.
-// ─────────────────────────────────────────────────────────────
+import { apiFetch } from './client.js'
 
 const BASE_URL = '/api/manuscritos'
 
 /**
- * Obtiene el token JWT guardado (si existe).
- */
-function authHeaders() {
-  const raw = localStorage.getItem('rpp_usuario')
-  const usuario = raw ? JSON.parse(raw) : null
-  const headers = { 'Content-Type': 'application/json' }
-  if (usuario?.token) {
-    headers['Authorization'] = `Bearer ${usuario.token}`
-  }
-  return headers
-}
-
-/**
  * Obtener todos los manuscritos del backend.
- * @returns {Promise<Array|null>} null si el backend no responde (usar mock)
  */
 export async function fetchManuscritos() {
   try {
-    const res = await fetch(BASE_URL, { headers: authHeaders() })
+    const res = await apiFetch(BASE_URL)
     if (!res.ok) return null
     return await res.json()
-  } catch {
-    console.warn('[Manuscritos] Backend no disponible, usando datos mock')
+  } catch (err) {
+    console.warn('[Manuscritos] Error en fetch:', err.message)
     return null
   }
 }
 
 /**
- * Obtener manuscritos por autor.
- * @returns {Promise<Array|null>}
+ * Obtener manuscritos por autor (excluye borradores por default).
  */
-export async function fetchManuscritosPorAutor(autorId) {
+export async function fetchManuscritosPorAutor(autorId, { incluirBorradores = false } = {}) {
   try {
-    const res = await fetch(`${BASE_URL}/autor/${autorId}`, { headers: authHeaders() })
+    const qs = incluirBorradores ? '?incluirBorradores=true' : ''
+    const res = await apiFetch(`${BASE_URL}/autor/${autorId}${qs}`)
     if (!res.ok) return null
     return await res.json()
   } catch {
-    console.warn('[Manuscritos] Backend no disponible')
+    return null
+  }
+}
+
+/**
+ * Obtener solo los borradores del autor.
+ */
+export async function fetchBorradoresPorAutor(autorId) {
+  try {
+    const res = await apiFetch(`${BASE_URL}/autor/${autorId}/borradores`)
+    if (!res.ok) return null
+    return await res.json()
+  } catch {
     return null
   }
 }
@@ -53,12 +46,15 @@ export async function fetchManuscritosPorAutor(autorId) {
 /**
  * Actualizar estado de un manuscrito.
  */
-export async function actualizarEstadoManuscrito(id, estado) {
+export async function actualizarEstadoManuscrito(id, estado, motivoRechazo = undefined) {
   try {
-    const res = await fetch(`${BASE_URL}/${id}`, {
+    const payload = { estado }
+    if (motivoRechazo !== undefined) {
+      payload.motivoRechazo = motivoRechazo
+    }
+    const res = await apiFetch(`${BASE_URL}/${id}`, {
       method: 'PATCH',
-      headers: authHeaders(),
-      body: JSON.stringify({ estado }),
+      body: JSON.stringify(payload),
     })
     return res.ok
   } catch {
@@ -67,13 +63,12 @@ export async function actualizarEstadoManuscrito(id, estado) {
 }
 
 /**
- * Asignar editor de sección a un manuscrito (solo editor jefe).
+ * Asignar editor de sección a un manuscrito.
  */
 export async function asignarEditorSeccionApi(manuscritoId, editorSeccionId) {
   try {
-    const res = await fetch(`${BASE_URL}/${manuscritoId}`, {
+    const res = await apiFetch(`${BASE_URL}/${manuscritoId}`, {
       method: 'PATCH',
-      headers: authHeaders(),
       body: JSON.stringify({ editorSeccionId }),
     })
     return res.ok
@@ -84,25 +79,70 @@ export async function asignarEditorSeccionApi(manuscritoId, editorSeccionId) {
 
 /**
  * Crear un manuscrito en el backend.
- * @returns {Promise<Object|null>} null si el backend no responde
+ * Lanza error si el HTTP falla, devuelve el documento creado si tuvo éxito.
  */
 export async function crearManuscrito(datos) {
+  const res = await apiFetch(BASE_URL, {
+    method: 'POST',
+    body: JSON.stringify(datos),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.message || `Error ${res.status} al crear manuscrito`)
+  }
+  return await res.json()
+}
+
+/**
+ * Actualizar datos completos de un manuscrito.
+ */
+export async function actualizarDatosManuscrito(id, datos) {
   try {
-    const res = await fetch(BASE_URL, {
-      method: 'POST',
-      headers: authHeaders(),
+    const res = await apiFetch(`${BASE_URL}/${id}`, {
+      method: 'PATCH',
       body: JSON.stringify(datos),
     })
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}))
-      throw new Error(err.message || 'Error al crear manuscrito')
-    }
-    return await res.json()
-  } catch (err) {
-    if (err.message && err.message !== 'Failed to fetch') {
-      throw err
-    }
-    console.warn('[Manuscritos] Backend no disponible, guardando solo en mock')
-    return null
+    return res.ok
+  } catch {
+    return false
   }
 }
+
+/**
+ * Eliminar un manuscrito.
+ */
+export async function eliminarManuscrito(id) {
+  try {
+    const res = await apiFetch(`${BASE_URL}/${id}`, {
+      method: 'DELETE',
+    })
+    return res.ok
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Descargar un archivo PDF por su referencia.
+ */
+export async function descargarArchivo(referencia) {
+  try {
+    const res = await apiFetch(`${BASE_URL}/download/${referencia}`)
+    if (!res.ok) throw new Error('No se pudo descargar el archivo')
+    
+    const blob = await res.blob()
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = referencia.endsWith('.pdf') ? referencia : `${referencia}.pdf`
+    document.body.appendChild(a)
+    a.click()
+    window.URL.revokeObjectURL(url)
+    document.body.removeChild(a)
+    return true
+  } catch (err) {
+    console.error('[Manuscritos] Error en descarga:', err)
+    return false
+  }
+}
+

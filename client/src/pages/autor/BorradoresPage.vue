@@ -43,7 +43,7 @@
             color="error" 
             size="small" 
             style="flex-shrink:0; margin-top:-4px; margin-right:-4px"
-            @click.stop="confirmarEliminar(m)"
+            @click.stop="abrirDialogoEliminar(m)"
           ></v-btn>
         </div>
 
@@ -68,6 +68,25 @@
       <v-icon size="44" color="secondary">mdi-file-document-edit-outline</v-icon>
       <p style="font-size:14px; margin-top:10px">No tienes borradores guardados.</p>
     </div>
+
+    <!-- Dialogo Confirmación Eliminación -->
+    <v-dialog v-model="dialogoEliminar" max-width="400">
+      <v-card rounded="xl" border>
+        <div style="background:#c62828; height:6px; border-radius:8px 8px 0 0" />
+        <v-card-title class="pa-5 pb-2 text-h5 font-weight-bold text-error">
+          <v-icon start color="error">mdi-delete-alert</v-icon>
+          Eliminar Borrador
+        </v-card-title>
+        <v-card-text class="px-5 text-body-2">
+          ¿Estás seguro de que deseas eliminar el borrador <strong>"{{ borradorAEliminar?.titulo || '(Sin título)' }}"</strong>?
+          Esta acción no se puede deshacer.
+        </v-card-text>
+        <v-card-actions class="pa-4 justify-end">
+          <v-btn variant="text" @click="dialogoEliminar = false">Cancelar</v-btn>
+          <v-btn color="error" variant="flat" :loading="eliminando" @click="ejecutarEliminacion">Eliminar de forma permanente</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -78,23 +97,39 @@ import { useAutorStore } from '@/store/autor/index.js'
 
 const router = useRouter()
 const autorStore = useAutorStore()
+const busqueda = ref('')
+
+const dialogoEliminar = ref(false)
+const borradorAEliminar = ref(null)
+const eliminando = ref(false)
 
 onMounted(() => {
   autorStore.cargarMisManuscritos()
 })
-const busqueda = ref('')
 
 const borradoresFiltrados = computed(() =>
   autorStore.manuscritos.filter(m => {
     const isBorrador = m.estado === 'BORRADOR'
-    const b = (m.titulo || '').toLowerCase().includes(busqueda.value.toLowerCase())
-    return isBorrador && b
+    const matchBusqueda = (m.titulo || '').toLowerCase().includes(busqueda.value.toLowerCase())
+    return isBorrador && matchBusqueda
   })
 )
 
-async function confirmarEliminar(borrador) {
-  if (window.confirm('¿Estás seguro de que deseas eliminar este borrador de forma permanente?')) {
-    await autorStore.eliminarBorrador(borrador.id)
+function abrirDialogoEliminar(borrador) {
+  borradorAEliminar.value = borrador
+  dialogoEliminar.value = true
+}
+
+async function ejecutarEliminacion() {
+  if (borradorAEliminar.value) {
+    eliminando.value = true
+    try {
+      await autorStore.eliminarBorrador(borradorAEliminar.value.id)
+      dialogoEliminar.value = false
+    } finally {
+      eliminando.value = false
+      borradorAEliminar.value = null
+    }
   }
 }
 </script>

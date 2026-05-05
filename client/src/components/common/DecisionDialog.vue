@@ -89,7 +89,7 @@ const META_DECISION = {
     color: '#c62828',
     icon: 'mdi-close-circle',
   },
-  EN_REVISION: {
+  REQUERIDAS_REVISIONES: {
     titulo: 'Solicitar revisiones',
     accion: 'solicitud',
     color: '#e65100',
@@ -139,7 +139,7 @@ const PLANTILLAS_BASE = {
         'en el área correspondiente.\n\nCordialmente,\nComité Editorial',
     },
   ],
-  EN_REVISION: [
+  REQUERIDAS_REVISIONES: [
     {
       id: 'revisiones-mayores',
       nombre: 'Revisiones mayores',

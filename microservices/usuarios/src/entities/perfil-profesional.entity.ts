@@ -18,6 +18,12 @@ export class PerfilProfesional {
   @Column({ type: 'varchar', length: 200, name: 'especialidad_academica', nullable: true })
   especialidad_academica!: string;
 
+  @Column({ type: 'varchar', length: 255, name: 'palabras_clave', nullable: true })
+  palabras_clave!: string;
+
+  @Column({ type: 'text', name: 'experiencia', nullable: true })
+  experiencia!: string;
+
   @Column({ type: 'longtext', nullable: true })
   avatar!: string;
 

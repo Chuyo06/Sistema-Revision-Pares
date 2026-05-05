@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { fetchNotificaciones, marcarNotificacionLeida as marcarLeidaApi } from '@/services/api/notificaciones.js'
 
 const STORAGE_KEY = 'rpp_notificaciones'
 
@@ -38,8 +39,51 @@ export const useNotificacionesStore = defineStore('notificaciones', () => {
     const notif = notificaciones.value.find(n => n.id === id)
     if (notif) {
       notif.leida = true
+      if (notif.backendId) {
+        marcarLeidaApi(notif.backendId)
+      }
       persistir(notificaciones.value)
     }
+  }
+
+  async function cargarNotificacionesBackend(usuarioId) {
+    if (!usuarioId) return
+    const delBackend = await fetchNotificaciones(usuarioId)
+    
+    const nuevas = delBackend.map(b => {
+      let titulo = b.tipo.replace('_', ' ')
+      let ruta = '/editor/manuscritos'
+
+      if (b.tipo === 'NUEVA_INVITACION') {
+        titulo = 'Nueva Invitación'
+        ruta = '/revisor/asignados'
+      } else if (b.tipo === 'INVITACION_RECHAZADA') {
+        titulo = 'Invitación Declinada'
+      }
+
+      return {
+        id: `backend_${b.id}`,
+        backendId: b.id,
+        tipo: b.tipo,
+        titulo,
+        mensaje: b.mensaje,
+        leida: b.leida,
+        timestamp: b.fechaCreacion,
+        ruta
+      }
+    })
+
+    // Conservar las locales para no romper la maqueta del editor
+    const locals = notificaciones.value.filter(n => !n.backendId)
+    
+    // Fusionar y ordenar
+    const todas = [...locals, ...nuevas].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp))
+    
+    // Para evitar duplicados en la interfaz si se llama varias veces:
+    const unicas = Array.from(new Map(todas.map(item => [item.id, item])).values())
+    
+    notificaciones.value = unicas
+    persistir(notificaciones.value)
   }
 
   function marcarTodasLeidas() {
@@ -80,6 +124,7 @@ export const useNotificacionesStore = defineStore('notificaciones', () => {
     marcarTodasLeidas,
     limpiar,
     agregarNotificacionRevision,
-    agregarNotificacionDecision
+    agregarNotificacionDecision,
+    cargarNotificacionesBackend
   }
 })

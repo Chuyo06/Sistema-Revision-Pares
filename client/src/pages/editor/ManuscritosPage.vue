@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <v-container style="max-width:900px; padding:20px">
     <v-row align="center" class="mb-6">
       <v-col>
@@ -105,13 +105,15 @@
           </div>
 
           <v-row>
-            <v-col v-for="m in grupo.items" :key="m.id" cols="12">
+            <v-col v-for="m in paginar(grupo.items)" :key="m.id" cols="12">
+              <!-- ... card content ... -->
               <v-card
                 border
                 elevation="1"
                 class="mb-3 hover-elevation"
                 style="background:#FFFFFF; border-radius:12px; overflow:hidden;"
               >
+                <!-- (Keep existing card content exactly as is) -->
                 <div :style="`height:6px; background:${hexEstado(m.estado)}`" />
                 <v-card-item class="pa-4">
                   <div class="d-flex align-start justify-space-between mb-2">
@@ -139,7 +141,6 @@
                     </template>
                   </div>
 
-                  <!-- Barra de progreso: revisores que han terminado vs asignados -->
                   <div v-if="(m.revisoresAsignados || 0) > 0" class="mt-3">
                     <div class="d-flex justify-space-between text-caption text-medium-emphasis mb-1">
                       <span>Progreso de revisión</span>
@@ -206,6 +207,15 @@
             </v-col>
           </v-row>
         </div>
+
+        <!-- Paginación -->
+        <v-pagination
+          v-if="!agruparPorConvocatoria"
+          v-model="pagina"
+          :length="Math.ceil(manuscritosVisibles.length / itemsPorPagina)"
+          rounded="lg"
+          class="mt-4"
+        ></v-pagination>
       </template>
 
       <!-- Vacío -->
@@ -229,7 +239,7 @@
       v-model="dialogPdf"
       :titulo="manuscritoPdf?.titulo"
       :referencia="manuscritoPdf?.referencia"
-      :url-pdf="manuscritoPdf?.urlPdf"
+      :url-pdf="manuscritoPdf?.referencia ? `/api/manuscritos/download/${manuscritoPdf.referencia}` : ''"
       :contenido="manuscritoPdf?.contenido || manuscritoPdf?.resumen"
     />
 
@@ -288,6 +298,16 @@ const manuscritoSeleccionado = ref(null)
 const editorSeccionElegido = ref(null)
 const dialogPdf = ref(false)
 const manuscritoPdf = ref(null)
+
+// Paginación
+const pagina = ref(1)
+const itemsPorPagina = 6
+
+function paginar(items) {
+  if (agruparPorConvocatoria.value) return items // No paginar dentro de grupos
+  const inicio = (pagina.value - 1) * itemsPorPagina
+  return items.slice(inicio, inicio + itemsPorPagina)
+}
 
 function abrirPdf(m) {
   manuscritoPdf.value = m
@@ -372,7 +392,7 @@ function exportarCSV() {
       (m.fechaEnvio || m.fechaSubida || '').split('T')[0],
     ].map(escape).join(','))
   }
-  const csv = '﻿' + lines.join('\n') // BOM para que Excel lea acentos
+  const csv = '\ufeff' + lines.join('\n') // BOM para que Excel lea acentos
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')

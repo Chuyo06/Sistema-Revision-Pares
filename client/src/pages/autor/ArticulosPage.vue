@@ -1,6 +1,20 @@
 <template>
   <div style="max-width:800px; padding:20px">
 
+    <!-- Tabs Enviados / Borradores -->
+    <v-tabs v-model="tab" color="primary" align-tabs="start" density="compact" class="mb-3">
+      <v-tab value="enviados">
+        <v-icon start size="18">mdi-send-check-outline</v-icon>
+        Enviados
+        <v-chip size="x-small" variant="tonal" class="ml-2">{{ autorStore.manuscritos.length }}</v-chip>
+      </v-tab>
+      <v-tab value="borradores">
+        <v-icon start size="18">mdi-file-edit-outline</v-icon>
+        Borradores
+        <v-chip size="x-small" variant="tonal" class="ml-2">{{ autorStore.borradores.length }}</v-chip>
+      </v-tab>
+    </v-tabs>
+
     <!-- Barra de acciones -->
     <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px; flex-wrap:wrap">
       <v-text-field
@@ -11,8 +25,10 @@
         hide-details
         clearable
         style="max-width:260px; flex:1; min-width:160px"
+        @update:model-value="pagina = 1"
       />
       <v-select
+        v-if="tab === 'enviados'"
         v-model="filtroEstado"
         :items="filtros"
         item-title="label"
@@ -20,6 +36,7 @@
         density="compact"
         hide-details
         style="max-width:200px; flex:1; min-width:140px"
+        @update:model-value="pagina = 1"
       />
       <v-btn color="primary" prepend-icon="mdi-plus" to="/autor/nuevo" style="flex-shrink:0">
         Nuevo
@@ -28,7 +45,7 @@
 
     <!-- Lista feed de artículos -->
     <div
-      v-for="m in manuscritosFiltrados"
+      v-for="m in manuscritosPaginados"
       :key="m.id"
       style="background:#FFFFFF; border:1px solid #D3E0D7; border-radius:12px; margin-bottom:10px; overflow:hidden; transition: 0.2s;"
       :style="m.estado !== 'BORRADOR' ? 'cursor: pointer;' : ''"
@@ -37,7 +54,7 @@
     >
       <div :style="`height:5px; background:${hexEstado(m.estado)}`" />
       <div style="padding:16px">
-        <!-- Fila 1: Título + chip (no se enciman) -->
+        <!-- Fila 1: Título + chip -->
         <div style="display:flex; align-items:flex-start; gap:10px; margin-bottom:6px">
           <div style="flex:1; min-width:0">
             <div style="font-size:15px; font-weight:600; color:#1B4332; word-break:break-word">
@@ -57,7 +74,7 @@
         <!-- Fila 2: Subtítulo -->
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap">
           <span style="font-size:12px; color:#8B5A2B">{{ m.convocatoria }}</span>
-          <span v-if="m.fechaEnvio" style="font-size:12px; color:#bda89a">Â·</span>
+          <span v-if="m.fechaEnvio" style="font-size:12px; color:#bda89a">·</span>
           <span v-if="m.fechaEnvio" style="font-size:12px; color:#8B5A2B">{{ m.fechaEnvio }}</span>
           <v-chip v-if="m.referencia" size="x-small" variant="tonal" color="secondary">
             REF: {{ m.referencia }}
@@ -71,6 +88,16 @@
         </p>
       </div>
     </div>
+
+    <!-- Paginación -->
+    <v-pagination
+      v-if="totalPaginas > 1"
+      v-model="pagina"
+      :length="totalPaginas"
+      :total-visible="5"
+      density="compact"
+      class="mt-4"
+    ></v-pagination>
 
     <!-- Vacío -->
     <div v-if="manuscritosFiltrados.length === 0" style="text-align:center; padding:48px 0; color:#8B5A2B">
@@ -118,15 +145,15 @@
 
             <v-divider class="mb-6" />
 
-            <!-- ALERTA DE RECHAZO (solo si fue rechazado) -->
+            <!-- ALERTA DE DECISIÓN DEL EDITOR (Rechazo o Petición de Revisiones) -->
             <v-alert
-              v-if="articuloSeleccionado?.estado === 'RECHAZADO' && articuloSeleccionado?.motivoRechazo"
-              type="error"
+              v-if="['RECHAZADO', 'REQUERIDAS_REVISIONES'].includes(articuloSeleccionado?.estado) && articuloSeleccionado?.motivoRechazo"
+              :type="articuloSeleccionado?.estado === 'RECHAZADO' ? 'error' : 'warning'"
               variant="tonal"
               class="mb-6"
-              icon="mdi-alert-circle"
+              :icon="articuloSeleccionado?.estado === 'RECHAZADO' ? 'mdi-alert-circle' : 'mdi-clipboard-text-outline'"
             >
-              <strong>Motivo de rechazo del Editor:</strong><br/>
+              <strong>Carta del Editor:</strong><br/>
               <span style="white-space: pre-wrap;">{{ articuloSeleccionado.motivoRechazo }}</span>
             </v-alert>
 
@@ -138,8 +165,17 @@
               <div v-for="comentario in comentarios" :key="comentario.id" class="mb-4 pa-4 bg-grey-lighten-4 rounded-lg border">
                 <div class="d-flex align-center justify-space-between mb-2">
                   <div class="font-weight-bold" style="color:#8B5A2B">Revisor #{{ comentario.id }}</div>
-                  <div class="d-flex align-center" v-if="comentario.puntuacion">
-                    <v-rating :model-value="comentario.puntuacion" color="amber" density="compact" size="small" readonly></v-rating>
+                  <div v-if="comentario.puntuacion" class="mb-2">
+                    <div class="d-flex align-center">
+                      <v-rating :model-value="comentario.puntuacion" color="amber" density="compact" size="small" readonly></v-rating>
+                      <span class="ml-2 font-weight-bold text-brown">{{ comentario.puntuacion }}/5</span>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2 mt-1" v-if="comentario.originalidad" style="font-size: 11px; color: #546e7a;">
+                      <v-chip size="x-small" variant="outlined" color="primary">Originalidad: {{ comentario.originalidad }}</v-chip>
+                      <v-chip size="x-small" variant="outlined" color="info">Metodología: {{ comentario.metodologia }}</v-chip>
+                      <v-chip size="x-small" variant="outlined" color="success">Claridad: {{ comentario.claridad }}</v-chip>
+                      <v-chip size="x-small" variant="outlined" color="warning">Relevancia: {{ comentario.relevancia }}</v-chip>
+                    </div>
                   </div>
                 </div>
                 <div style="color:#1B4332; white-space: pre-wrap; font-size: 14px;">{{ comentario.comentarios }}</div>
@@ -167,16 +203,23 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useAutorStore } from '@/store/autor/index.js'
 
 const autorStore = useAutorStore()
+const busqueda = ref('')
+const filtroEstado = ref('TODOS')
+const tab = ref('enviados')
+const pagina = ref(1)
+const itemsPorPagina = 5
 
 onMounted(() => {
   autorStore.cargarMisManuscritos()
+  autorStore.cargarBorradores()
 })
-const busqueda = ref('')
-const filtroEstado = ref('TODOS')
+
+// Cuando cambia la pestaña, vuelve a página 1.
+watch(tab, () => { pagina.value = 1 })
 
 const dialogoComentarios = ref(false)
 const cargandoComentarios = ref(false)
@@ -205,7 +248,6 @@ const eventosLineaDeTiempo = computed(() => {
   const eventos = []
   let idCounter = 1
   
-  // 1. Fecha de envío
   const m = articuloSeleccionado.value
   eventos.push({
     id: idCounter++,
@@ -215,7 +257,6 @@ const eventosLineaDeTiempo = computed(() => {
     icon: 'mdi-file-upload'
   })
 
-  // 2. Asignaciones y Revisiones
   asignacionesPuras.value.forEach((a, i) => {
     if (a.fecha_invitacion) {
       eventos.push({
@@ -237,7 +278,6 @@ const eventosLineaDeTiempo = computed(() => {
     }
   })
 
-  // 3. Veredicto Final
   if (['ACEPTADO', 'RECHAZADO', 'REQUERIDAS_REVISIONES'].includes(m.estado)) {
     const estado = m.estado === 'REQUERIDAS_REVISIONES' ? 'Requiere Revisiones' : m.estado
     const isError = m.estado === 'RECHAZADO'
@@ -245,16 +285,12 @@ const eventosLineaDeTiempo = computed(() => {
     eventos.push({
       id: idCounter++,
       titulo: `Veredicto Final: ${estado}`,
-      fecha: formatDate(m.fechaDecision || new Date()), // Fallback si no tiene fecha guardada en BD
+      fecha: formatDate(m.fechaDecision || new Date()),
       color: isError ? 'error' : (isWarning ? 'orange-darken-3' : 'success'),
       colorText: isError ? '#c62828' : (isWarning ? '#ef6c00' : '#2e7d32'),
       icon: 'mdi-gavel'
     })
   }
-
-  // Ordenar por fecha cronológica (aproximación, ya que formatDate cambia el formato, es mejor ordenar antes, 
-  // pero para simplificar lo mostramos en el orden lógico: Envío -> Asignación -> Completada -> Decisión)
-  // El orden lógico ya está implícito en cómo los insertamos.
   
   return eventos
 })
@@ -267,13 +303,31 @@ const filtros = [
   { label:'Rechazado',   value:'RECHAZADO' },
 ]
 
+// Fuente de datos según la pestaña activa.
+const fuenteActiva = computed(() =>
+  tab.value === 'borradores' ? autorStore.borradores : autorStore.manuscritos
+)
+
 const manuscritosFiltrados = computed(() =>
-  autorStore.manuscritos.filter(m => {
-    const b = m.titulo.toLowerCase().includes(busqueda.value.toLowerCase())
-    const e = filtroEstado.value === 'TODOS' || m.estado === filtroEstado.value
+  fuenteActiva.value.filter(m => {
+    const titulo = (m.titulo || '').toLowerCase()
+    const term = (busqueda.value || '').toLowerCase()
+    const b = titulo.includes(term)
+    // El filtro por estado solo aplica en la pestaña Enviados.
+    const e = tab.value === 'borradores'
+      ? true
+      : (filtroEstado.value === 'TODOS' || m.estado === filtroEstado.value)
     return b && e
   })
 )
+
+const totalPaginas = computed(() => Math.ceil(manuscritosFiltrados.value.length / itemsPorPagina))
+
+const manuscritosPaginados = computed(() => {
+  const inicio = (pagina.value - 1) * itemsPorPagina
+  const fin = inicio + itemsPorPagina
+  return manuscritosFiltrados.value.slice(inicio, fin)
+})
 
 const ESTADOS = { BORRADOR:'Borrador', ENVIADO:'Enviado', EN_REVISION:'En revisión', REQUERIDAS_REVISIONES:'Requiere revisiones', ACEPTADO:'Aceptado', RECHAZADO:'Rechazado' }
 const HEX     = { BORRADOR:'#9e9e9e', ENVIADO:'#546e7a', EN_REVISION:'#e65100', REQUERIDAS_REVISIONES:'#ef6c00', ACEPTADO:'#558b2f', RECHAZADO:'#c62828' }

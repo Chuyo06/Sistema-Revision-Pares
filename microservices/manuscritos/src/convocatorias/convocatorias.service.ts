@@ -1,13 +1,30 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Convocatoria, ConvocatoriaDocument } from '../schemas/convocatoria.schema';
 
 @Injectable()
-export class ConvocatoriasService {
+export class ConvocatoriasService implements OnModuleInit {
   constructor(
     @InjectModel(Convocatoria.name) private convocatoriaModel: Model<ConvocatoriaDocument>,
   ) {}
+
+  async onModuleInit() {
+    await this.seed();
+  }
+
+  private async seed() {
+    const count = await this.convocatoriaModel.countDocuments();
+    if (count === 0) {
+      console.log('[Seed] Creando convocatoria inicial...');
+      await this.crear({
+        nombre: 'Congreso Internacional de Ingeniería 2024',
+        fechaInicio: new Date().toISOString(),
+        fechaLimite: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
+        areasTematicas: ['IA', 'Software Engineering', 'Networks']
+      });
+    }
+  }
 
   async crear(datos: Partial<Convocatoria>): Promise<Convocatoria> {
     const nueva = new this.convocatoriaModel(datos);

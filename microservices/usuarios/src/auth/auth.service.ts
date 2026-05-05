@@ -58,16 +58,26 @@ export class AuthService {
   }
 
   async login(email: string, passwordPlain: string) {
+    console.log(`[Auth] Intento de login para: ${email}`);
     // 1. Buscar al usuario con su perfil y roles
     const user = await this.usuarioRepository.findOne({
       where: { email },
       relations: ['perfil', 'roles'],
     });
-    if (!user) throw new UnauthorizedException('Credenciales inválidas');
+    
+    if (!user) {
+      console.log(`[Auth] Usuario no encontrado: ${email}`);
+      throw new UnauthorizedException('Credenciales inválidas');
+    }
 
     // 2. Comparar la contraseña ingresada con la encriptada
     const isPasswordValid = await bcrypt.compare(passwordPlain, user.password_hash);
-    if (!isPasswordValid) throw new UnauthorizedException('Credenciales inválidas');
+    if (!isPasswordValid) {
+      console.log(`[Auth] Contraseña inválida para: ${email}`);
+      throw new UnauthorizedException('Credenciales inválidas');
+    }
+    
+    console.log(`[Auth] Login exitoso: ${email}`);
 
     // 3. Generar el Token JWT
     const rolesArray = user.roles?.map(r => r.nombre) || [];

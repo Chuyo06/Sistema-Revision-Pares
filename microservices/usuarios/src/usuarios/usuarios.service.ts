@@ -53,6 +53,7 @@ export class UsuariosService implements OnModuleInit {
     await this.asyncSeed('editor@demo.com', 'Dr. Martínez (Editor)', [RolUsuario.EDITOR, RolUsuario.REVISOR]);
     await this.asyncSeed('revisor@demo.com', 'Carlos López (Revisor)', [RolUsuario.REVISOR, RolUsuario.AUTOR]);
     await this.asyncSeed('autor@demo.com', 'Ana García (Autor)', [RolUsuario.AUTOR]);
+    await this.asyncSeed('super@demo.com', 'Super Usuario Multi-Rol', [RolUsuario.ADMIN, RolUsuario.EDITOR, RolUsuario.REVISOR, RolUsuario.AUTOR, RolUsuario.EDITOR_JEFE]);
   }
 
   async obtenerTodos() {

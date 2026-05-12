@@ -1,5 +1,5 @@
 # =========================================
-# 1. DEPENDENCIAS (¡El culpable de los 2000 archivos!)
+# 1. DEPENDENCIAS (El culpable de los 2000 archivos!)
 # =========================================
 node_modules/
 npm-debug.log*
@@ -15,25 +15,30 @@ build/
 .nuxt/
 
 # =========================================
-# 3. SEGURIDAD Y CONFIGURACIÓN
+# 3. PLAYWRIGHT E2E TESTS
 # =========================================
-.env
-.env.local
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+playwright/.auth/
 
 # =========================================
-# 4. BASES DE DATOS LOCALES (Si mapean volúmenes)
+# 4. SEGURIDAD Y CONFIGURACIÓN
 # =========================================
-# Si alguna vez la base de datos se guarda en su compu, esto evita que se suba
-/docker_data/
-/data/
+# .env (Permitimos .env para este proyecto)
+
+# =========================================
+# 5. BASES DE DATOS LOCALES
+# =========================================
+docker_data/
+data/
 *.sql.gz
 
 # =========================================
-# 5. ARCHIVOS DE SISTEMA OPERATIVO Y EDITORES
+# 6. ARCHIVOS DE SISTEMA OPERATIVO Y EDITORES
 # =========================================
-# Windows y Mac
 Thumbs.db
 .DS_Store
-# VS Code (Ignoramos configuraciones personales, pero permitimos las del equipo)
 .vscode/
 !.vscode/settings.json

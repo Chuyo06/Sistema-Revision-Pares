@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { fetchManuscritosPorAutor, fetchBorradoresPorAutor, crearManuscrito, actualizarDatosManuscrito, eliminarManuscrito } from '@/services/api/manuscritos.js'
-import { apiFetch } from '@/services/api/client.js'
+import { fetchAsignacionesPorManuscrito, reabrirRevisionesApi } from '@/services/api/revision.js'
+import { crearNotificacionApi } from '@/services/api/notificaciones.js'
 import { useAuthStore } from '../auth.js'
 import { useConvocatoriasStore } from '../convocatorias.js'
 
@@ -54,7 +55,7 @@ export const useAutorStore = defineStore('autor', () => {
         console.warn('[Autor] El backend no devolvió manuscritos (data=null)')
       }
     } catch (e) {
-      console.error("Error cargando manuscritos del autor:", e)
+      console.warn('[Autor] No se pudieron cargar los manuscritos:', e.message)
     } finally {
       cargando.value = false
     }
@@ -76,7 +77,7 @@ export const useAutorStore = defineStore('autor', () => {
         console.warn('[Autor] El backend no devolvió borradores (data=null)')
       }
     } catch (e) {
-      console.error('Error cargando borradores del autor:', e)
+      console.warn('[Autor] No se pudieron cargar los borradores:', e.message)
     } finally {
       cargando.value = false
     }
@@ -152,32 +153,52 @@ export const useAutorStore = defineStore('autor', () => {
 
   async function reenviarManuscrito(id, referenciaPdf, respuestasRevisores) {
     try {
-      const payload = {
+      // Al reenviar el manuscrito vuelve a estado EN_REVISION, no
+      // LISTO_PARA_DECISION, porque las revisiones se reabren para una nueva
+      // ronda. Solo pasará a LISTO_PARA_DECISION cuando todos los revisores
+      // completen la nueva revisión (lo hace el microservicio de revision).
+      const exito = await actualizarDatosManuscrito(id, {
         referencia: referenciaPdf,
         respuestasRevisores: respuestasRevisores,
-        estado: 'LISTO_PARA_DECISION'
-      }
-      
-      const res = await apiFetch(`/api/manuscritos/${id}`, {
-        method: 'PATCH',
-        body: JSON.stringify(payload)
+        estado: 'EN_REVISION',
       })
 
-      if (res.ok) {
+      if (exito) {
+        // Reabrir las asignaciones COMPLETADAS del manuscrito para que los
+        // revisores puedan evaluar la versión corregida. Fire-and-forget.
+        try {
+          await reabrirRevisionesApi(id)
+        } catch (e) {
+          console.warn('[Autor] No se pudieron reabrir las revisiones:', e.message)
+        }
+
+        // Notificar a los editores que el autor reenvió la versión corregida.
+        try {
+          const authStore = useAuthStore()
+          const manuscrito = manuscritos.value.find(m => String(m.id) === String(id))
+          await crearNotificacionApi({
+            tipo: 'NUEVA_VERSION',
+            rol_destinatario: 'editor',
+            mensaje: `${authStore.usuario?.nombre || 'El autor'} reenvió la versión corregida de "${manuscrito?.titulo || 'un manuscrito'}". Los revisores ya pueden re-evaluarla.`,
+            referencia_manuscrito: id,
+          })
+        } catch (e) {
+          console.warn('[Autor] No se pudo notificar a los editores sobre el reenvío:', e)
+        }
+
         await cargarMisManuscritos()
         return true
       }
     } catch (e) {
-      console.error('Error reenviando manuscrito:', e)
+      console.warn('[Autor] No se pudo reenviar el manuscrito:', e.message)
     }
     return false
   }
 
   async function cargarComentarios(manuscritoId) {
     try {
-      const res = await apiFetch(`/api/revision/manuscrito/${manuscritoId}`)
-      if (res.ok) {
-        const asignaciones = await res.json()
+      const asignaciones = await fetchAsignacionesPorManuscrito(manuscritoId)
+      if (Array.isArray(asignaciones)) {
         const comentariosParseados = asignaciones
           .filter(a => a.estado === 'COMPLETADA' && a.comentarios)
           .map((a, index) => {
@@ -203,13 +224,14 @@ export const useAutorStore = defineStore('autor', () => {
               originalidad: a.originalidad,
               metodologia: a.metodologia,
               claridad: a.claridad,
-              relevancia: a.relevancia
+              relevancia: a.relevancia,
+              ronda: a.ronda
             };
           })
         return { comentarios: comentariosParseados, asignaciones }
       }
     } catch (e) {
-      console.error('Error fetching comments:', e)
+      console.warn('[Autor] No se pudieron cargar los comentarios:', e.message)
     }
     return { comentarios: [], asignaciones: [] }
   }

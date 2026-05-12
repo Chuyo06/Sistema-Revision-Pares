@@ -3,24 +3,12 @@ import { ref, computed } from 'vue'
 import { fetchManuscritos, actualizarEstadoManuscrito, asignarEditorSeccionApi } from '@/services/api/manuscritos.js'
 import { fetchUsuarios } from '@/services/api/usuarios.js'
 import { fetchAsignacionesGeneral, crearAsignacion, eliminarAsignacionApi } from '@/services/api/revision.js'
+import { crearNotificacionApi } from '@/services/api/notificaciones.js'
 import { useAuthStore } from '../auth.js'
 import { useNotificacionesStore } from '../notificaciones.js'
 import { useHistorialStore } from '../historial.js'
 
-const HISTORIAL_KEY = 'rpp_historial_decisiones'
-
-function cargarHistorialPersistido() {
-  try {
-    const raw = localStorage.getItem(HISTORIAL_KEY)
-    return raw ? JSON.parse(raw) : []
-  } catch {
-    return []
-  }
-}
-
-function guardarHistorial(lista) {
-  localStorage.setItem(HISTORIAL_KEY, JSON.stringify(lista))
-}
+// Se eliminó la persistencia manual del historial para usar historialStore
 
 const PLANTILLAS_DECISION = {
   ACEPTADO: [
@@ -46,30 +34,46 @@ export const useEditorStore = defineStore('editor', () => {
   const editoresSeccion = ref([])
   const asignaciones = ref([])
   const cargando = ref(false)
-  const historialDecisiones = ref(cargarHistorialPersistido())
   // IDs de asignaciones ya notificadas como COMPLETADAS (evita duplicados entre recargas).
   const asignacionesNotificadas = ref(new Set(
     JSON.parse(localStorage.getItem('rpp_notif_asigs') || '[]')
+  ))
+  // IDs de asignaciones ya notificadas como DECLINADAS por revisor (evita duplicados).
+  const asignacionesDeclinadas = ref(new Set(
+    JSON.parse(localStorage.getItem('rpp_notif_asigs_declinadas') || '[]')
+  ))
+  // IDs de manuscritos ya notificados como reenviados (LISTO_PARA_DECISION).
+  const reenviosNotificados = ref(new Set(
+    JSON.parse(localStorage.getItem('rpp_notif_reenvios') || '[]')
   ))
 
   // Sub-rol activo: en el sistema académico, cualquier usuario con rol 'editor' es editor jefe.
   // 'editor_jefe' y 'editor_seccion' son alias de granularidad futura que aún no están en BD.
   const esEditorJefe = computed(() => {
     const auth = useAuthStore()
-    return auth.roles.includes('editor_jefe') || auth.roles.includes('editor')
+    const res = auth.roles.includes('editor_jefe') || (auth.roles.includes('editor') && !auth.roles.includes('editor_seccion'))
+    console.log('[EditorStore] esEditorJefe:', res, 'Roles:', auth.roles)
+    return res
   })
   const esEditorSeccion = computed(() => {
     const auth = useAuthStore()
-    return auth.roles.includes('editor_seccion') && !auth.roles.includes('editor_jefe') && !auth.roles.includes('editor')
+    const res = auth.roles.includes('editor_seccion')
+    console.log('[EditorStore] esEditorSeccion:', res)
+    return res
   })
 
   // Vista filtrada: editor de sección solo ve los manuscritos asignados a él.
   // Editor jefe (o editor sin sub-rol) ve todo.
   const manuscritos = computed(() => {
-    if (!esEditorSeccion.value) return manuscritosRaw.value
-    const auth = useAuthStore()
-    const myId = auth.usuario?.id
-    return manuscritosRaw.value.filter(m => Number(m.editorSeccionId) === Number(myId))
+    console.log('[EditorStore] Calculando visibles. Jefe:', esEditorJefe.value, 'Seccion:', esEditorSeccion.value)
+    if (esEditorJefe.value) return manuscritosRaw.value
+    if (esEditorSeccion.value) {
+      const auth = useAuthStore()
+      const filtrados = manuscritosRaw.value.filter(m => Number(m.editorSeccionId) === Number(auth.usuario?.id))
+      console.log('[EditorStore] Visibles para seccion:', filtrados.length)
+      return filtrados
+    }
+    return []
   })
 
   // Filtros aplicables a las métricas (por convocatoria y rango de fechas).
@@ -152,6 +156,22 @@ export const useEditorStore = defineStore('editor', () => {
             alertas: asigsDelArticulo.length === 0 && m.estado === 'ENVIADO' ? ['Requiere asignación de revisores'] : []
           }
         })
+
+        // Detectar manuscritos recién reenviados por el autor (estado LISTO_PARA_DECISION)
+        // y crear notificación local si no se notificó antes (fallback al backend de notif).
+        const notifStore = useNotificacionesStore()
+        for (const m of manuscritosRaw.value) {
+          if (m.estado === 'LISTO_PARA_DECISION' && !reenviosNotificados.value.has(m.id)) {
+            reenviosNotificados.value.add(m.id)
+            notifStore.agregar({
+              tipo: 'NUEVA_VERSION',
+              titulo: 'Nueva versión recibida',
+              mensaje: `El autor reenvió una versión corregida de "${m.titulo || 'un manuscrito'}". Está lista para tu decisión.`,
+              ruta: `/editor/asignacion/${m.id}`,
+            })
+          }
+        }
+        localStorage.setItem('rpp_notif_reenvios', JSON.stringify([...reenviosNotificados.value]))
       }
 
       if (listUsuarios && Array.isArray(listUsuarios)) {
@@ -211,13 +231,30 @@ export const useEditorStore = defineStore('editor', () => {
               notifStore.agregarNotificacionRevision(manuscrito, revisor)
             }
           }
+
+          // Detectar asignaciones recién declinadas y avisar al editor (fallback local
+          // por si el backend de notificaciones no propagó la INVITACION_RECHAZADA).
+          if ((asig.estado === 'DECLINADO' || asig.estado === 'RECHAZADA') && !asignacionesDeclinadas.value.has(asig.id_asignacion)) {
+            asignacionesDeclinadas.value.add(asig.id_asignacion)
+            const revisor = (revisoresDisponibles.value || []).find(r => Number(r.id) === Number(asig.id_revisor))
+            const manuscrito = (listManuscritos || []).find(m => String(m.id) === String(asig.id_manuscrito_mongo))
+            const nombreRev = revisor?.nombre || `Revisor #${asig.id_revisor}`
+            const tituloMs = manuscrito?.titulo || 'un manuscrito'
+            notifStore.agregar({
+              tipo: 'INVITACION_RECHAZADA',
+              titulo: 'Invitación declinada',
+              mensaje: `${nombreRev} declinó la invitación a revisar "${tituloMs}". Considera asignar otro revisor.`,
+              ruta: manuscrito ? `/editor/asignacion/${manuscrito.id}` : '/editor/manuscritos',
+            })
+          }
         }
-        // Persistir el set de notificadas para sobrevivir recargas.
+        // Persistir los sets para sobrevivir recargas.
         localStorage.setItem('rpp_notif_asigs', JSON.stringify([...asignacionesNotificadas.value]))
+        localStorage.setItem('rpp_notif_asigs_declinadas', JSON.stringify([...asignacionesDeclinadas.value]))
         asignaciones.value = listAsig
       }
     } catch (e) {
-      console.error("Error cargando dashboard editor:", e)
+      console.warn('[Editor] No se pudo cargar el dashboard:', e.message)
     } finally {
       cargando.value = false
     }
@@ -236,6 +273,21 @@ export const useEditorStore = defineStore('editor', () => {
       if (manuscrito && manuscrito.estado === 'ENVIADO') {
         await actualizarEstadoManuscrito(manuscritoId, 'EN_REVISION')
       }
+
+      // Notificar al revisor que ha sido invitado (fire-and-forget).
+      try {
+        await crearNotificacionApi({
+          tipo: 'NUEVA_INVITACION',
+          usuario_id: revisorId,
+          mensaje: manuscrito
+            ? `Has sido invitado a revisar "${manuscrito.titulo}". Tienes 3 días para responder.`
+            : 'Has sido invitado a revisar un nuevo manuscrito.',
+          referencia_manuscrito: manuscritoId,
+        })
+      } catch (e) {
+        console.warn('[Editor] No se pudo notificar al revisor:', e)
+      }
+
       await cargarDashboardEditor()
       return { ok: true }
     }
@@ -294,9 +346,6 @@ export const useEditorStore = defineStore('editor', () => {
     return exito
   }
 
-  function obtenerHistorial(manuscritoId) {
-    return historialDecisiones.value.filter(h => String(h.manuscritoId) === String(manuscritoId))
-  }
 
   async function tomarDecisionConPlantilla(manuscritoId, decision, plantillaId, personalizada) {
     if (!esEditorJefe.value) {
@@ -317,17 +366,18 @@ export const useEditorStore = defineStore('editor', () => {
     }
 
     const auth = useAuthStore()
-    const entradaHistorial = {
+    const historial = useHistorialStore()
+    
+    historial.registrar({
       manuscritoId: String(manuscritoId),
-      titulo: manuscrito.titulo,
+      manuscritoTitulo: manuscrito.titulo,
+      referencia: manuscrito.referencia || '',
       decision,
-      carta: carta || null,
-      editor: auth.usuario?.nombre || 'Editor',
-      fecha: new Date().toISOString()
-    }
-
-    historialDecisiones.value.unshift(entradaHistorial)
-    guardarHistorial(historialDecisiones.value.slice(0, 100))
+      comentario: carta || '',
+      plantilla: plantillaId || null,
+      editorId: auth.usuario?.id,
+      editorNombre: auth.usuario?.nombre || 'Editor',
+    })
 
     const notifStore = useNotificacionesStore()
     notifStore.agregarNotificacionDecision(manuscrito, decision)
@@ -355,13 +405,17 @@ export const useEditorStore = defineStore('editor', () => {
     cargando,
     esEditorJefe,
     esEditorSeccion,
-    historialDecisiones,
+    rolActivoNombre: computed(() => esEditorJefe.value ? 'Editor en Jefe' : 'Editor de Sección'),
+    rolActivoColor: computed(() => esEditorJefe.value ? '#1a237e' : '#2e7d32'),
+    rolActivoGradiente: computed(() => esEditorJefe.value 
+      ? 'linear-gradient(135deg, #1a237e 0%, #311b92 100%)' 
+      : 'linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%)'),
     cargarDashboardEditor,
     asignarRevisor,
     quitarRevisor,
     tomarDecision,
     tomarDecisionConPlantilla,
-    obtenerHistorial,
+    asignarEditorSeccion,
     getPlantillas,
   }
 })

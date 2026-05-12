@@ -224,9 +224,17 @@ async function guardarPerfilEspecialidad() {
       experiencia: perfilProfesional.value.experiencia
     }
     await auth.guardarPerfilBackend(datosParaGuardar)
+    // El backend hoy solo persiste `especialidad`. `palabras_clave` y `experiencia`
+    // se conservan localmente en la sesión del usuario hasta que el backend los
+    // soporte (evita perderlos al recargar la página).
+    auth.actualizarPerfil({
+      especialidad: datosParaGuardar.especialidad,
+      palabras_clave: datosParaGuardar.palabras_clave,
+      experiencia: datosParaGuardar.experiencia,
+    })
     snackbar.value = {
       show: true,
-      text: 'Perfil de especialidad actualizado exitosamente en el servidor.',
+      text: 'Perfil de especialidad actualizado exitosamente.',
       color: 'success'
     }
   } catch (error) {

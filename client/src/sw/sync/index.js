@@ -20,7 +20,7 @@ export const revisionesQueue = new Queue('sync-revisiones', {
     while ((entry = await queue.shiftRequest())) {
       try {
         await fetch(entry.request)
-        console.log('[SW Sync] Revisión enviada:', entry.request.url)
+        if (self.location.hostname === 'localhost') console.log('[SW Sync] Revisión enviada:', entry.request.url)
       } catch {
         await queue.unshiftRequest(entry)
         console.warn('[SW Sync] Sin conexión — revisión reingresada a la cola')
@@ -38,7 +38,7 @@ export const borradoresQueue = new Queue('sync-borradores', {
     while ((entry = await queue.shiftRequest())) {
       try {
         await fetch(entry.request)
-        console.log('[SW Sync] Borrador sincronizado:', entry.request.url)
+        if (self.location.hostname === 'localhost') console.log('[SW Sync] Borrador sincronizado:', entry.request.url)
       } catch {
         await queue.unshiftRequest(entry)
         throw new Error('sync-borradores fallido, se reintentará')
@@ -55,10 +55,10 @@ export async function encolarSiEsOffline(request, error) {
   if (!navigator.onLine) {
     if (request.url.includes('/revisiones')) {
       await revisionesQueue.pushRequest({ request })
-      console.log('[SW Sync] Revisión encolada para reintento')
+      if (self.location.hostname === 'localhost') console.log('[SW Sync] Revisión encolada para reintento')
     } else if (request.url.includes('/borradores')) {
       await borradoresQueue.pushRequest({ request })
-      console.log('[SW Sync] Borrador encolado para reintento')
+      if (self.location.hostname === 'localhost') console.log('[SW Sync] Borrador encolada para reintento')
     }
   }
   throw error

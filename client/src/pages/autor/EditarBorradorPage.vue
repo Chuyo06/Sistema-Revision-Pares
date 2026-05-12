@@ -120,6 +120,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAutorStore } from '@/store/autor/index.js'
+import { subirArchivoManuscrito } from '@/services/api/manuscritos.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -175,19 +176,10 @@ async function procesarSubidaArchivo() {
   }
 
   try {
-    const formData = new FormData()
-    formData.append('archivo', file)
-
-    const res = await fetch('/api/manuscritos/upload', {
-      method: 'POST',
-      body: formData,
-    })
-
-    if (!res.ok) throw new Error('Error al subir el archivo')
-    const data = await res.json()
+    const data = await subirArchivoManuscrito(file)
     return data.referencia
   } catch (error) {
-    errorMessage.value = 'Error al subir el archivo al servidor.'
+    errorMessage.value = error.message || 'Error al subir el archivo al servidor.'
     return null
   }
 }

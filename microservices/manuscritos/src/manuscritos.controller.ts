@@ -5,7 +5,11 @@ import { ManuscritosService } from './manuscritos.service';
 import { join } from 'path';
 import { Manuscrito } from './schemas/manuscrito.schema';
 
-@Controller()
+// Prefijo explícito: alinea con nginx (proxy_pass /manuscritos) y con las
+// llamadas directas del microservicio de revisión (http://manuscritos:3000/manuscritos/...).
+// Sin este prefijo, las rutas paramétricas (:id) podían capturar /convocatorias
+// y causar 404 cruzados con ConvocatoriasController.
+@Controller('manuscritos')
 export class ManuscritosController {
   constructor(private readonly manuscritosService: ManuscritosService) {}
 
@@ -16,7 +20,7 @@ export class ManuscritosController {
 
   @Post('upload')
   @UseInterceptors(FileInterceptor('archivo', {
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+    limits: { fileSize: 5 * 1024 * 1024 },
     fileFilter: (_req, file, cb) => {
       if (file.mimetype !== 'application/pdf') {
         cb(new BadRequestException('Solo se permiten archivos PDF'), false);
@@ -40,15 +44,11 @@ export class ManuscritosController {
     return res.sendFile(join(uploadDir, filename));
   }
 
-  @Post()
-  crear(@Body() datos: Partial<Manuscrito>) {
-    console.log('[Manuscritos] Solicitud de creación recibida:', datos);
-    return this.manuscritosService.crear(datos);
-  }
-
-  @Get()
-  obtenerTodos() {
-    return this.manuscritosService.obtenerTodos();
+  @Get('autor/:autorId/borradores')
+  obtenerBorradoresPorAutor(@Param('autorId') autorId: string) {
+    const numId = +autorId;
+    if (isNaN(numId)) return [];
+    return this.manuscritosService.obtenerBorradoresPorAutor(numId);
   }
 
   @Get('autor/:autorId')
@@ -62,16 +62,15 @@ export class ManuscritosController {
     return this.manuscritosService.obtenerPorAutor(numId, incluir);
   }
 
-  @Get('autor/:autorId/borradores')
-  obtenerBorradoresPorAutor(@Param('autorId') autorId: string) {
-    const numId = +autorId;
-    if (isNaN(numId)) return [];
-    return this.manuscritosService.obtenerBorradoresPorAutor(numId);
+  @Post()
+  crear(@Body() datos: Partial<Manuscrito>) {
+    console.log('[Manuscritos] Solicitud de creación recibida:', datos);
+    return this.manuscritosService.crear(datos);
   }
 
-  @Get(':id')
-  obtenerPorId(@Param('id') id: string) {
-    return this.manuscritosService.obtenerPorId(id);
+  @Get()
+  obtenerTodos() {
+    return this.manuscritosService.obtenerTodos();
   }
 
   @Patch(':id')

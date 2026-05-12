@@ -1,13 +1,13 @@
-﻿<template>
+<template>
   <div>
     <!-- Banner -->
     <div
-      style="background:linear-gradient(135deg,#bf360c 0%,#e65100 100%); padding:32px 28px 24px; position:relative; overflow:hidden"
+      :style="`background:${editorStore.rolActivoGradiente}; padding:32px 28px 24px; position:relative; overflow:hidden`"
     >
       <v-icon size="120" style="position:absolute; right:-16px; bottom:-20px; color:rgba(255,255,255,0.08)">
         mdi-pencil-ruler
       </v-icon>
-      <div style="color:rgba(255,255,255,0.7); font-size:12px; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:4px">Editor</div>
+      <div style="color:rgba(255,255,255,0.7); font-size:12px; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:4px">{{ editorStore.rolActivoNombre }}</div>
       <div style="font-size:22px; font-weight:700; color:#fff; margin-bottom:4px">Panel Editorial</div>
       <div style="font-size:14px; color:rgba(255,255,255,0.75)">Bienvenido, {{ auth.usuario?.nombre }}</div>
       <v-btn
@@ -20,6 +20,19 @@
         to="/editor/manuscritos"
       >
         Ver manuscritos
+      </v-btn>
+      <v-btn
+        v-if="editorStore.esEditorJefe"
+        color="white"
+        variant="tonal"
+        class="mt-4 ml-3"
+        style="color:#fff; background:rgba(255,255,255,0.15)"
+        prepend-icon="mdi-calendar-star"
+        rounded="xl"
+        elevation="0"
+        to="/editor/convocatorias"
+      >
+        Gestionar convocatorias
       </v-btn>
     </div>
 
@@ -75,6 +88,17 @@
 
       <!-- Panel derecho -->
       <div>
+        <!-- Gestión de Editores (solo Jefe) -->
+        <div v-if="editorStore.esEditorJefe" style="background:#FFFFFF; border:1px solid #D3E0D7; border-radius:12px; overflow:hidden; margin-bottom:16px">
+          <div style="background:#1a237e; padding:10px 14px">
+            <span style="font-size:13px; font-weight:600; color:#fff">Gestión de Editores</span>
+          </div>
+          <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px">
+            <span style="font-size:13px; color:#4CAF50">Editores de Sección</span>
+            <span style="font-size:18px; font-weight:700; color:#1B4332">{{ editorStore.editoresSeccion.length }}</span>
+          </div>
+        </div>
+
         <!-- Resumen editorial -->
         <div style="background:#FFFFFF; border:1px solid #D3E0D7; border-radius:12px; overflow:hidden; margin-bottom:16px">
           <div style="background:#e65100; padding:10px 14px">

@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { fetchNotificaciones, marcarNotificacionLeida as marcarLeidaApi } from '@/services/api/notificaciones.js'
+import { useAuthStore } from './auth.js'
 
 const STORAGE_KEY = 'rpp_notificaciones'
 
@@ -8,7 +9,8 @@ function cargarPersistidas() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     return raw ? JSON.parse(raw) : []
-  } catch {
+  } catch (err) {
+    console.error('[Notificaciones] Error cargando persistencia:', err)
     return []
   }
 }
@@ -46,44 +48,96 @@ export const useNotificacionesStore = defineStore('notificaciones', () => {
     }
   }
 
+  // Contador de fallos consecutivos del polling. Si supera el umbral,
+  // se auto-detiene para no spammear la consola ni hacer red innecesaria.
+  let fallosConsecutivos = 0
+  const MAX_FALLOS = 3
+
   async function cargarNotificacionesBackend(usuarioId) {
     if (!usuarioId) return
-    const delBackend = await fetchNotificaciones(usuarioId)
-    
-    const nuevas = delBackend.map(b => {
-      let titulo = b.tipo.replace('_', ' ')
-      let ruta = '/editor/manuscritos'
+    try {
+      const delBackend = await fetchNotificaciones(usuarioId)
 
-      if (b.tipo === 'NUEVA_INVITACION') {
-        titulo = 'Nueva Invitación'
-        ruta = '/revisor/asignados'
-      } else if (b.tipo === 'INVITACION_RECHAZADA') {
-        titulo = 'Invitación Declinada'
+      // fetchNotificaciones devuelve null cuando el backend no respondió.
+      if (delBackend === null) {
+        fallosConsecutivos++
+        if (fallosConsecutivos >= MAX_FALLOS && pollingInterval) {
+          console.warn(`[Notificaciones] Backend no responde tras ${MAX_FALLOS} intentos — deteniendo polling.`)
+          detenerPolling()
+        }
+        return
       }
 
-      return {
-        id: `backend_${b.id}`,
-        backendId: b.id,
-        tipo: b.tipo,
-        titulo,
-        mensaje: b.mensaje,
-        leida: b.leida,
-        timestamp: b.fechaCreacion,
-        ruta
-      }
-    })
+      // Éxito (puede ser []): reseteamos el contador de fallos.
+      fallosConsecutivos = 0
 
-    // Conservar las locales para no romper la maqueta del editor
-    const locals = notificaciones.value.filter(n => !n.backendId)
-    
-    // Fusionar y ordenar
-    const todas = [...locals, ...nuevas].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp))
-    
-    // Para evitar duplicados en la interfaz si se llama varias veces:
-    const unicas = Array.from(new Map(todas.map(item => [item.id, item])).values())
-    
-    notificaciones.value = unicas
-    persistir(notificaciones.value)
+      const nuevas = delBackend.map(b => {
+        let titulo = b.tipo.replace('_', ' ')
+        let ruta = '/editor/manuscritos'
+
+        if (b.tipo === 'NUEVA_INVITACION' || b.tipo === 'NUEVA_INVITACION_REVISION') {
+          titulo = 'Nueva Invitación a Revisar'
+          ruta = '/revisor/asignados'
+        } else if (b.tipo === 'INVITACION_RECHAZADA') {
+          titulo = 'Invitación Declinada'
+        } else if (b.tipo === 'REVISIONES_COMPLETADAS') {
+          titulo = 'Revisiones Completadas'
+          ruta = '/editor/manuscritos'
+        } else if (b.tipo === 'NUEVA_VERSION') {
+          titulo = 'Nueva Versión Corregida'
+          ruta = '/editor/manuscritos'
+        }
+
+        return {
+          id: `backend_${b.id}`,
+          backendId: b.id,
+          tipo: b.tipo,
+          titulo,
+          mensaje: b.mensaje,
+          leida: b.leida,
+          timestamp: b.fechaCreacion,
+          ruta
+        }
+      })
+
+      // Conservar las locales para no romper la maqueta del editor
+      const locals = notificaciones.value.filter(n => !n.backendId)
+      
+      // Fusionar y ordenar
+      const todas = [...locals, ...nuevas].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp))
+      
+      // Para evitar duplicados en la interfaz si se llama varias veces:
+      const unicas = Array.from(new Map(todas.map(item => [item.id, item])).values())
+      
+      notificaciones.value = unicas
+      persistir(notificaciones.value)
+    } catch {
+      // Esperado cuando el backend de notificaciones está apagado o no responde.
+      // No tocamos las notificaciones locales (in-memory + localStorage) para
+      // que la UI siga funcionando con la última información disponible.
+      console.warn('[Notificaciones] Backend no disponible — solo notificaciones locales.')
+    }
+  }
+
+  let pollingInterval = null
+  function iniciarPolling() {
+    if (pollingInterval) return
+    // Reset del circuit breaker al (re)iniciar manualmente.
+    fallosConsecutivos = 0
+    pollingInterval = setInterval(() => {
+      const authStore = useAuthStore()
+      const usuarioId = authStore.usuario?.id || authStore.usuario?.id_usuario
+      if (usuarioId) {
+        cargarNotificacionesBackend(usuarioId)
+      }
+    }, 60000) // Cada minuto
+  }
+
+  function detenerPolling() {
+    if (pollingInterval) {
+      clearInterval(pollingInterval)
+      pollingInterval = null
+    }
   }
 
   function marcarTodasLeidas() {
@@ -125,6 +179,8 @@ export const useNotificacionesStore = defineStore('notificaciones', () => {
     limpiar,
     agregarNotificacionRevision,
     agregarNotificacionDecision,
-    cargarNotificacionesBackend
+    cargarNotificacionesBackend,
+    iniciarPolling,
+    detenerPolling
   }
 })

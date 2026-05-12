@@ -1,6 +1,59 @@
 import { apiFetch } from './client.js'
 
 const BASE_URL = '/api/usuarios'
+const CONFIG_URL = `${BASE_URL}/config`
+
+/**
+ * Configuración global (áreas temáticas + parámetros del análisis IA).
+ * Centralizada aquí para que ningún componente / store hable directo con apiFetch.
+ */
+export async function fetchAreasTematicasApi() {
+  try {
+    const res = await apiFetch(`${CONFIG_URL}/areas`)
+    if (!res.ok) return null
+    return await res.json()
+  } catch (err) {
+    console.warn('[Usuarios] No se pudieron cargar áreas temáticas:', err.message)
+    return null
+  }
+}
+
+export async function guardarAreasTematicasApi(valor) {
+  try {
+    const res = await apiFetch(`${CONFIG_URL}/areas`, {
+      method: 'POST',
+      body: JSON.stringify({ valor }),
+    })
+    return res.ok
+  } catch (err) {
+    console.warn('[Usuarios] Error guardando áreas temáticas:', err.message)
+    return false
+  }
+}
+
+export async function fetchConfiguracionIAApi() {
+  try {
+    const res = await apiFetch(`${CONFIG_URL}/ia`)
+    if (!res.ok) return null
+    return await res.json()
+  } catch (err) {
+    console.warn('[Usuarios] No se pudo cargar configuración IA:', err.message)
+    return null
+  }
+}
+
+export async function guardarConfiguracionIAApi(valor) {
+  try {
+    const res = await apiFetch(`${CONFIG_URL}/ia`, {
+      method: 'POST',
+      body: JSON.stringify({ valor }),
+    })
+    return res.ok
+  } catch (err) {
+    console.warn('[Usuarios] Error guardando configuración IA:', err.message)
+    return false
+  }
+}
 
 export async function fetchUsuarios() {
   try {
@@ -11,7 +64,7 @@ export async function fetchUsuarios() {
     }
     return await res.json()
   } catch (err) {
-    console.error('[Usuarios] Excepción en fetchUsuarios:', err)
+    console.warn('[Usuarios] Sin respuesta del backend:', err.message)
     return []
   }
 }
@@ -24,7 +77,8 @@ export async function toggleEstadoUsuarioApi(id, estadoActual) {
       body: JSON.stringify({ estado: nuevoEstado }),
     })
     return res.ok
-  } catch {
+  } catch (err) {
+    console.warn('[Usuarios] Error en toggleEstadoUsuarioApi:', err.message)
     return false
   }
 }
@@ -37,7 +91,8 @@ export async function crearUsuarioApi(datos) {
     })
     if (!res.ok) return null
     return await res.json()
-  } catch {
+  } catch (err) {
+    console.warn('[Usuarios] Error en crearUsuarioApi:', err.message)
     return null
   }
 }
@@ -54,7 +109,8 @@ export async function actualizarUsuarioApi(id, datos) {
     }
     return await res.json()
   } catch (err) {
-    console.error(err)
+    // El caller (store admin) muestra snackbar al usuario; aquí solo log discreto.
+    console.warn('[Usuarios] actualizarUsuarioApi falló:', err.message)
     throw err
   }
 }

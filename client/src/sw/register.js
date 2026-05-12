@@ -33,7 +33,7 @@ function _setState(newState) {
   if (_currentState === newState) return
   const prev = _currentState
   _currentState = newState
-  console.log(`[SW Register] ${prev} → ${newState}`)
+  if (window.location.hostname === 'localhost') console.log(`[SW Register] ${prev} → ${newState}`)
   _listeners.forEach((fn) => fn(newState, prev))
 }
 
@@ -49,7 +49,7 @@ export async function registerSW() {
       scope: '/',
     })
 
-    console.log('[SW Register] Registrado con scope:', registration.scope)
+    if (window.location.hostname === 'localhost') console.log('[SW Register] Registrado con scope:', registration.scope)
 
     _watchForUpdates(registration)
     _watchConnectionState()
@@ -73,7 +73,7 @@ function _watchForUpdates(registration) {
         installingWorker.state === 'installed' &&
         navigator.serviceWorker.controller
       ) {
-        console.log('[SW Register] Nueva versión disponible')
+        if (window.location.hostname === 'localhost') console.log('[SW Register] Nueva versión disponible')
         _notifyApp({ tipo: 'SW_UPDATE_AVAILABLE' })
       }
     })
@@ -81,7 +81,7 @@ function _watchForUpdates(registration) {
 
   // Cuando un nuevo SW toma control, recargar para aplicar cambios
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    console.log('[SW Register] Nuevo SW tomó control — recargando')
+    if (window.location.hostname === 'localhost') console.log('[SW Register] Nuevo SW tomó control — recargando')
     window.location.reload()
   })
 }
@@ -122,7 +122,7 @@ export function cacheManuscrito(url) {
 // ─── Mensajes entrantes del SW ────────────────────────────────────────────────
 navigator.serviceWorker?.addEventListener('message', (event) => {
   const { tipo, payload } = event.data ?? {}
-  console.log('[SW Register] Mensaje del SW:', tipo, payload)
+  if (window.location.hostname === 'localhost') console.log('[SW Register] Mensaje del SW:', tipo, payload)
   _notifyApp({ tipo, payload })
 })
 

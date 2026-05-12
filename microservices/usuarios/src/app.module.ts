@@ -15,7 +15,7 @@ import { UsuariosModule } from './usuarios/usuarios.module';
     // 0. Rate Limiting (10 peticiones por minuto por IP)
     ThrottlerModule.forRoot([{
       ttl: 60000,
-      limit: 10,
+      limit: 100,
     }]),
     
     // 1. Conexión de MariaDB

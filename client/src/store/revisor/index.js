@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { fetchAsignaciones, enviarRevisionApi, actualizarEstadoRevisionApi } from '@/services/api/revision.js'
 import { fetchManuscritos } from '@/services/api/manuscritos.js'
+import { crearNotificacionApi } from '@/services/api/notificaciones.js'
 import { useAuthStore } from '../auth.js'
 
 export const useRevisorStore = defineStore('revisor', () => {
@@ -61,12 +62,18 @@ export const useRevisorStore = defineStore('revisor', () => {
             diasRestantesRespuesta,
             deadline: asig.fecha_limite ? asig.fecha_limite.split('T')[0] : 'Sin fecha',
             estado: estadoUI,
-            resumen: manuscrito.resumen || 'Sin resumen disponible'
+            resumen: manuscrito.resumen || 'Sin resumen disponible',
+            // Campos necesarios para que el visor PDF y la vista de detalle
+            // (RevisionPage) funcionen: la referencia es la "RPP-YYYY-NNNN" que
+            // el backend usa para servir el archivo en GET /manuscritos/download/:ref.
+            referencia: manuscrito.referencia || null,
+            contenido: manuscrito.contenido || '',
+            fechaEnvio: manuscrito.fechaEnvio || manuscrito.fechaSubida || null,
           }
         })
       }
     } catch (e) {
-      console.error("Error cargando dashboard revisor:", e)
+      console.warn('[Revisor] No se pudo cargar el dashboard:', e.message)
     } finally {
       cargando.value = false
     }
@@ -93,7 +100,23 @@ export const useRevisorStore = defineStore('revisor', () => {
       if (asig) {
         asig.estado = aceptar ? 'EN_PROGRESO' : 'DECLINADO'
       }
-      // Opcionalmente podemos recargar dashboard: await cargarDashboard()
+
+      // Si declinó, notificar al editor (fire-and-forget). Si el backend
+      // de notificaciones no responde, se silencia: el flujo no se rompe.
+      if (!aceptar && asig) {
+        try {
+          const authStore = useAuthStore()
+          await crearNotificacionApi({
+            tipo: 'INVITACION_RECHAZADA',
+            rol_destinatario: 'editor',
+            mensaje: `${authStore.usuario?.nombre || 'Un revisor'} declinó la invitación a revisar "${asig.titulo}". Considera asignar otro revisor.`,
+            referencia_manuscrito: asig.id_manuscrito,
+            referencia_asignacion: idAsignacion,
+          })
+        } catch (e) {
+          console.warn('[Revisor] No se pudo notificar al editor sobre rechazo:', e)
+        }
+      }
     }
     return res
   }

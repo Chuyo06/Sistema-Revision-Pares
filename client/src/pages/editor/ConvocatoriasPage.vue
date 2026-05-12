@@ -149,6 +149,12 @@
       </v-card>
     </v-dialog>
 
+    <!-- Feedback al usuario -->
+    <v-snackbar v-model="snackbar" :color="snackbarColor" location="top right" timeout="4000">
+      <v-icon start>{{ snackbarColor === 'success' ? 'mdi-check-circle' : 'mdi-alert-circle' }}</v-icon>
+      {{ snackbarMsg }}
+    </v-snackbar>
+
     <!-- Confirmar eliminar -->
     <v-dialog v-model="dialogoEliminar" max-width="420">
       <v-card>
@@ -182,6 +188,15 @@ const dialogoEliminar = ref(false)
 const formValido = ref(false)
 const editando = ref(null)
 const convAEliminar = ref(null)
+const snackbar = ref(false)
+const snackbarMsg = ref('')
+const snackbarColor = ref('success')
+
+function notify(msg, color = 'success') {
+  snackbarMsg.value = msg
+  snackbarColor.value = color
+  snackbar.value = true
+}
 
 const form = ref({ nombre: '', fechaInicio: '', fechaLimite: '', areasTematicas: [] })
 
@@ -205,13 +220,17 @@ async function guardar() {
   try {
     if (editando.value) {
       await convStore.actualizar(editando.value, form.value)
+      notify('Convocatoria actualizada correctamente.', 'success')
     } else {
       await convStore.crear(form.value)
+      notify('Convocatoria creada correctamente.', 'success')
     }
+    dialogo.value = false
   } catch (e) {
-    console.error('Error al guardar convocatoria', e)
+    // Mensaje limpio (preparado por el service); no cerramos el diálogo
+    // para que el usuario pueda corregir si fue un error de validación.
+    notify(e.message || 'No se pudo guardar la convocatoria.', 'error')
   }
-  dialogo.value = false
 }
 
 function confirmarEliminar(c) {
@@ -222,8 +241,9 @@ function confirmarEliminar(c) {
 async function eliminarConfirmado() {
   try {
     await convStore.eliminar(convAEliminar.value.id)
+    notify('Convocatoria eliminada.', 'success')
   } catch (e) {
-    console.error('Error al eliminar convocatoria', e)
+    notify(e.message || 'No se pudo eliminar la convocatoria.', 'error')
   }
   dialogoEliminar.value = false
   convAEliminar.value = null

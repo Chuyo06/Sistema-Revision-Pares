@@ -61,6 +61,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
+import { borradorDecisionApi } from '@/services/api/analisis.js'
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -171,17 +172,12 @@ function aplicarPlantilla(id) {
 async function generarBorradorIA() {
   cargandoIA.value = true
   try {
-    const res = await fetch('/api/analisis/draft-decision', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        decisionEditor: props.decision,
-        revisiones: ['Revisión 1 simulada', 'Revisión 2 simulada'] // Idealmente esto vendría de los props
-      })
+    const data = await borradorDecisionApi({
+      decisionEditor: props.decision,
+      revisiones: ['Revisión 1 simulada', 'Revisión 2 simulada'], // Idealmente esto vendría de los props
     })
-    if (res.ok) {
-      const data = await res.json()
-      comentario.value = data.carta + (data.timelineSugerido ? `\n\nTiempo sugerido para revisión: ${data.timelineSugerido}` : '')
+    if (data) {
+      comentario.value = (data.carta || '') + (data.timelineSugerido ? `\n\nTiempo sugerido para revisión: ${data.timelineSugerido}` : '')
     }
   } catch (e) {
     console.error('Error generando borrador IA:', e)

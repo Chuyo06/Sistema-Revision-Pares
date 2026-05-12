@@ -1,119 +1,215 @@
-# Sistema de Revisión por Pares (RPP) 🚀
+# Sistema de Revisión por Pares (RPP)
 
 Plataforma integral para la gestión del proceso editorial de revisión por pares, basada en una arquitectura de microservicios (NestJS) y un frontend moderno (Vue 3).
 
 ---
 
-## 📋 Guía de Inicio Rápido
+## Para Nuevos Compañeros: Empezar de Cero
 
-Este proyecto está diseñado para ejecutarse con el menor número de comandos posible, orquestando bases de datos y servicios mediante Docker.
+> **Requisitos**: Node.js 20+ y Docker Desktop iniciado.
 
-### 1. Requisitos Previos 
-- **Node.js 20+**
-- **Docker Desktop** (Debes tenerlo iniciado)
-
-### 2. Instalación y Ejecución
-Desde la carpeta raíz del proyecto:
 ```bash
-# Instalar dependencias (instala raíz y cliente automáticamente)
+# 1. Clonar el repositorio y entrar al proyecto
+cd Sistema-Revision-Pares
+
+# 2. Instalar TODO (cliente, microservicios y Playwright)
 npm install
 
-# Lanzar el entorno completo con datos de prueba limpios (Recomendado)
+# 3. [Solo primera vez] Instalar navegador para tests
+npm run test:install
+
+# 4. Arrancar el sistema completo con datos frescos
 npm run dev:fresh
 ```
 
-## 🔑 Credenciales de Acceso para Pruebas 
+El sistema estará disponible en **http://localhost:5173**.
 
-Para facilitar el testing de los diferentes flujos, utiliza la siguiente tabla de usuarios preconfigurados. Todos los servicios comparten el mismo sistema de autenticación centralizado.
+---
 
-| Rol | Correo Electrónico | Contraseña | Institución / Propósito |
-| :--- | :--- | :--- | :--- |
-| **Administrador** | `admin@demo.com` | `1234` | Control total del sistema. |
-| **Editor** | `editor@demo.com` | `1234` | Gestión editorial principal. |
-| **Editor** | `j.doe@oxford.ac.uk` | `1234` | Oxford University. |
-| **Autor** | `autor@demo.com` | `1234` | Flujo de envíos básico. |
-| **Autor** | `elena.v@stanford.edu` | `1234` | Stanford University. |
-| **Autor** | `l.martinez@unam.mx` | `1234` | UNAM. |
-| **Revisor** | `revisor@demo.com` | `1234` | Revisor de prueba rápido. |
-| **Revisor** | `carlos.r@mit.edu` | `1234` | MIT Media Lab. |
-| **Revisor** | `chen.wei@tsinghua.cn` | `1234` | Tsinghua University. |
-| **Revisor** | `s.kawasaki@u-tokyo.jp` | `1234` | University of Tokyo. |
-| **Revisor** | `h.mueller@tu-berlin.de` | `1234` | TU Berlin. |
-| **Revisor** | `m.patel@iit.ac.in` | `1234` | IIT Bombay. |
+## Mantener Todo al Día
+
+Cuando otro compañero haga cambios al repositorio:
+
+```bash
+# 1. Traer los últimos cambios
+git pull
+
+# 2. Actualizar todas las dependencias (se ejecuta automáticamente si alguien modifyó package.json)
+npm install
+
+# 3. Si hay nuevos contenedores o cambios en Docker, reconstruir
+npm run docker:down
+npm run dev:fresh
+```
 
 > [!TIP]
-> Si deseas limpiar todos los datos y reiniciar los usuarios a este estado inicial, ejecuta: `npm run dev:fresh`.
+> Si alguien modifica algo en las carpetas `client/` o `microservices/`, solo necesitas `npm install` dentro de esa carpeta, no todo el proyecto.
 
----
+```bash
+# Actualizar solo el frontend
+cd client && npm install && cd ..
 
-## 🛠️ Stack Tecnológico y Arquitectura
-
-### Frontend
-- **Framework**: Vue 3 (Composition API) + Vuetify 3 (Material Design).
-- **Estado**: Pinia (Stores modulares para Autor, Editor, Revisor).
-- **Herramientas**: Vite (Servidor de desarrollo y Proxy).
-
-### Backend (Microservicios)
-Cada servicio corre de forma independiente en su propio puerto:
-- **Usuarios API** (Puerto 3001): Autenticación JWT y perfiles.
-- **Manuscritos API** (Puerto 3002): CRUD de artículos y archivos.
-- **Revisión API** (Puerto 3003): Gestión de asignaciones y formularios de evaluación.
-
-### Infraestructura (Docker)
-| Servicio | Tipo | Propósito |
-| :--- | :--- | :--- |
-| **MariaDB** | Relacional | Datos críticos (Usuarios, Manuscritos, Revisiones). |
-| **MongoDB** | NoSQL | Metadatos extendidos y logs. |
-| **Redis** | Key-Value | Caché de sesiones y colas de tareas asíncronas. |
-
----
-
-## 📂 Estructura del Repositorio
-```text
-Sistema-Revision-Pares/
-├── client/                 # Frontend Vue 3
-├── microservices/          # Microservicios NestJS
-│   ├── usuarios/
-│   ├── manuscritos/
-│   └── revision/
-├── database/               # Scripts de inicialización SQL/NoSQL
-├── docker/                 # Configuraciones adicionales de contenedores
-└── docker-compose.yml       # Orquestación global
+# Actualizar solo un microservicio
+cd microservices/manuscritos && npm install && cd ../..
 ```
 
 ---
 
-## 📘 Comandos de Utilidad
+## Comandos Disponibles
 
+### Primeros Pasos
 | Comando | Descripción |
-| :--- | :--- |
-| `npm start` | Inicia el entorno de desarrollo. |
-| `npm run dev:fresh` | **Limpieza Total**: Borra volúmenes previos y carga datos nuevos. |
-| `npm run docker:logs` | Muestra los logs de los microservicios en tiempo real. |
-| `npm run docker:down` | Apaga y remueve los contenedores. |
+|:---|:---|
+| `npm install` | Instala todo (cliente + microservicios + Playwright). |
+| `npm run dev:fresh` | Limpia volúmenes y arranca con datos frescos. |
+| `npm run test:install` | Instala el navegador Chromium para tests E2E. |
+
+### Desarrollo Diario
+| Comando | Descripción |
+|:---|:---|
+| `npm run dev` | Inicia el entorno completo (conserva datos existentes). |
+| `npm run dev:client` | Solo el frontend (Vite, puerto 5173). |
+| `npm run build` | Compila el frontend para producción. |
+
+### Docker
+| Comando | Descripción |
+|:---|:---|
+| `npm run docker:up` | Levanta todos los contenedores. |
+| `npm run docker:down` | Detiene los contenedores. |
+| `npm run docker:logs` | Logs en tiempo real de los contenedores. |
+| `npm run docker:ps` | Ver estado de los contenedores. |
+
+### Tests E2E
+| Comando | Descripción |
+|:---|:---|
+| `npm run test` | Ejecuta tests E2E (headless, sin navegador). |
+| `npm run test:headed` | Ejecuta tests con navegador visible. |
+| `npm run test:ui` | Abre la interfaz gráfica de Playwright. |
+| `npm run test:report` | Muestra el reporte HTML del último test. |
 
 ---
 
-## 📚 Documentación de APIs (OpenAPI)
+## Credenciales de Prueba
 
-Cada microservicio cuenta con su propia documentación interactiva autogenerada mediante Swagger. Puedes probar los endpoints directamente desde el navegador:
-
-- **Usuarios API**: [http://localhost:3001/docs](http://localhost:3001/docs)
-- **Manuscritos API**: [http://localhost:3002/docs](http://localhost:3002/docs)
-- **Revisión API**: [http://localhost:3003/docs](http://localhost:3003/docs)
-- **Matching API**: [http://localhost:3004/docs](http://localhost:3004/docs)
-- **Análisis IA API**: [http://localhost:3005/docs](http://localhost:3005/docs)
+| Rol | Email | Contraseña |
+|:---|:---|:---|
+| **Administrador** | `admin@demo.com` | `1234` |
+| **Editor Jefe** | `editor@demo.com` | `1234` |
+| **Editor Sección** | `editor.seccion@demo.com` | `1234` |
+| **Autor** | `autor@demo.com` | `1234` |
+| **Autor** | `elena.v@stanford.edu` | `1234` |
+| **Revisor** | `revisor@demo.com` | `1234` |
+| **Revisor** | `carlos.r@mit.edu` | `1234` |
 
 ---
 
-## ⚠️ Solución de Problemas Comunes
+## Arquitectura del Proyecto
+
+```
+Sistema-Revision-Pares/
+├── client/                    # Frontend Vue 3 + Vuetify + Pinia
+├── microservices/             # Backend NestJS
+│   ├── usuarios/        (3001)  # Auth y perfiles
+│   ├── manuscritos/     (3002)  # CRUD de artículos y PDF
+│   ├── revision/        (3003)  # Asignaciones y evaluaciones
+│   ├── matching/        (3004)  # Algoritmo de emparejamiento
+│   └── analisis-ia/     (3005)  # Análisis con IA
+├── docs/                      # Documentación del proyecto
+│   └── auditorias/            # Informes de auditoría
+├── tests/                     # Tests E2E (Playwright)
+└── docker-compose.yml         # Orquestación de servicios
+```
+
+### Puertos de los Servicios
+| Puerto | Servicio |
+|:---|:---|
+| 5173 | Frontend (Vite) |
+| 3001 | Usuarios API |
+| 3002 | Manuscritos API |
+| 3003 | Revisión API |
+| 3004 | Matching API |
+| 3005 | Análisis IA API |
+
+### Bases de Datos (Docker)
+- **MariaDB** - Datos relacionales
+- **MongoDB** - Metadatos y logs
+- **Redis** - Caché y sesiones
+
+---
+
+## Diferenciación de Roles Editoriales
+
+Se ha implementado una jerarquía clara dentro del equipo editorial:
+
+### 👑 Editor en Jefe (Color: Azul Profundo)
+- **Privilegios**: Gestión total del sistema.
+- **Acciones**: Crear/Editar convocatorias, asignar editores de sección, toma de decisión final (Aceptar/Rechazar).
+- **Visibilidad**: Ve todos los manuscritos del sistema.
+
+### 📗 Editor de Sección (Color: Verde Bosque)
+- **Privilegios**: Operativo y enfocado.
+- **Acciones**: Gestionar revisores para los artículos asignados, enviar recomendaciones al Jefe.
+- **Visibilidad**: Limitada únicamente a los manuscritos donde ha sido asignado como responsable.
+- **Restricciones**: No puede crear convocatorias ni tomar la decisión final sobre el estado del artículo.
+
+---
+
+## Solución de Problemas Comunes
 
 ### Error: "Ports are not available (3306/6379)"
-Esto ocurre si ya tienes MariaDB o Redis instalado localmente en tu Windows.
-- **Solución**: Detén tus servicios locales desde `services.msc` o cierra XAMPP antes de lanzar Docker.
+> Significa que MariaDB o Redis ya están corriendo en tu máquina.
+> **Solución**: Detén esos servicios desde `services.msc` o cierra XAMPP/WAMP.
 
-### Error de Conexión (CORS)
-Asegúrate de acceder siempre a través del puerto del frontend (**5173**). El Proxy de Vite se encarga de redirigir las llamadas `/api/*` a los puertos correctos de los microservicios.
+### Error: "Cannot find module 'xxxxx'"
+> Faltan dependencias.
+> **Solución**: `npm install` desde la carpeta raíz.
+
+### Error: "Connection refused" al acceder a los microservicios
+> Los contenedores de Docker no están corriendo.
+> **Solución**: `npm run docker:up`
+
+### Los tests E2E fallan
+> Primero verifica que el sistema corre bien manualmente en el navegador.
+> Si el frontend no carga, los tests tampoco funcionarán.
+
+### Cambios en el código no se reflejan
+> Detén el servidor (Ctrl+C) y vuelve a `npm run dev`.
 
 ---
+
+## Documentación de APIs (Swagger)
+
+Cada microservicio tiene su propia documentación:
+- http://localhost:3001/docs (Usuarios)
+- http://localhost:3002/docs (Manuscritos)
+- http://localhost:3003/docs (Revisión)
+- http://localhost:3004/docs (Matching)
+- http://localhost:3005/docs (Análisis IA)
+
+---
+
+## Guía de Contribución
+
+1. **Antes de trabajar**: `git pull` para tener la última versión.
+2. **Trabaja en tu propia rama**: `git checkout -b mi-rama-trabajo`.
+3. **Haz tus cambios** y pruébalos con `npm run dev`.
+4. **Ejecuta tests** con `npm run test` antes de commitear.
+5. **Commit y push**: `git commit -m "descripción"` y `git push`.
+6. **Crea un Pull Request** para que el equipo revise tus cambios.
+
+> [!NOTE]
+> Para cambios en `client/` o `microservices/`, prueba manualmente que el sistema sigue funcionando antes de hacer PR.
+
+---
+
+## Documentación Adicional
+
+Revisa la carpeta `/docs` para:
+- `CONTEXTO_PROYECTO.md` - Estado actual y arquitectura del sistema.
+- `CONTRIBUTING.md` - Guía de contribución detallada.
+- `requisitos_pendientes.md` - Requisitos por implementar.
+- `auditorias/` - Informes de auditoría del sistema.
+
+---
+
 © 2026 - Proyecto de Ingeniería de Software - RPP

@@ -24,9 +24,15 @@ export const useConvocatoriasStore = defineStore('convocatorias', () => {
     cargando.value = true
     try {
       const data = await fetchConvocatorias()
-      lista.value = data
+      // Si el backend está caído fetchConvocatorias devuelve [] (no lanza).
+      // Solo sobrescribimos la lista cuando recibimos algo válido para no
+      // borrar datos previos en una recarga intermitente.
+      lista.value = Array.isArray(data) ? data : []
     } catch (e) {
-      console.error('Error al cargar convocatorias', e)
+      // Esperado cuando el gateway no está disponible. La UI mostrará
+      // "No hay convocatorias creadas" como estado vacío natural.
+      console.warn('[Convocatorias] Backend no disponible — usando lista vacía.')
+      lista.value = []
     } finally {
       cargando.value = false
     }
@@ -40,36 +46,24 @@ export const useConvocatoriasStore = defineStore('convocatorias', () => {
     return convocatorias.value.find(c => c.nombre === nombre) || null
   }
 
+  // En crear/actualizar/eliminar dejamos que el error suba al componente
+  // (que lo muestra como snackbar). NO duplicamos el log aquí: el service
+  // ya devuelve un Error con mensaje limpio listo para mostrar al usuario.
   async function crear(datos) {
-    try {
-      const nueva = await crearConvocatoria(datos)
-      lista.value.unshift(nueva)
-      return nueva
-    } catch (e) {
-      console.error(e)
-      throw e
-    }
+    const nueva = await crearConvocatoria(datos)
+    lista.value.unshift(nueva)
+    return nueva
   }
 
   async function actualizar(id, datos) {
-    try {
-      const c = await actualizarConvocatoria(id, datos)
-      lista.value = lista.value.map(item => String(item._id) === String(id) ? c : item)
-      return c
-    } catch (e) {
-      console.error(e)
-      throw e
-    }
+    const c = await actualizarConvocatoria(id, datos)
+    lista.value = lista.value.map(item => String(item._id) === String(id) ? c : item)
+    return c
   }
 
   async function eliminar(id) {
-    try {
-      await eliminarConvocatoria(id)
-      lista.value = lista.value.filter(c => String(c._id) !== String(id))
-    } catch (e) {
-      console.error(e)
-      throw e
-    }
+    await eliminarConvocatoria(id)
+    lista.value = lista.value.filter(c => String(c._id) !== String(id))
   }
 
   // Auto-cargar al instanciar el store

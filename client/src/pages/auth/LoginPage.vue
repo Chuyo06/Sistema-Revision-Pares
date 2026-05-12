@@ -245,7 +245,9 @@ async function iniciarSesion() {
   try {
     const usuario = await auth.login(email.value, password.value)
     router.push(`/${usuario.rolActivo}/dashboard`)
-  } catch {}
+  } catch (err) {
+    auth.error = err.message || 'Error al iniciar sesión'
+  }
 }
 
 async function registrarUsuario() {
@@ -255,7 +257,9 @@ async function registrarUsuario() {
     // Limpiar form
     Object.keys(reg).forEach(k => reg[k] = k === 'rol' ? 'AUTOR' : '')
     modoRegistro.value = false
-  } catch {}
+  } catch (err) {
+    auth.error = err.message || 'Error al registrar usuario'
+  }
 }
 
 function loginRapido(demo) {

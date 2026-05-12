@@ -4,16 +4,20 @@ const BASE_URL = '/api/notificaciones'
 
 /**
  * Obtiene las notificaciones del usuario.
+ * Devuelve:
+ *   - Array (posiblemente vacío) si el backend respondió OK.
+ *   - null si hubo error de red, timeout, 4xx o 5xx (permite al caller
+ *     distinguir "no hay datos" de "no se pudo consultar").
  */
 export async function fetchNotificaciones(usuarioId) {
   if (!usuarioId) return []
   try {
     const res = await apiFetch(`${BASE_URL}/usuario/${usuarioId}`)
-    if (!res.ok) return []
+    if (!res.ok) return null
     return await res.json()
-  } catch (e) {
-    console.error('[API Notificaciones] Error fetching:', e)
-    return []
+  } catch {
+    // El cliente API ya emitió un warn de conectividad; aquí solo señalamos fallo.
+    return null
   }
 }
 
@@ -27,7 +31,7 @@ export async function marcarNotificacionLeida(id) {
     })
     return res.ok
   } catch (e) {
-    console.error('[API Notificaciones] Error marking as read:', e)
+    console.warn('[Notificaciones] No se pudo marcar como leída:', e.message)
     return false
   }
 }
@@ -43,7 +47,7 @@ export async function crearNotificacionApi(datos) {
     })
     return res.ok
   } catch (e) {
-    console.error('[API Notificaciones] Error creating:', e)
+    console.warn('[Notificaciones] No se pudo crear:', e.message)
     return false
   }
 }

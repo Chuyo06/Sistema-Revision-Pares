@@ -79,6 +79,17 @@
           <v-chip v-if="m.referencia" size="x-small" variant="tonal" color="secondary">
             REF: {{ m.referencia }}
           </v-chip>
+          <v-btn
+            v-if="m.referencia"
+            size="x-small"
+            variant="tonal"
+            color="brown"
+            prepend-icon="mdi-file-pdf-box"
+            class="text-none"
+            @click.stop="abrirPdf(m)"
+          >
+            Ver PDF
+          </v-btn>
         </div>
 
         <!-- Fila 3: Resumen -->
@@ -157,28 +168,46 @@
               <span style="white-space: pre-wrap;">{{ articuloSeleccionado.motivoRechazo }}</span>
             </v-alert>
 
-            <div v-if="comentarios.length === 0" class="text-center py-4 text-grey">
-              No hay comentarios disponibles para este artículo.
+            <!-- Gating de opiniones: solo se publican al autor cuando la decisión
+                 editorial está tomada O cuando todos los revisores terminaron.
+                 Los nombres de los revisores quedan anonimizados como "Revisor #N". -->
+            <div v-if="!puedeVerOpiniones" class="text-center py-6">
+              <v-icon size="36" color="grey-lighten-1" class="mb-2">mdi-account-eye-outline</v-icon>
+              <p class="text-body-2" style="color:#8B5A2B">
+                Las opiniones de los revisores se publicarán de forma anonimizada
+                <strong>cuando todos hayan completado su revisión</strong> y el editor tome la decisión final.
+              </p>
             </div>
             <div v-else>
-              <h3 class="text-h6 mb-4" style="color:#8B5A2B">Comentarios Detallados</h3>
-              <div v-for="comentario in comentarios" :key="comentario.id" class="mb-4 pa-4 bg-grey-lighten-4 rounded-lg border">
-                <div class="d-flex align-center justify-space-between mb-2">
-                  <div class="font-weight-bold" style="color:#8B5A2B">Revisor #{{ comentario.id }}</div>
-                  <div v-if="comentario.puntuacion" class="mb-2">
-                    <div class="d-flex align-center">
-                      <v-rating :model-value="comentario.puntuacion" color="amber" density="compact" size="small" readonly></v-rating>
-                      <span class="ml-2 font-weight-bold text-brown">{{ comentario.puntuacion }}/5</span>
+              <h3 class="text-h6 mb-2" style="color:#8B5A2B">Opiniones de los Revisores</h3>
+              <p class="text-caption text-medium-emphasis mb-4">
+                Los nombres de los revisores se mantienen anónimos (doble ciego).
+              </p>
+              
+              <div v-for="ronda in comentariosPorRonda" :key="ronda.numero" class="mb-6">
+                <div class="bg-brown-lighten-4 pa-2 px-4 text-subtitle-2 font-weight-bold text-brown-darken-3 rounded-t-lg border">
+                  RONDA {{ ronda.numero }}
+                </div>
+                <div class="border rounded-b-lg pa-4 bg-white">
+                  <div v-for="comentario in ronda.items" :key="comentario.id" class="mb-4 pa-4 bg-grey-lighten-4 rounded-lg border-dashed">
+                    <div class="d-flex align-center justify-space-between mb-2">
+                      <div class="font-weight-bold" style="color:#8B5A2B">Revisor #{{ comentario.id }}</div>
+                      <div v-if="comentario.puntuacion" class="mb-2">
+                        <div class="d-flex align-center">
+                          <v-rating :model-value="comentario.puntuacion" color="amber" density="compact" size="small" readonly></v-rating>
+                          <span class="ml-2 font-weight-bold text-brown">{{ comentario.puntuacion }}/5</span>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 mt-1" v-if="comentario.originalidad" style="font-size: 11px; color: #546e7a;">
+                          <v-chip size="x-small" variant="outlined" color="primary">Originalidad: {{ comentario.originalidad }}</v-chip>
+                          <v-chip size="x-small" variant="outlined" color="info">Metodología: {{ comentario.metodologia }}</v-chip>
+                          <v-chip size="x-small" variant="outlined" color="success">Claridad: {{ comentario.claridad }}</v-chip>
+                          <v-chip size="x-small" variant="outlined" color="warning">Relevancia: {{ comentario.relevancia }}</v-chip>
+                        </div>
+                      </div>
                     </div>
-                    <div class="d-flex flex-wrap gap-2 mt-1" v-if="comentario.originalidad" style="font-size: 11px; color: #546e7a;">
-                      <v-chip size="x-small" variant="outlined" color="primary">Originalidad: {{ comentario.originalidad }}</v-chip>
-                      <v-chip size="x-small" variant="outlined" color="info">Metodología: {{ comentario.metodologia }}</v-chip>
-                      <v-chip size="x-small" variant="outlined" color="success">Claridad: {{ comentario.claridad }}</v-chip>
-                      <v-chip size="x-small" variant="outlined" color="warning">Relevancia: {{ comentario.relevancia }}</v-chip>
-                    </div>
+                    <div style="color:#1B4332; white-space: pre-wrap; font-size: 14px;">{{ comentario.comentarios }}</div>
                   </div>
                 </div>
-                <div style="color:#1B4332; white-space: pre-wrap; font-size: 14px;">{{ comentario.comentarios }}</div>
               </div>
             </div>
           </div>
@@ -199,12 +228,22 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Visor PDF compartido -->
+    <PdfViewer
+      v-model="dialogoPdf"
+      :titulo="manuscritoPdf?.titulo"
+      :referencia="manuscritoPdf?.referencia"
+      :url-pdf="manuscritoPdf?.referencia ? `/api/manuscritos/download/${manuscritoPdf.referencia}` : ''"
+      :contenido="manuscritoPdf?.contenido || manuscritoPdf?.resumen"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useAutorStore } from '@/store/autor/index.js'
+import PdfViewer from '@/components/common/PdfViewer.vue'
 
 const autorStore = useAutorStore()
 const busqueda = ref('')
@@ -222,6 +261,13 @@ onMounted(() => {
 watch(tab, () => { pagina.value = 1 })
 
 const dialogoComentarios = ref(false)
+const dialogoPdf = ref(false)
+const manuscritoPdf = ref(null)
+
+function abrirPdf(m) {
+  manuscritoPdf.value = m
+  dialogoPdf.value = true
+}
 const cargandoComentarios = ref(false)
 const comentarios = ref([])
 const asignacionesPuras = ref([])
@@ -242,6 +288,32 @@ function formatDate(dateStr) {
   return new Date(dateStr).toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
+// Las opiniones de los revisores se muestran al autor SOLO cuando:
+//  (a) la decisión editorial está tomada (ACEPTADO / RECHAZADO / REQUERIDAS_REVISIONES), o
+//  (b) hay al menos una revisión completada y TODAS las asignaciones lo están.
+// Antes de eso solo se muestra un placeholder, no se filtran datos sensibles del backend.
+const puedeVerOpiniones = computed(() => {
+  const m = articuloSeleccionado.value
+  if (!m) return false
+  if (['ACEPTADO', 'RECHAZADO', 'REQUERIDAS_REVISIONES'].includes(m.estado)) return true
+  const asigs = asignacionesPuras.value || []
+  if (asigs.length === 0) return false
+  return asigs.every(a => a.estado === 'COMPLETADA')
+})
+
+const comentariosPorRonda = computed(() => {
+  const grupos = {}
+  comentarios.value.forEach(c => {
+    const r = c.ronda || 1
+    if (!grupos[r]) grupos[r] = []
+    grupos[r].push(c)
+  })
+  return Object.keys(grupos).sort((a, b) => b - a).map(num => ({
+    numero: num,
+    items: grupos[num]
+  }))
+})
+
 const eventosLineaDeTiempo = computed(() => {
   if (!articuloSeleccionado.value) return []
   
@@ -257,11 +329,11 @@ const eventosLineaDeTiempo = computed(() => {
     icon: 'mdi-file-upload'
   })
 
-  asignacionesPuras.value.forEach((a, i) => {
+  asignacionesPuras.value.forEach((a) => {
     if (a.fecha_invitacion) {
       eventos.push({
         id: idCounter++,
-        titulo: `Revisor #${i+1} Asignado`,
+        titulo: `Ronda ${a.ronda || 1}: Revisor Asignado`,
         fecha: formatDate(a.fecha_invitacion),
         color: 'warning',
         icon: 'mdi-account-arrow-right'
@@ -270,7 +342,7 @@ const eventosLineaDeTiempo = computed(() => {
     if (a.fecha_completada) {
       eventos.push({
         id: idCounter++,
-        titulo: `Revisor #${i+1} Completó Revisión`,
+        titulo: `Ronda ${a.ronda || 1}: Revisión Completada`,
         fecha: formatDate(a.fecha_completada),
         color: 'success',
         icon: 'mdi-check-all'

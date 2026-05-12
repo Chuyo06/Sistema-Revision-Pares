@@ -89,6 +89,64 @@ export class RevisionService {
     return asignacionActualizada;
   }
 
+  /**
+   * Reabre las asignaciones COMPLETADAS de un manuscrito para una nueva ronda
+   * de revisión, típicamente porque el autor reenvió la versión corregida.
+   *
+   * - Cambia estado COMPLETADA → ACEPTADO (los revisores las verán como
+   *   "en progreso" otra vez en su dashboard).
+   * - Limpia fecha_completada para indicar que la ronda actual está abierta.
+   * - **Preserva** puntuación y comentarios anteriores: el revisor los ve como
+   *   referencia y los sobrescribirá al enviar la nueva revisión.
+   * - Notifica a cada revisor afectado (fire-and-forget).
+   */
+  async reabrirParaRevision(manuscritoId: string) {
+    const todas = await this.obtenerPorManuscrito(manuscritoId);
+    const reabrir = todas.filter(a => a.estado === 'COMPLETADA');
+    if (reabrir.length === 0) return { reabiertas: 0 };
+
+    for (const a of reabrir) {
+      // En lugar de actualizar la existente, creamos una NUEVA para la siguiente ronda.
+      // Así preservamos el historial de la ronda anterior intacto.
+      const nuevaAsignacion = this.asignacionRepo.create({
+        id_revisor: a.id_revisor,
+        id_manuscrito_mongo: a.id_manuscrito_mongo,
+        ronda: (a.ronda || 1) + 1,
+        estado: 'ACEPTADO', // Se asume aceptada porque ya la aceptó en la ronda 1
+        fecha_invitacion: new Date(),
+        fecha_limite: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // 10 días para corregida
+      });
+      await this.asignacionRepo.save(nuevaAsignacion);
+    }
+
+    // Notificación a cada revisor (no rompe si el servicio de notificaciones falla).
+    try {
+      const urlManuscritos = process.env.MS_MANUSCRITOS_URL || 'http://manuscritos:3000';
+      const resManuscrito = await fetch(`${urlManuscritos}/manuscritos/${manuscritoId}`);
+      const titulo = resManuscrito.ok
+        ? (await resManuscrito.json()).titulo || 'un manuscrito'
+        : 'un manuscrito';
+
+      const urlNotif = process.env.MS_NOTIFICACIONES_URL || 'http://notificaciones:3000';
+      await Promise.allSettled(
+        reabrir.map(a => fetch(`${urlNotif}/notificaciones`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            destinatarioId: a.id_revisor,
+            tipo: 'NUEVA_VERSION',
+            mensaje: `El autor envió una versión corregida de "${titulo}". Por favor revisa tus comentarios y actualiza la evaluación.`,
+            referencia_manuscrito: manuscritoId,
+          }),
+        })),
+      );
+    } catch (e) {
+      console.warn('[Revision] No se pudo notificar reapertura:', e.message);
+    }
+
+    return { reabiertas: reabrir.length };
+  }
+
   async enviarRevision(id: number, revision: Partial<AsignacionRevision>) {
     await this.asignacionRepo.update(id, {
       estado: 'COMPLETADA',

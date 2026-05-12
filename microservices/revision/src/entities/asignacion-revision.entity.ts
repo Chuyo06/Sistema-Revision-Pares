@@ -35,6 +35,9 @@ export class AsignacionRevision {
   @Column({ type: 'int', nullable: true })
   puntuacion: number;
 
+  @Column({ type: 'int', default: 1 })
+  ronda: number;
+
   @Column({ type: 'text', nullable: true })
   comentarios: string;
 
@@ -45,5 +48,5 @@ export class AsignacionRevision {
   recomendacion: string;
 
   @Column({ type: 'timestamp', name: 'fecha_completada', nullable: true })
-  fecha_completada: Date;
+  fecha_completada: Date | null;
 }

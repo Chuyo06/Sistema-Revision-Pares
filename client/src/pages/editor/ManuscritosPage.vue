@@ -124,6 +124,10 @@
                       <div class="text-caption text-medium-emphasis mt-1">
                         {{ m.autores || 'Autor desconocido' }} · {{ m.convocatoria || 'Sin convocatoria' }}
                       </div>
+                      <div v-if="editorStore.esEditorJefe && m.editorSeccionId" class="text-caption mt-1" style="color:#1a237e">
+                        <v-icon size="14" class="mr-1">mdi-account-tie-outline</v-icon>
+                        Asignado a: {{ editorStore.editoresSeccion.find(e => Number(e.id) === Number(m.editorSeccionId))?.nombre || 'Editor de Sección' }}
+                      </div>
                     </div>
                     <v-chip :color="chipEstado(m.estado)" label size="small" class="font-weight-bold">
                       {{ estadoLabel(m.estado) }}

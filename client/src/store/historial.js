@@ -7,12 +7,18 @@ function cargar() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) return JSON.parse(raw)
-  } catch {}
+  } catch (err) {
+    console.error('[Historial] Error cargando persistencia:', err)
+  }
   return []
 }
 
 function guardar(lista) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(lista)) } catch {}
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(lista))
+  } catch (err) {
+    console.error('[Historial] Error guardando persistencia:', err)
+  }
 }
 
 export const useHistorialStore = defineStore('historial', () => {

@@ -66,4 +66,15 @@ export class RevisionController {
     if (isNaN(numId)) return null;
     return this.revisionService.actualizarEstado(numId, estado);
   }
+
+  /**
+   * Reabre todas las asignaciones COMPLETADAS de un manuscrito para una nueva
+   * ronda de revisión. Lo invoca el flujo cuando el autor reenvía la versión
+   * corregida (estado del manuscrito → LISTO_PARA_DECISION).
+   */
+  @Post('reabrir/:manuscritoId')
+  async reabrirRevisiones(@Param('manuscritoId') manuscritoId: string) {
+    if (!manuscritoId) return { reabiertas: 0 };
+    return this.revisionService.reabrirParaRevision(manuscritoId);
+  }
 }

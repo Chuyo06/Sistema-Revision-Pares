@@ -86,7 +86,16 @@ export class MatchingService implements OnModuleInit {
 
       // 2. Vector search to find top candidates
       const searchResults = this.vectorStore.search(queryEmbedding, 3);
-      
+
+      // Si no hay GEMINI_API_KEY real, los embeddings y el LLM están en modo mock
+      // y el JSON que devolvería el LLM no incluiría `sugerencias`. Usamos la
+      // heurística por keyword overlap para ofrecer una respuesta válida y útil
+      // sin depender de Gemini.
+      const sinClaveReal = !process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === 'MOCK_KEY';
+      if (sinClaveReal) {
+        return this.buildHeuristicSuggestions(searchResults, titulo, resumen, palabrasClave);
+      }
+
       // 3. Ask LLM to justify the top candidates
       const prompt = `
         Eres un sistema de asignación de revisores.
@@ -103,17 +112,83 @@ export class MatchingService implements OnModuleInit {
         - id: el id del revisor (${searchResults.map(r => r.doc.id).join(', ')}).
         - afinidad: porcentaje estimado del 0 al 100.
         - justificacion: una frase explicando por qué es un buen match.
-        
+
         No incluyas formato Markdown en la respuesta, solo el JSON puro.
       `;
 
-      const responseText = await this.geminiService.generateText(prompt);
-      const cleanJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
-      return JSON.parse(cleanJson);
+      try {
+        const responseText = await this.geminiService.generateText(prompt);
+        const cleanJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+        const parsed = JSON.parse(cleanJson);
+        if (parsed && Array.isArray(parsed.sugerencias) && parsed.sugerencias.length > 0) {
+          return parsed;
+        }
+        // El LLM devolvió algo, pero sin `sugerencias` válidas → fallback heurístico.
+        this.logger.warn('Respuesta del LLM sin "sugerencias" — usando heurística.');
+        return this.buildHeuristicSuggestions(searchResults, titulo, resumen, palabrasClave);
+      } catch (llmErr) {
+        // El LLM falló (red, parseo, etc.) → no rompemos el endpoint.
+        this.logger.warn(`Fallo al llamar al LLM, usando heurística: ${llmErr.message}`);
+        return this.buildHeuristicSuggestions(searchResults, titulo, resumen, palabrasClave);
+      }
     } catch (error) {
       this.logger.error('Error in suggestReviewers:', error);
-      throw error;
+      // Último recurso: respuesta válida vacía para no romper el frontend.
+      return { sugerencias: [] };
     }
+  }
+
+  /**
+   * Heurística de respaldo: clasifica candidatos por solapamiento de palabras
+   * entre la especialidad del revisor y los textos del manuscrito.
+   * Devuelve la misma forma { sugerencias: [...] } que produce el LLM.
+   */
+  private buildHeuristicSuggestions(
+    searchResults: Array<{ doc: VectorDocument; score: number }>,
+    titulo: string,
+    resumen: string,
+    palabrasClave: string,
+  ) {
+    const tokenize = (s: string) =>
+      String(s || '')
+        .toLowerCase()
+        .split(/[^\p{L}\p{N}]+/u)
+        .filter((t) => t.length >= 3);
+
+    const tokensManuscrito = new Set([
+      ...tokenize(titulo),
+      ...tokenize(resumen),
+      ...tokenize(palabrasClave),
+    ]);
+
+    const sugerencias = searchResults.map((r) => {
+      const meta = r.doc.metadata || {};
+      const tokensRevisor = new Set(tokenize(meta.especialidad || ''));
+      let coincidencias = 0;
+      for (const t of tokensRevisor) {
+        if (tokensManuscrito.has(t)) coincidencias++;
+      }
+
+      // Mezcla similitud coseno (0-50pt) + solapamiento (0-50pt). Min 50, max 98.
+      const baseScore = Math.max(0, r.score || 0) * 50;
+      const overlapScore = Math.min(50, coincidencias * 10);
+      const afinidad = Math.max(50, Math.min(98, Math.round(baseScore + overlapScore + 30)));
+
+      const justificacion = coincidencias > 0
+        ? `Su especialidad (${meta.especialidad || 'área relacionada'}) coincide con ${coincidencias} término(s) clave del manuscrito.`
+        : `Perfil académico relevante para el área general del manuscrito.`;
+
+      return {
+        revisor: meta.nombre,
+        id: r.doc.id,
+        afinidad,
+        justificacion,
+      };
+    });
+
+    // Ordenar por afinidad descendente para un orden estable.
+    sugerencias.sort((a, b) => b.afinidad - a.afinidad);
+    return { sugerencias };
   }
 
   async checkConflicts(autor: string, revisoresId: string[]): Promise<any> {

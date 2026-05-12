@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div style="display:flex; align-items:center; gap:10px; width:100%">
     <v-menu v-if="rolesNavegables.length > 1" location="top start">
       <template v-slot:activator="{ props }">
@@ -86,19 +86,17 @@ const rolesNavegables = computed(() =>
 // Etiqueta más específica: si el usuario está en /editor y tiene editor_jefe/seccion, mostramos eso.
 const rolMostrar = computed(() => {
   if (auth.rol === 'editor') {
-    if (auth.roles?.includes('editor_jefe')) return 'editor_jefe'
     if (auth.roles?.includes('editor_seccion')) return 'editor_seccion'
+    if (auth.roles?.includes('editor_jefe')) return 'editor_jefe'
   }
   return auth.rol
 })
 
 const rolMeta = computed(() => ROL_META[rolMostrar.value] || { label: rolMostrar.value, icon:'mdi-account', color:'#8B5A2B' })
 
-function cambiarRolUi(nuevoRol) {
+async function cambiarRolUi(nuevoRol) {
   auth.cambiarRol(nuevoRol)
-  // Para WebHashHistory incluimos '#' en la URL antes de recargar
-  window.location.hash = `/${nuevoRol.toLowerCase()}/dashboard`
-  window.location.reload()
+  await router.push(`/${nuevoRol.toLowerCase()}/dashboard`)
 }
 
 function cerrarSesion() {

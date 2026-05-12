@@ -59,6 +59,11 @@ services:
     env_file: .env
     environment:
       - NODE_ENV=development
+      # Bajo bind-mount en Windows/Mac los eventos de filesystem no llegan al
+      # container Linux. Forzamos polling para que `nest start --watch` detecte
+      # cambios del host y recompile sin necesidad de rebuildear la imagen.
+      - CHOKIDAR_USEPOLLING=true
+      - CHOKIDAR_INTERVAL=1000
     depends_on:
       mariadb:
         condition: service_healthy
@@ -78,8 +83,15 @@ services:
     env_file: .env
     environment:
       - NODE_ENV=development
+      # Bajo bind-mount en Windows/Mac los eventos de filesystem no llegan al
+      # container Linux. Forzamos polling para que `nest start --watch` detecte
+      # cambios del host y recompile sin necesidad de rebuildear la imagen.
+      - CHOKIDAR_USEPOLLING=true
+      - CHOKIDAR_INTERVAL=1000
     depends_on:
       mariadb:
+        condition: service_healthy
+      mongodb:
         condition: service_healthy
     volumes:
       - ./microservices/manuscritos:/app
@@ -96,6 +108,11 @@ services:
     env_file: .env
     environment:
       - NODE_ENV=development
+      # Bajo bind-mount en Windows/Mac los eventos de filesystem no llegan al
+      # container Linux. Forzamos polling para que `nest start --watch` detecte
+      # cambios del host y recompile sin necesidad de rebuildear la imagen.
+      - CHOKIDAR_USEPOLLING=true
+      - CHOKIDAR_INTERVAL=1000
     depends_on:
       mariadb:
         condition: service_healthy
@@ -113,6 +130,11 @@ services:
     env_file: .env
     environment:
       - NODE_ENV=development
+      # Bajo bind-mount en Windows/Mac los eventos de filesystem no llegan al
+      # container Linux. Forzamos polling para que `nest start --watch` detecte
+      # cambios del host y recompile sin necesidad de rebuildear la imagen.
+      - CHOKIDAR_USEPOLLING=true
+      - CHOKIDAR_INTERVAL=1000
     depends_on:
       mariadb:
         condition: service_healthy
@@ -132,6 +154,11 @@ services:
     env_file: .env
     environment:
       - NODE_ENV=development
+      # Bajo bind-mount en Windows/Mac los eventos de filesystem no llegan al
+      # container Linux. Forzamos polling para que `nest start --watch` detecte
+      # cambios del host y recompile sin necesidad de rebuildear la imagen.
+      - CHOKIDAR_USEPOLLING=true
+      - CHOKIDAR_INTERVAL=1000
     depends_on:
       mongodb:
         condition: service_healthy
@@ -151,6 +178,11 @@ services:
     env_file: .env
     environment:
       - NODE_ENV=development
+      # Bajo bind-mount en Windows/Mac los eventos de filesystem no llegan al
+      # container Linux. Forzamos polling para que `nest start --watch` detecte
+      # cambios del host y recompile sin necesidad de rebuildear la imagen.
+      - CHOKIDAR_USEPOLLING=true
+      - CHOKIDAR_INTERVAL=1000
     depends_on:
       mariadb:
         condition: service_healthy

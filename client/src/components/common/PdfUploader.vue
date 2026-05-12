@@ -79,7 +79,7 @@
 
 <script setup>
 import { ref, computed } from 'vue';
-import { apiFetch } from '@/services/api/client.js';
+import { subirArchivoManuscrito } from '@/services/api/manuscritos.js';
 
 const selectedFile = ref(null);
 const errorMessage = ref('');
@@ -128,20 +128,7 @@ const uploadFile = async () => {
 
   try {
     const file = getFileToProcess();
-    const formData = new FormData();
-    formData.append('archivo', file);
-
-    const res = await apiFetch('/api/manuscritos/upload', {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.message || 'Error al subir el archivo');
-    }
-
-    const data = await res.json();
+    const data = await subirArchivoManuscrito(file);
     referenceNumber.value = data.referencia;
     uploadSuccess.value = true;
 

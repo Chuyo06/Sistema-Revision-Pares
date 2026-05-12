@@ -12,7 +12,8 @@ export async function fetchAsignaciones(revisorId) {
     if (!res.ok) return []
     const data = await res.json()
     return data.map(asig => ({ ...asig, id: asig.id_asignacion }))
-  } catch {
+  } catch (err) {
+    console.warn('[Revision] Sin respuesta del backend:', err.message)
     return []
   }
 }
@@ -26,6 +27,21 @@ export async function fetchAsignacionesGeneral() {
     if (!res.ok) return []
     const data = await res.json()
     return data.map(asig => ({ ...asig, id: asig.id_asignacion }))
+  } catch (err) {
+    console.warn('[Revision] Sin respuesta del backend:', err.message)
+    return []
+  }
+}
+
+/**
+ * Obtener todas las asignaciones de revisión de un manuscrito específico.
+ * Útil para construir línea de tiempo / mostrar evaluaciones recibidas.
+ */
+export async function fetchAsignacionesPorManuscrito(manuscritoId) {
+  try {
+    const res = await apiFetch(`${BASE_URL}/manuscrito/${manuscritoId}`)
+    if (!res.ok) return []
+    return await res.json()
   } catch {
     return []
   }
@@ -47,8 +63,26 @@ export async function crearAsignacion(revisorId, manuscritoId) {
       }),
     })
     return res.ok
-  } catch {
+  } catch (err) {
+    console.warn('[Revision] Sin respuesta del backend:', err.message)
     return false
+  }
+}
+
+/**
+ * Reabre las asignaciones COMPLETADAS de un manuscrito para una nueva ronda
+ * de revisión (típicamente cuando el autor reenvió la versión corregida).
+ * Fire-and-forget: no rompe el flujo si el endpoint no responde.
+ */
+export async function reabrirRevisionesApi(manuscritoId) {
+  try {
+    const res = await apiFetch(`${BASE_URL}/reabrir/${manuscritoId}`, {
+      method: 'POST',
+    })
+    if (!res.ok) return null
+    return await res.json()
+  } catch {
+    return null
   }
 }
 
@@ -61,7 +95,8 @@ export async function eliminarAsignacionApi(idAsignacion) {
       method: 'DELETE',
     })
     return res.ok
-  } catch {
+  } catch (err) {
+    console.warn('[Revision] Sin respuesta del backend:', err.message)
     return false
   }
 }
@@ -77,7 +112,8 @@ export async function enviarRevisionApi(articuloId, revision) {
     })
     if (!res.ok) return null
     return await res.json()
-  } catch {
+  } catch (err) {
+    console.warn('[Revision] Error en enviarRevisionApi:', err.message)
     return null
   }
 }
@@ -92,7 +128,8 @@ export async function actualizarEstadoRevisionApi(idAsignacion, nuevoEstado) {
       body: JSON.stringify({ estado: nuevoEstado }),
     })
     return res.ok
-  } catch {
+  } catch (err) {
+    console.warn('[Revision] Error en actualizarEstadoRevisionApi:', err.message)
     return false
   }
 }

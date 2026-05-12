@@ -14,7 +14,7 @@ import { RevisionService } from './services/revision.service';
       password: 'root_password',
       database: 'mi_base_datos',
       entities: [AsignacionRevision],
-      synchronize: false, 
+      synchronize: true, 
     }),
     TypeOrmModule.forFeature([AsignacionRevision]),
   ],

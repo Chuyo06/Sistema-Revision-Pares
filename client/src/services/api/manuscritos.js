@@ -25,7 +25,8 @@ export async function fetchManuscritosPorAutor(autorId, { incluirBorradores = fa
     const res = await apiFetch(`${BASE_URL}/autor/${autorId}${qs}`)
     if (!res.ok) return null
     return await res.json()
-  } catch {
+  } catch (err) {
+    console.warn('[Manuscritos] Sin respuesta del backend:', err.message)
     return null
   }
 }
@@ -38,7 +39,8 @@ export async function fetchBorradoresPorAutor(autorId) {
     const res = await apiFetch(`${BASE_URL}/autor/${autorId}/borradores`)
     if (!res.ok) return null
     return await res.json()
-  } catch {
+  } catch (err) {
+    console.warn('[Manuscritos] Sin respuesta del backend:', err.message)
     return null
   }
 }
@@ -57,7 +59,8 @@ export async function actualizarEstadoManuscrito(id, estado, motivoRechazo = und
       body: JSON.stringify(payload),
     })
     return res.ok
-  } catch {
+  } catch (err) {
+    console.warn('[Manuscritos] Sin respuesta del backend:', err.message)
     return false
   }
 }
@@ -72,7 +75,8 @@ export async function asignarEditorSeccionApi(manuscritoId, editorSeccionId) {
       body: JSON.stringify({ editorSeccionId }),
     })
     return res.ok
-  } catch {
+  } catch (err) {
+    console.warn('[Manuscritos] Sin respuesta del backend:', err.message)
     return false
   }
 }
@@ -103,7 +107,8 @@ export async function actualizarDatosManuscrito(id, datos) {
       body: JSON.stringify(datos),
     })
     return res.ok
-  } catch {
+  } catch (err) {
+    console.warn('[Manuscritos] Sin respuesta del backend:', err.message)
     return false
   }
 }
@@ -117,9 +122,31 @@ export async function eliminarManuscrito(id) {
       method: 'DELETE',
     })
     return res.ok
-  } catch {
+  } catch (err) {
+    console.warn('[Manuscritos] Sin respuesta del backend:', err.message)
     return false
   }
+}
+
+/**
+ * Subir un archivo PDF de manuscrito al backend.
+ * Devuelve { referencia, nombreArchivo, tamano, mensaje } generado por el servidor.
+ *
+ * @param {File} archivo - archivo PDF
+ * @returns {Promise<{ referencia:string, nombreArchivo:string, tamano:number, mensaje:string }>}
+ */
+export async function subirArchivoManuscrito(archivo) {
+  const formData = new FormData()
+  formData.append('archivo', archivo)
+  const res = await apiFetch(`${BASE_URL}/upload`, {
+    method: 'POST',
+    body: formData,
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.message || `Error ${res.status} al subir el archivo`)
+  }
+  return await res.json()
 }
 
 /**
@@ -141,7 +168,7 @@ export async function descargarArchivo(referencia) {
     document.body.removeChild(a)
     return true
   } catch (err) {
-    console.error('[Manuscritos] Error en descarga:', err)
+    console.warn('[Manuscritos] Error en descarga:', err.message)
     return false
   }
 }

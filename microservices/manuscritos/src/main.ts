@@ -8,8 +8,13 @@ async function bootstrap() {
     origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:5173'],
     credentials: true,
   });
+
+  app.use((req, res, next) => {
+    console.log(`[Request] ${req.method} ${req.originalUrl}`);
+    next();
+  });
   
-  app.setGlobalPrefix(''); 
+
 
   const config = new DocumentBuilder()
     .setTitle('API de Manuscritos')

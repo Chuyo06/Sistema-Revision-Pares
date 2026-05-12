@@ -124,6 +124,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useAdminStore } from '@/store/administrador/index.js'
+import { testConexionIAApi } from '@/services/api/analisis.js'
 
 const adminStore = useAdminStore()
 const apiKey = ref('************************')
@@ -142,18 +143,12 @@ async function guardarConfiguracion() {
 async function probarConexion() {
   probandoConexion.value = true
   try {
-    const res = await fetch('/api/analisis/test-connection')
-    if (res.ok) {
-      const data = await res.json()
-      if (data.ok) {
-        snackbarMsg.value = '¡Conexión a IA exitosa! El modelo está respondiendo.'
-        snackbarColor.value = 'success'
-      } else {
-        snackbarMsg.value = 'Fallo en la conexión: ' + data.message
-        snackbarColor.value = 'error'
-      }
+    const data = await testConexionIAApi()
+    if (data.ok) {
+      snackbarMsg.value = '¡Conexión a IA exitosa! El modelo está respondiendo.'
+      snackbarColor.value = 'success'
     } else {
-      snackbarMsg.value = 'Error al conectar con el microservicio de IA'
+      snackbarMsg.value = 'Fallo en la conexión: ' + (data.message || 'desconocido')
       snackbarColor.value = 'error'
     }
   } catch (e) {

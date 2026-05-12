@@ -59,6 +59,15 @@
             </td>
             <td>{{ m.autorId }}</td>
             <td>
+              <v-btn
+                v-if="m.referencia"
+                icon="mdi-file-pdf-box"
+                variant="text"
+                size="small"
+                color="brown"
+                title="Ver PDF"
+                @click="abrirPdf(m)"
+              ></v-btn>
               <v-btn icon="mdi-eye-outline" variant="text" size="small" :to="`/editor/asignacion/${m.id}`" title="Ver como Editor"></v-btn>
             </td>
           </tr>
@@ -68,16 +77,33 @@
         No se encontraron manuscritos.
       </div>
     </v-card>
+
+    <!-- Visor PDF compartido -->
+    <PdfViewer
+      v-model="dialogoPdf"
+      :titulo="manuscritoPdf?.titulo"
+      :referencia="manuscritoPdf?.referencia"
+      :url-pdf="manuscritoPdf?.referencia ? `/api/manuscritos/download/${manuscritoPdf.referencia}` : ''"
+      :contenido="manuscritoPdf?.contenido || manuscritoPdf?.resumen"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useAdminStore } from '@/store/administrador/index.js'
+import PdfViewer from '@/components/common/PdfViewer.vue'
 
 const adminStore = useAdminStore()
 const busqueda = ref('')
 const filtroEstado = ref('TODOS')
+const dialogoPdf = ref(false)
+const manuscritoPdf = ref(null)
+
+function abrirPdf(m) {
+  manuscritoPdf.value = m
+  dialogoPdf.value = true
+}
 
 onMounted(() => {
   adminStore.cargarUsuarios() // Carga usuarios y manuscritos (alias de cargarDatosGlobales)
@@ -87,7 +113,7 @@ const filtros = ['TODOS', 'ENVIADO', 'EN_REVISION', 'ACEPTADO', 'RECHAZADO']
 
 const filtrados = computed(() => {
   return adminStore.manuscritos.filter(m => {
-    const matchesBusqueda = m.titulo.toLowerCase().includes(busqueda.value.toLowerCase()) || String(m.id).includes(busqueda.value)
+    const matchesBusqueda = (m.titulo || '').toLowerCase().includes((busqueda.value || '').toLowerCase()) || String(m.id).includes(busqueda.value || '')
     const matchesEstado = filtroEstado.value === 'TODOS' || m.estado === filtroEstado.value
     return matchesBusqueda && matchesEstado
   })

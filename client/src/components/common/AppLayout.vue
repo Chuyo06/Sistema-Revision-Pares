@@ -172,6 +172,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useDisplay } from 'vuetify'
 import { useAuthStore } from '@/store/auth.js'
 import { useNotificacionesStore } from '@/store/notificaciones.js'
+import { useEditorStore } from '@/store/editor/index.js'
 import RoleSwitcher from './RoleSwitcher.vue'
 
 const auth   = useAuthStore()
@@ -181,6 +182,7 @@ const { smAndUp } = useDisplay()
 
 const drawer = ref(true)
 const notifStore = useNotificacionesStore()
+const editorStore = useEditorStore()
 const mostrarNotificaciones = ref(false)
 
 onMounted(() => {
@@ -188,12 +190,14 @@ onMounted(() => {
     notifStore.cargarNotificacionesBackend(auth.usuario.id)
   }
   // Mantener actualizado el polling
-  // notifStore.iniciarPolling() // Descomentar si se desea polling activo
+  if (auth.usuario?.id) {
+    notifStore.iniciarPolling()
+  }
 })
 
-// onBeforeUnmount(() => {
-//   notifStore.detenerPolling()
-// })
+onBeforeUnmount(() => {
+  notifStore.detenerPolling()
+})
 
 function formatTime(ts) {
   const d = new Date(ts)
@@ -235,7 +239,19 @@ const NAV_CONFIG = {
   ],
 }
 
-const navItems = computed(() => NAV_CONFIG[auth.rol] || [])
+const navItems = computed(() => {
+  if (!auth.rol) return []
+  let items = NAV_CONFIG[auth.rol.toLowerCase()] || []
+  
+  // Filtro extra para Editor: Solo Editor Jefe ve Convocatorias
+  if (auth.rol.toLowerCase() === 'editor') {
+    if (!editorStore.esEditorJefe) {
+      items = items.filter(i => i.to !== '/editor/convocatorias')
+    }
+  }
+  
+  return items
+})
 
 const TITULOS = {
   'perfil':             'Mi Perfil',

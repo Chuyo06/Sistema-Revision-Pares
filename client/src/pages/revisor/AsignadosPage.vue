@@ -49,9 +49,14 @@
               {{ a.titulo }}
             </div>
           </div>
-          <v-chip :color="chipEstado(a.estado)" label size="small" style="flex-shrink:0">
-            {{ estadoLabel(a.estado) }}
-          </v-chip>
+          <div class="d-flex align-center gap-2" style="flex-shrink:0">
+            <v-chip v-if="a.ronda > 1" color="brown" label size="small" variant="tonal">
+              Ronda {{ a.ronda }}
+            </v-chip>
+            <v-chip :color="chipEstado(a.estado)" label size="small">
+              {{ estadoLabel(a.estado) }}
+            </v-chip>
+          </div>
         </div>
 
         <!-- Fila 2: Meta -->

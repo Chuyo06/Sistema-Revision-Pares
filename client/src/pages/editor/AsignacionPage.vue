@@ -21,13 +21,23 @@
             <div style="height:8px; background: linear-gradient(90deg, #4CAF50, #8B5A2B)"></div>
             <v-card-item class="pa-6">
               <div class="d-flex justify-space-between align-start">
-                <div>
+                <div style="flex: 1">
                   <div class="text-h4 font-weight-bold text-brown-darken-4 mb-2">{{ manuscrito.titulo }}</div>
                   <div class="text-h6 text-brown-lighten-1 mb-4">{{ manuscrito.autores }}</div>
                   <v-chip :color="chipColor(manuscrito.estado)" size="small" class="font-weight-bold px-4" label>
                     {{ estadoLabel(manuscrito.estado).toUpperCase() }}
                   </v-chip>
                 </div>
+                <v-btn
+                  v-if="manuscrito.referencia"
+                  color="brown"
+                  variant="flat"
+                  prepend-icon="mdi-file-pdf-box"
+                  @click="dialogoPdf = true"
+                  class="ml-4"
+                >
+                  Ver PDF
+                </v-btn>
               </div>
             </v-card-item>
           </v-card>
@@ -40,49 +50,54 @@
             </v-card-title>
             <v-divider></v-divider>
             <v-card-text class="pa-0">
-              <v-list v-if="asignacionesDelArticulo.length > 0" lines="three" class="bg-transparent">
-                <v-list-item 
-                  v-for="(asig, index) in asignacionesDelArticulo" 
-                  :key="asig.id_asignacion || index"
-                  class="pa-4 border-bottom"
-                >
-                  <template v-slot:prepend>
-                    <v-avatar :color="asig.estado === 'COMPLETADA' ? 'success' : 'warning'" size="48">
+              <div v-if="asignacionesPorRonda.length > 0">
+                <div v-for="ronda in asignacionesPorRonda" :key="ronda.numero" class="mb-4">
+                  <div class="bg-brown-lighten-4 pa-2 px-4 text-subtitle-2 font-weight-bold text-brown-darken-3 d-flex align-center">
+                    <v-icon size="16" class="mr-2">mdi-numeric-{{ ronda.numero }}-circle</v-icon>
+                    RONDA {{ ronda.numero }}
+                  </div>
+                  
+                  <div
+                    v-for="(asig, index) in ronda.items"
+                    :key="asig.id_asignacion || index"
+                    class="pa-4 border-bottom d-flex align-start"
+                    style="gap: 16px;"
+                  >
+                    <v-avatar :color="asig.estado === 'COMPLETADA' ? 'success' : 'warning'" size="48" class="flex-shrink-0">
                       <v-icon color="white">{{ asig.estado === 'COMPLETADA' ? 'mdi-check-decagram' : 'mdi-clock-fast' }}</v-icon>
                     </v-avatar>
-                  </template>
 
-                  <v-list-item-title class="text-h6 font-weight-bold">
-                    {{ nombreRevisor(asig.id_revisor) }}
-                    <v-chip size="x-small" variant="tonal" class="ml-2">{{ asig.estado }}</v-chip>
-                  </v-list-item-title>
-
-                  <v-list-item-subtitle class="mt-1">
-                    <div v-if="asig.puntuacion" class="mb-2">
-                      <div class="d-flex align-center">
-                        <span class="font-weight-bold text-brown mr-2">Global: {{ asig.puntuacion }}/5</span>
-                        <v-rating :model-value="asig.puntuacion" color="amber" density="compact" size="small" readonly></v-rating>
+                    <div class="flex-grow-1" style="min-width: 0;">
+                      <div class="text-h6 font-weight-bold d-flex align-center flex-wrap" style="gap: 6px;">
+                        <span>{{ nombreRevisor(asig.id_revisor) }}</span>
+                        <v-chip size="x-small" variant="tonal">{{ asig.estado }}</v-chip>
                       </div>
-                      <div class="d-flex flex-wrap gap-2 mt-1" v-if="asig.originalidad" style="font-size: 11px; color: #546e7a;">
-                        <v-chip size="x-small" variant="outlined" color="primary">Originalidad: {{ asig.originalidad }}</v-chip>
-                        <v-chip size="x-small" variant="outlined" color="info">Metodología: {{ asig.metodologia }}</v-chip>
-                        <v-chip size="x-small" variant="outlined" color="success">Claridad: {{ asig.claridad }}</v-chip>
-                        <v-chip size="x-small" variant="outlined" color="warning">Relevancia: {{ asig.relevancia }}</v-chip>
-                      </div>
-                    </div>
-                    <div v-if="asig.comentarios" class="bg-brown-lighten-5 pa-3 rounded-lg border mt-2" style="white-space: pre-wrap; font-size: 13px; color: #1B4332">
-                       <strong style="color: #8B5A2B">Para el Autor:</strong><br/>
-                       {{ asig.comentarios }}
-                    </div>
-                    <div v-if="asig.comentarios_editor" class="bg-red-lighten-5 pa-3 rounded-lg border mt-2" style="white-space: pre-wrap; font-size: 13px; color: #c62828">
-                       <strong style="color: #b71c1c"><v-icon size="14" class="mr-1">mdi-lock</v-icon>Confidencial para Editor:</strong><br/>
-                       {{ asig.comentarios_editor }}
-                    </div>
-                    <div v-else-if="asig.estado !== 'COMPLETADA'" class="text-caption text-grey mt-2">Esperando respuesta del revisor...</div>
-                  </v-list-item-subtitle>
 
-                  <template v-slot:append>
-                    <!-- Quitar revisor: solo si NO ha enviado su revisi�n -->
+                      <div v-if="asig.puntuacion" class="mt-2">
+                        <div class="d-flex align-center">
+                          <span class="font-weight-bold text-brown mr-2">Global: {{ asig.puntuacion }}/5</span>
+                          <v-rating :model-value="asig.puntuacion" color="amber" density="compact" size="small" readonly></v-rating>
+                        </div>
+                        <div v-if="asig.originalidad" class="d-flex flex-wrap gap-2 mt-1" style="font-size: 11px; color: #546e7a;">
+                          <v-chip size="x-small" variant="outlined" color="primary">Originalidad: {{ asig.originalidad }}</v-chip>
+                          <v-chip size="x-small" variant="outlined" color="info">Metodología: {{ asig.metodologia }}</v-chip>
+                          <v-chip size="x-small" variant="outlined" color="success">Claridad: {{ asig.claridad }}</v-chip>
+                          <v-chip size="x-small" variant="outlined" color="warning">Relevancia: {{ asig.relevancia }}</v-chip>
+                        </div>
+                      </div>
+
+                      <div v-if="asig.comentarios" class="bg-brown-lighten-5 pa-3 rounded-lg border mt-3" style="white-space: pre-wrap; word-break: break-word; font-size: 13px; color: #1B4332; line-height: 1.5;">
+                        <strong style="color: #8B5A2B">Para el Autor:</strong><br />
+                        {{ asig.comentarios }}
+                      </div>
+                      <div v-if="asig.comentarios_editor" class="bg-red-lighten-5 pa-3 rounded-lg border mt-2" style="white-space: pre-wrap; word-break: break-word; font-size: 13px; color: #c62828; line-height: 1.5;">
+                        <strong style="color: #b71c1c"><v-icon size="14" class="mr-1">mdi-lock</v-icon>Confidencial para Editor:</strong><br />
+                        {{ asig.comentarios_editor }}
+                      </div>
+                      <div v-else-if="asig.estado !== 'COMPLETADA'" class="text-caption text-grey mt-2">Esperando respuesta del revisor...</div>
+                    </div>
+
+                    <!-- Quitar revisor: solo si NO ha enviado su revisión -->
                     <v-btn
                       v-if="asig.estado !== 'COMPLETADA'"
                       icon
@@ -90,16 +105,17 @@
                       size="small"
                       color="error"
                       title="Quitar revisor"
+                      class="flex-shrink-0"
                       @click="quitar(asig.id_asignacion)"
                     >
                       <v-icon>mdi-account-remove-outline</v-icon>
                     </v-btn>
-                  </template>
-                </v-list-item>
-              </v-list>
+                  </div>
+                </div>
+              </div>
               <div v-else class="pa-8 text-center text-grey-darken-1">
                 <v-icon size="48" class="mb-2 opacity-20">mdi-account-question-outline</v-icon>
-                <div>No hay revisores asignados todav�a.</div>
+                <div>No hay revisores asignados todavía.</div>
               </div>
             </v-card-text>
           </v-card>
@@ -139,17 +155,30 @@
           </v-card>
 
           <!-- Mensaje informativo para editor de secci�n -->
-          <v-alert
+          <v-card
             v-else-if="editorStore.esEditorSeccion && asignacionesCompletadas.length > 0"
-            type="info"
-            variant="tonal"
-            border="start"
             class="mb-6"
-            icon="mdi-information-outline"
+            rounded="xl"
+            variant="outlined"
+            color="info"
           >
-            Tu rol de editor de secci�n puede gestionar revisores, pero la <strong>decisi�n final</strong>
-            (aceptar / rechazar / pedir revisiones) la toma el editor jefe.
-          </v-alert>
+            <v-card-text class="pa-6">
+              <div class="d-flex align-center mb-3">
+                <v-icon color="info" size="24" class="mr-3">mdi-information-outline</v-icon>
+                <div class="text-h6 font-weight-bold">Revisiones Completadas</div>
+              </div>
+              <p class="text-body-2 mb-4">
+                Has gestionado las revisiones de este manuscrito. El <strong>Editor en Jefe</strong> ha sido notificado y tomará la decisión final (aceptar, rechazar o solicitar cambios) basándose en los resultados obtenidos.
+              </p>
+              <v-btn color="info" variant="tonal" prepend-icon="mdi-email-outline" block class="text-none">
+                Enviar nota al Editor Jefe
+              </v-btn>
+            </v-card-text>
+          </v-card>
+
+
+
+
         </v-col>
 
         <!-- Columna Derecha: Seleccionar Revisores -->
@@ -349,6 +378,15 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Visor PDF -->
+    <PdfViewer
+      v-model="dialogoPdf"
+      :titulo="manuscrito?.titulo"
+      :referencia="manuscrito?.referencia"
+      :url-pdf="manuscrito?.referencia ? `/api/manuscritos/download/${manuscrito.referencia}` : ''"
+      :contenido="manuscrito?.contenido || manuscrito?.resumen"
+    />
   </v-container>
 </template>
 
@@ -357,7 +395,9 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useEditorStore } from '@/store/editor/index.js'
 import { useHistorialStore } from '@/store/historial.js'
+import { sugerirRevisoresApi } from '@/services/api/matching.js'
 import DecisionDialog from '@/components/common/DecisionDialog.vue'
+import PdfViewer from '@/components/common/PdfViewer.vue'
 
 const route = useRoute()
 const editorStore = useEditorStore()
@@ -366,6 +406,7 @@ const snackbar = ref(false)
 const snackbarColor = ref('success')
 const snackbarMsg = ref('Operaci�n completada con �xito')
 const busquedaRevisor = ref('')
+const dialogoPdf = ref(false)
 
 function notify(msg, color = 'success') {
   snackbarMsg.value = msg
@@ -394,25 +435,20 @@ const cargandoMatchingIA = ref(false)
 async function sugerirRevisoresIA() {
   cargandoMatchingIA.value = true
   try {
-    const res = await fetch('/api/matching/suggest', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        titulo: manuscrito.value?.titulo || '',
-        resumen: manuscrito.value?.resumen || '',
-        palabrasClave: 'Investigación, academia' // Placeholder if no keywords
-      })
+    const data = await sugerirRevisoresApi({
+      titulo: manuscrito.value?.titulo || '',
+      resumen: manuscrito.value?.resumen || '',
+      palabrasClave: 'Investigación, academia', // Placeholder if no keywords
     })
-    if (res.ok) {
-      const data = await res.json()
-      sugerenciasIA.value = data.sugerencias
+    sugerenciasIA.value = data?.sugerencias || []
+    if (sugerenciasIA.value.length > 0) {
       notify('Revisores sugeridos por IA', 'success')
     } else {
-      notify('Error al obtener sugerencias de IA', 'error')
+      notify('No se encontraron sugerencias', 'warning')
     }
   } catch (e) {
     console.error('Error in sugerirRevisoresIA:', e)
-    notify('Error de red al conectar con IA', 'error')
+    notify('Error al conectar con el matching IA', 'error')
   } finally {
     cargandoMatchingIA.value = false
   }
@@ -430,6 +466,19 @@ function getRevisorCompleto(id) {
 const asignacionesDelArticulo = computed(() => {
   if (!editorStore.asignaciones) return []
   return editorStore.asignaciones.filter(a => String(a.id_manuscrito_mongo) === String(manuscritoId))
+})
+
+const asignacionesPorRonda = computed(() => {
+  const grupos = {}
+  asignacionesDelArticulo.value.forEach(asig => {
+    const r = asig.ronda || 1
+    if (!grupos[r]) grupos[r] = []
+    grupos[r].push(asig)
+  })
+  return Object.keys(grupos).sort((a, b) => b - a).map(num => ({
+    numero: num,
+    items: grupos[num]
+  }))
 })
 
 const asignacionesCompletadas = computed(() => 

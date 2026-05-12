@@ -58,6 +58,7 @@ CREATE TABLE asignaciones_revision (
     claridad INT NULL,
     relevancia INT NULL,
     puntuacion INT NULL,
+    ronda INT DEFAULT 1,
     comentarios TEXT NULL,
     comentarios_editor TEXT NULL,
     recomendacion VARCHAR(50) NULL,

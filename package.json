@@ -23,9 +23,17 @@
     "docker:logs": "docker compose logs -f",
     "docker:ps": "docker compose ps",
     "setup": "npm install && npm run dev",
-    "start": "npm run dev"
+    "start": "npm run dev",
+    "test": "npx playwright test",
+    "test:ui": "npx playwright test --ui",
+    "test:headed": "npx playwright test --headed",
+    "test:debug": "npx playwright test --debug",
+    "test:report": "npx playwright show-report",
+    "test:install": "npx playwright install chromium --with-deps"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
+    "@types/node": "^25.6.0",
     "concurrently": "^9.2.1"
   }
 }

@@ -26,18 +26,23 @@ import { encolarSiEsOffline }            from './sync/index.js'
 import { handlePush, handleNotificationClick } from './push/index.js'
 
 // ─── 1. PRECACHÉ (inyectado por Workbox en build) ────────────────────────────
-precacheAndRoute(self.__WB_MANIFEST)
-cleanupOutdatedCaches()
+if (self.__WB_MANIFEST) {
+  precacheAndRoute(self.__WB_MANIFEST)
+  cleanupOutdatedCaches()
+}
 
 // ─── 2. ESTRATEGIAS DE CACHÉ ─────────────────────────────────────────────────
 
 // Assets estáticos: JS, CSS, fuentes, íconos → Cache First
+// En desarrollo (localhost) evitamos Cache First para no interferir con HMR
 registerRoute(
-  ({ request }) =>
-    request.destination === 'script' ||
-    request.destination === 'style'  ||
-    request.destination === 'font'   ||
-    request.destination === 'image',
+  ({ request, url }) => 
+    url.hostname !== 'localhost' && (
+      request.destination === 'script' ||
+      request.destination === 'style'  ||
+      request.destination === 'font'   ||
+      request.destination === 'image'
+    ),
   cacheFirstStrategy
 )
 
@@ -81,12 +86,12 @@ self.addEventListener('notificationclick', handleNotificationClick)
 
 // ─── 5. CICLO DE VIDA ─────────────────────────────────────────────────────────
 self.addEventListener('install', (event) => {
-  console.log('[SW] Instalado')
+    if (self.location.hostname === 'localhost') console.log('[SW] Instalado')
   self.skipWaiting()
 })
 
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activado')
+    if (self.location.hostname === 'localhost') console.log('[SW] Activado')
   event.waitUntil(
     Promise.all([
       self.clients.claim(),

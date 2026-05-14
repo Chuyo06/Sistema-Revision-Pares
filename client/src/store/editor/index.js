@@ -5,7 +5,6 @@ import { fetchUsuarios } from '@/services/api/usuarios.js'
 import { fetchAsignacionesGeneral, crearAsignacion, eliminarAsignacionApi } from '@/services/api/revision.js'
 import { crearNotificacionApi } from '@/services/api/notificaciones.js'
 import { useAuthStore } from '../auth.js'
-import { useNotificacionesStore } from '../notificaciones.js'
 import { useHistorialStore } from '../historial.js'
 
 // Se eliminó la persistencia manual del historial para usar historialStore
@@ -34,18 +33,6 @@ export const useEditorStore = defineStore('editor', () => {
   const editoresSeccion = ref([])
   const asignaciones = ref([])
   const cargando = ref(false)
-  // IDs de asignaciones ya notificadas como COMPLETADAS (evita duplicados entre recargas).
-  const asignacionesNotificadas = ref(new Set(
-    JSON.parse(localStorage.getItem('rpp_notif_asigs') || '[]')
-  ))
-  // IDs de asignaciones ya notificadas como DECLINADAS por revisor (evita duplicados).
-  const asignacionesDeclinadas = ref(new Set(
-    JSON.parse(localStorage.getItem('rpp_notif_asigs_declinadas') || '[]')
-  ))
-  // IDs de manuscritos ya notificados como reenviados (LISTO_PARA_DECISION).
-  const reenviosNotificados = ref(new Set(
-    JSON.parse(localStorage.getItem('rpp_notif_reenvios') || '[]')
-  ))
 
   // Sub-rol activo: en el sistema académico, cualquier usuario con rol 'editor' es editor jefe.
   // 'editor_jefe' y 'editor_seccion' son alias de granularidad futura que aún no están en BD.
@@ -157,21 +144,8 @@ export const useEditorStore = defineStore('editor', () => {
           }
         })
 
-        // Detectar manuscritos recién reenviados por el autor (estado LISTO_PARA_DECISION)
-        // y crear notificación local si no se notificó antes (fallback al backend de notif).
-        const notifStore = useNotificacionesStore()
-        for (const m of manuscritosRaw.value) {
-          if (m.estado === 'LISTO_PARA_DECISION' && !reenviosNotificados.value.has(m.id)) {
-            reenviosNotificados.value.add(m.id)
-            notifStore.agregar({
-              tipo: 'NUEVA_VERSION',
-              titulo: 'Nueva versión recibida',
-              mensaje: `El autor reenvió una versión corregida de "${m.titulo || 'un manuscrito'}". Está lista para tu decisión.`,
-              ruta: `/editor/asignacion/${m.id}`,
-            })
-          }
-        }
-        localStorage.setItem('rpp_notif_reenvios', JSON.stringify([...reenviosNotificados.value]))
+        // Backend handle notification for both REVISIONES_COMPLETADAS and NUEVA_VERSION.
+        // Therefore, we do not need to emit local notifications based on LISTO_PARA_DECISION anymore.
       }
 
       if (listUsuarios && Array.isArray(listUsuarios)) {
@@ -220,37 +194,6 @@ export const useEditorStore = defineStore('editor', () => {
       }
 
       if (listAsig) {
-        // Detectar asignaciones recien completadas y notificar al editor.
-        const notifStore = useNotificacionesStore()
-        for (const asig of listAsig) {
-          if (asig.estado === 'COMPLETADA' && !asignacionesNotificadas.value.has(asig.id_asignacion)) {
-            asignacionesNotificadas.value.add(asig.id_asignacion)
-            const revisor = (revisoresDisponibles.value || []).find(r => Number(r.id) === Number(asig.id_revisor))
-            const manuscrito = (listManuscritos || []).find(m => String(m.id) === String(asig.id_manuscrito_mongo))
-            if (revisor && manuscrito) {
-              notifStore.agregarNotificacionRevision(manuscrito, revisor)
-            }
-          }
-
-          // Detectar asignaciones recién declinadas y avisar al editor (fallback local
-          // por si el backend de notificaciones no propagó la INVITACION_RECHAZADA).
-          if ((asig.estado === 'DECLINADO' || asig.estado === 'RECHAZADA') && !asignacionesDeclinadas.value.has(asig.id_asignacion)) {
-            asignacionesDeclinadas.value.add(asig.id_asignacion)
-            const revisor = (revisoresDisponibles.value || []).find(r => Number(r.id) === Number(asig.id_revisor))
-            const manuscrito = (listManuscritos || []).find(m => String(m.id) === String(asig.id_manuscrito_mongo))
-            const nombreRev = revisor?.nombre || `Revisor #${asig.id_revisor}`
-            const tituloMs = manuscrito?.titulo || 'un manuscrito'
-            notifStore.agregar({
-              tipo: 'INVITACION_RECHAZADA',
-              titulo: 'Invitación declinada',
-              mensaje: `${nombreRev} declinó la invitación a revisar "${tituloMs}". Considera asignar otro revisor.`,
-              ruta: manuscrito ? `/editor/asignacion/${manuscrito.id}` : '/editor/manuscritos',
-            })
-          }
-        }
-        // Persistir los sets para sobrevivir recargas.
-        localStorage.setItem('rpp_notif_asigs', JSON.stringify([...asignacionesNotificadas.value]))
-        localStorage.setItem('rpp_notif_asigs_declinadas', JSON.stringify([...asignacionesDeclinadas.value]))
         asignaciones.value = listAsig
       }
     } catch (e) {
@@ -270,22 +213,51 @@ export const useEditorStore = defineStore('editor', () => {
 
     const exito = await crearAsignacion(revisorId, manuscritoId)
     if (exito) {
+      const authStore = useAuthStore()
+      const editorId = authStore.usuario?.id || authStore.usuario?.id_usuario
+
       if (manuscrito && manuscrito.estado === 'ENVIADO') {
         await actualizarEstadoManuscrito(manuscritoId, 'EN_REVISION')
+      }
+      
+      // Guardar el editorId en el manuscrito para que las notificaciones futuras
+      // (aceptar/declinar invitación, envío de revisión) lleguen al editor correcto.
+      if (editorId && manuscrito && !manuscrito.editorId) {
+        try {
+          await fetch(`/api/manuscritos/${manuscritoId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ editorId })
+          })
+          // Actualizar también en el estado local para que el próximo find() lo tenga
+          manuscrito.editorId = editorId
+        } catch (e) {
+          console.warn('[Editor] No se pudo guardar editorId en el manuscrito:', e)
+        }
       }
 
       // Notificar al revisor que ha sido invitado (fire-and-forget).
       try {
         await crearNotificacionApi({
           tipo: 'NUEVA_INVITACION',
-          usuario_id: revisorId,
+          destinatarioId: revisorId,
           mensaje: manuscrito
             ? `Has sido invitado a revisar "${manuscrito.titulo}". Tienes 3 días para responder.`
             : 'Has sido invitado a revisar un nuevo manuscrito.',
           referencia_manuscrito: manuscritoId,
         })
+        
+        // Notificar al autor que se asignó un revisor
+        if (manuscrito && manuscrito.autorId) {
+          await crearNotificacionApi({
+            tipo: 'REVISOR_ASIGNADO',
+            destinatarioId: manuscrito.autorId,
+            mensaje: `Se ha asignado un revisor a tu manuscrito "${manuscrito.titulo}".`,
+            referencia_manuscrito: manuscritoId,
+          })
+        }
       } catch (e) {
-        console.warn('[Editor] No se pudo notificar al revisor:', e)
+        console.warn('[Editor] No se pudo notificar asignación:', e)
       }
 
       await cargarDashboardEditor()
@@ -331,6 +303,22 @@ export const useEditorStore = defineStore('editor', () => {
         editorId: auth.usuario?.id,
         editorNombre: auth.usuario?.nombre,
       })
+      
+      // Notificar al autor sobre la decisión
+      if (m?.autorId) {
+        try {
+          const labels = { ACEPTADO: 'aceptado', RECHAZADO: 'rechazado', EN_REVISION: 'enviado a revisión' }
+          await crearNotificacionApi({
+            destinatarioId: m.autorId,
+            tipo: 'DECISION_EDITORIAL',
+            mensaje: `Se ha tomado una decisión editorial sobre tu manuscrito "${m.titulo}": ha sido ${labels[decision] || decision}.`,
+            referencia_manuscrito: manuscritoId
+          })
+        } catch (e) {
+          console.warn('[Editor] No se pudo notificar al autor sobre la decisión:', e)
+        }
+      }
+      
       await cargarDashboardEditor()
     }
     return exito
@@ -379,11 +367,20 @@ export const useEditorStore = defineStore('editor', () => {
       editorNombre: auth.usuario?.nombre || 'Editor',
     })
 
-    const notifStore = useNotificacionesStore()
-    notifStore.agregarNotificacionDecision(manuscrito, decision)
-
+    // Primero confirmar con el backend — solo notificar si tuvo éxito
     const exito = await actualizarEstadoManuscrito(manuscritoId, decision)
     if (exito) {
+      try {
+        const labels = { ACEPTADO: 'aceptado', RECHAZADO: 'rechazado', EN_REVISION: 'enviado a revisión' }
+        await crearNotificacionApi({
+          destinatarioId: manuscrito.autorId,
+          tipo: 'DECISION_EDITORIAL',
+          mensaje: `Se ha tomado una decisión editorial sobre tu manuscrito "${manuscrito.titulo}": ha sido ${labels[decision] || decision}.`,
+          referencia_manuscrito: manuscritoId
+        })
+      } catch (e) {
+        console.warn('[Editor] No se pudo notificar al autor sobre la decisión', e)
+      }
       await cargarDashboardEditor()
       return { ok: true, carta }
     }

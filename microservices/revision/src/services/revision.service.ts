@@ -34,28 +34,6 @@ export class RevisionService {
   async crear(datos: Partial<AsignacionRevision>) {
     const nueva = this.asignacionRepo.create(datos);
     const guardada = await this.asignacionRepo.save(nueva);
-
-    try {
-      const resManuscrito = await fetch(`http://manuscritos:3000/manuscritos/${datos.id_manuscrito_mongo}`);
-      let titulo = 'un artículo';
-      if (resManuscrito.ok) {
-        const manuscrito = await resManuscrito.json();
-        titulo = manuscrito.titulo || manuscrito.referencia;
-      }
-
-      await fetch(`http://notificaciones:3000/notificaciones`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          destinatarioId: datos.id_revisor,
-          tipo: 'NUEVA_INVITACION',
-          mensaje: `Has sido invitado a revisar el artículo: "${titulo}".`
-        })
-      });
-    } catch (e) {
-      console.error('Error enviando notificación al revisor', e);
-    }
-
     return guardada;
   }
 
@@ -66,20 +44,39 @@ export class RevisionService {
     if (estado === 'DECLINADO' && asignacionActualizada) {
       try {
         const idManuscrito = asignacionActualizada.id_manuscrito_mongo;
-        const resManuscrito = await fetch(`http://manuscritos:3000/manuscritos/${idManuscrito}`);
+        const urlManuscritos = process.env.MS_MANUSCRITOS_URL || 'http://manuscritos:3000';
+        const urlNotificaciones = process.env.MS_NOTIFICACIONES_URL || 'http://notificaciones:3000';
+        const urlUsuarios = process.env.MS_USUARIOS_URL || 'http://usuarios:3000';
+        const resManuscrito = await fetch(`${urlManuscritos}/manuscritos/${idManuscrito}`);
         if (resManuscrito.ok) {
           const manuscrito = await resManuscrito.json();
-          const destinatario = manuscrito.editorId || manuscrito.editorSeccionId || 1;
           
-          await fetch(`http://notificaciones:3000/notificaciones`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              destinatarioId: destinatario,
-              tipo: 'INVITACION_RECHAZADA',
-              mensaje: `Un revisor ha declinado la invitación para revisar "${manuscrito.titulo || manuscrito.referencia}". Por favor, asigna a alguien más.`
-            })
-          });
+          // Resolver editor real; si el manuscrito no tiene editorId, consultar ms_usuarios
+          let destinatario = manuscrito.editorId || manuscrito.editorSeccionId;
+          if (!destinatario) {
+            try {
+              const resEditores = await fetch(`${urlUsuarios}/rol/editor`);
+              if (resEditores.ok) {
+                const editores = await resEditores.json();
+                const jefe = editores.find((e: any) => e.roles?.includes('editor_jefe'));
+                destinatario = jefe?.id || editores[0]?.id;
+              }
+            } catch (e2) {
+              console.warn('[Revision] No se pudo resolver editor para DECLINADO:', e2);
+            }
+          }
+          
+          if (destinatario) {
+            await fetch(`${urlNotificaciones}/`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                destinatarioId: destinatario,
+                tipo: 'INVITACION_RECHAZADA',
+                mensaje: `Un revisor ha declinado la invitación para revisar "${manuscrito.titulo || manuscrito.referencia}". Por favor, asigna a alguien más.`
+              })
+            });
+          }
         }
       } catch (error) {
         console.error('Error enviando notificación de rechazo:', error);
@@ -129,7 +126,7 @@ export class RevisionService {
 
       const urlNotif = process.env.MS_NOTIFICACIONES_URL || 'http://notificaciones:3000';
       await Promise.allSettled(
-        reabrir.map(a => fetch(`${urlNotif}/notificaciones`, {
+        reabrir.map(a => fetch(`${urlNotif}/`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -166,32 +163,94 @@ export class RevisionService {
 
     try {
       const idManuscrito = asignacionActualizada.id_manuscrito_mongo;
-      const todasLasAsignaciones = await this.obtenerPorManuscrito(idManuscrito);
+      const urlManuscritos = process.env.MS_MANUSCRITOS_URL || 'http://manuscritos:3000';
+      const urlNotificaciones = process.env.MS_NOTIFICACIONES_URL || 'http://notificaciones:3000';
+      const urlUsuarios = process.env.MS_USUARIOS_URL || 'http://usuarios:3000';
       
-      const asignacionesActivas = todasLasAsignaciones.filter(a => a.estado !== 'DECLINADO' && a.estado !== 'EXPIRADA');
-      const todasCompletadas = asignacionesActivas.length > 0 && asignacionesActivas.every(a => a.estado === 'COMPLETADA');
+      const resManuscrito = await fetch(`${urlManuscritos}/manuscritos/${idManuscrito}`);
+      if (resManuscrito.ok) {
+        const manuscrito = await resManuscrito.json();
+        
+        // Resolver el editor destinatario: primero del manuscrito, si no consultar ms_usuarios
+        let destinatario = manuscrito.editorId || manuscrito.editorSeccionId;
+        if (!destinatario) {
+          try {
+            const resEditores = await fetch(`${urlUsuarios}/rol/editor`);
+            if (resEditores.ok) {
+              const editores = await resEditores.json();
+              const jefe = editores.find((e: any) => e.roles?.includes('editor_jefe'));
+              destinatario = jefe?.id || editores[0]?.id;
+            }
+          } catch (e2) {
+            console.warn('[Revision] No se pudo resolver editor desde ms_usuarios:', e2);
+          }
+        }
+        
+        // Contar cuántas revisiones están completadas para el mensaje al autor
+        const todasLasAsignaciones = await this.obtenerPorManuscrito(idManuscrito);
+        const asignacionesActivas = todasLasAsignaciones.filter(a => a.estado !== 'DECLINADO' && a.estado !== 'EXPIRADA');
+        const completadas = asignacionesActivas.filter(a => a.estado === 'COMPLETADA').length;
+        const total = asignacionesActivas.length;
+        const todasCompletadas = total > 0 && completadas === total;
+        
+        // 1. Notificación individual al editor (Siempre que un revisor termina)
+        if (destinatario) {
+          await fetch(`${urlNotificaciones}/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              destinatarioId: destinatario,
+              tipo: 'REVISION_RECIBIDA',
+              mensaje: `Un revisor acaba de enviar su evaluación para el manuscrito: "${manuscrito.titulo || manuscrito.referencia}" (${completadas}/${total} revisiones completadas).`
+            })
+          });
+        }
+        
+        // 2. Notificar al autor con conteo específico
+        if (manuscrito.autorId && !todasCompletadas) {
+          const conteoMsg = total === 1
+            ? `Un revisor ha completado la evaluación de tu manuscrito "${manuscrito.titulo || manuscrito.referencia}".`
+            : `${completadas} de ${total} revisores han completado la evaluación de tu manuscrito "${manuscrito.titulo || manuscrito.referencia}".`;
+          await fetch(`${urlNotificaciones}/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              destinatarioId: manuscrito.autorId,
+              tipo: 'REVISION_PARCIAL_COMPLETADA',
+              mensaje: conteoMsg
+            })
+          });
+        }
 
-      if (todasCompletadas) {
-        const urlManuscritos = process.env.MS_MANUSCRITOS_URL || 'http://manuscritos:3000';
-        const resManuscrito = await fetch(`${urlManuscritos}/manuscritos/${idManuscrito}`);
-        if (resManuscrito.ok) {
-          const manuscrito = await resManuscrito.json();
-          
+        // 3. Si TODAS las revisiones están completadas
+        if (todasCompletadas) {
           await fetch(`${urlManuscritos}/manuscritos/${idManuscrito}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ estado: 'LISTO_PARA_DECISION' })
           });
 
-          if (manuscrito.editorId) {
-            const urlNotificaciones = process.env.MS_NOTIFICACIONES_URL || 'http://notificaciones:3000';
-            await fetch(`${urlNotificaciones}/notificaciones`, {
+          if (destinatario) {
+            await fetch(`${urlNotificaciones}/`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                destinatarioId: manuscrito.editorId,
+                destinatarioId: destinatario,
                 tipo: 'REVISIONES_COMPLETADAS',
-                mensaje: `Todas las revisiones del manuscrito ${manuscrito.titulo || manuscrito.referencia} han sido completadas. Está listo para decisión.`
+                mensaje: `Todas las revisiones del manuscrito "${manuscrito.titulo || manuscrito.referencia}" han sido completadas. Está listo para decisión.`
+              })
+            });
+          }
+          
+          // Notificar al autor que todas las revisiones terminaron
+          if (manuscrito.autorId) {
+            await fetch(`${urlNotificaciones}/`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                destinatarioId: manuscrito.autorId,
+                tipo: 'LISTO_PARA_VEREDICTO',
+                mensaje: `Todos los ${total} revisores de tu manuscrito "${manuscrito.titulo || manuscrito.referencia}" han completado sus evaluaciones. Está a la espera del veredicto editorial.`
               })
             });
           }

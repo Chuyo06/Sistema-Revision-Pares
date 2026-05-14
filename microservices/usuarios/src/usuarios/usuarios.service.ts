@@ -75,6 +75,21 @@ export class UsuariosService implements OnModuleInit {
     }));
   }
 
+  async obtenerPorRol(rol: string) {
+    const usuarios = await this.usuarioRepo.find({
+      relations: ['perfil', 'roles'],
+    });
+    const rolUpper = rol.toUpperCase();
+    return usuarios
+      .filter(u => u.roles?.some(r => r.nombre.toUpperCase() === rolUpper || r.nombre.toUpperCase() === `EDITOR_JEFE` && rolUpper === 'EDITOR'))
+      .map(u => ({
+        id: u.id_usuario,
+        nombre: u.perfil?.nombre_completo || u.email.split('@')[0],
+        email: u.email,
+        roles: u.roles?.map(r => r.nombre.toLowerCase()) || [],
+      }));
+  }
+
   async obtenerPorId(id: number) {
     const u = await this.usuarioRepo.findOne({
       where: { id_usuario: id },

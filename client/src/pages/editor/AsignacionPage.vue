@@ -28,16 +28,53 @@
                     {{ estadoLabel(manuscrito.estado).toUpperCase() }}
                   </v-chip>
                 </div>
-                <v-btn
-                  v-if="manuscrito.referencia"
-                  color="brown"
-                  variant="flat"
-                  prepend-icon="mdi-file-pdf-box"
-                  @click="dialogoPdf = true"
-                  class="ml-4"
-                >
-                  Ver PDF
-                </v-btn>
+                <div class="d-flex flex-column align-end">
+                  <v-btn
+                    v-if="manuscrito.referencia"
+                    color="brown"
+                    variant="flat"
+                    prepend-icon="mdi-file-pdf-box"
+                    @click="dialogoPdf = true"
+                    class="ml-4"
+                  >
+                    Ver PDF Actual
+                  </v-btn>
+                  
+                  <v-menu v-if="manuscrito.historialVersiones && manuscrito.historialVersiones.length > 0" location="bottom end">
+                    <template v-slot:activator="{ props }">
+                      <v-btn
+                        color="brown-darken-1"
+                        variant="tonal"
+                        size="small"
+                        prepend-icon="mdi-history"
+                        v-bind="props"
+                        class="ml-4 mt-2 text-none"
+                      >
+                        Versiones anteriores ({{ manuscrito.historialVersiones.length }})
+                      </v-btn>
+                    </template>
+                    <v-list class="bg-grey-lighten-4 border rounded-lg">
+                      <v-list-item
+                        v-for="(v, index) in manuscrito.historialVersiones"
+                        :key="v.referencia"
+                        :href="`/api/manuscritos/download/${v.referencia}`"
+                        target="_blank"
+                        class="border-bottom"
+                      >
+                        <template v-slot:prepend>
+                          <v-icon color="brown">mdi-file-pdf-box</v-icon>
+                        </template>
+                        <v-list-item-title class="font-weight-bold">Versión {{ index + 1 }}</v-list-item-title>
+                        <v-list-item-subtitle class="text-caption">
+                          {{ new Date(v.fecha).toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric' }) }} - REF: {{ v.referencia }}
+                        </v-list-item-subtitle>
+                        <template v-slot:append>
+                          <v-icon size="small" color="primary">mdi-download</v-icon>
+                        </template>
+                      </v-list-item>
+                    </v-list>
+                  </v-menu>
+                </div>
               </div>
             </v-card-item>
           </v-card>
@@ -125,29 +162,29 @@
             v-if="editorStore.esEditorJefe && asignacionesCompletadas.length > 0"
             class="mb-6 elevation-10"
             rounded="xl"
-            color="brown-darken-4"
-            theme="dark"
+            :color="seccionDecisionActiva ? 'brown-darken-4' : 'grey-lighten-3'"
+            :theme="seccionDecisionActiva ? 'dark' : 'light'"
           >
             <v-card-item class="pa-6">
-              <v-card-title class="text-h5 font-weight-bold d-flex align-center">
-                <v-icon class="mr-3" color="amber">mdi-gavel</v-icon>
+              <v-card-title class="text-h5 font-weight-bold d-flex align-center" :class="seccionDecisionActiva ? '' : 'text-grey-darken-2'">
+                <v-icon class="mr-3" :color="seccionDecisionActiva ? 'amber' : 'grey'">mdi-gavel</v-icon>
                 Decisi�n Editorial Final
               </v-card-title>
               <v-card-subtitle class="mt-1" :class="seccionDecisionActiva ? 'opacity-70 text-white' : 'text-grey-darken-1'">
                 <span v-if="manuscrito.estado === 'LISTO_PARA_DECISION'">Todas las revisiones completadas. Listo para su decisión.</span>
                 <span v-else-if="manuscrito.estado === 'ACEPTADO'">Manuscrito Aceptado</span>
                 <span v-else-if="manuscrito.estado === 'RECHAZADO'">Manuscrito Rechazado</span>
-                <span v-else>Esperando a que todos los revisores finalicen ({{ asignacionesCompletadas.length }} de {{ asignacionesDelArticulo.length }} completadas)</span>
+                <span v-else>Esperando a que todos los revisores finalicen ({{ asignacionesCompletadasUltimaRonda.length }} de {{ asignacionesUltimaRonda.length }} completadas)</span>
               </v-card-subtitle>
 
               <div class="d-flex gap-4 mt-6 flex-wrap">
-                <v-btn color="success" size="large" variant="elevated" @click="abrirDecision('ACEPTADO')" class="flex-grow-1 text-none font-weight-bold" prepend-icon="mdi-check-circle">
+                <v-btn :color="seccionDecisionActiva ? 'success' : 'grey'" size="large" variant="elevated" @click="abrirDecision('ACEPTADO')" class="flex-grow-1 text-none font-weight-bold" prepend-icon="mdi-check-circle" :disabled="!seccionDecisionActiva">
                   Aceptar
                 </v-btn>
-                <v-btn color="warning" size="large" variant="elevated" @click="abrirDecision('REQUERIDAS_REVISIONES')" class="flex-grow-1 text-none font-weight-bold" prepend-icon="mdi-refresh">
+                <v-btn :color="seccionDecisionActiva ? 'warning' : 'grey'" size="large" variant="elevated" @click="abrirDecision('REQUERIDAS_REVISIONES')" class="flex-grow-1 text-none font-weight-bold" prepend-icon="mdi-refresh" :disabled="!seccionDecisionActiva">
                   Pedir revisiones
                 </v-btn>
-                <v-btn color="error" size="large" variant="elevated" @click="abrirDecision('RECHAZADO')" class="flex-grow-1 text-none font-weight-bold" prepend-icon="mdi-close-circle">
+                <v-btn :color="seccionDecisionActiva ? 'error' : 'grey'" size="large" variant="elevated" @click="abrirDecision('RECHAZADO')" class="flex-grow-1 text-none font-weight-bold" prepend-icon="mdi-close-circle" :disabled="!seccionDecisionActiva">
                   Rechazar
                 </v-btn>
               </div>
@@ -481,17 +518,29 @@ const asignacionesPorRonda = computed(() => {
   }))
 })
 
+const ultimaRonda = computed(() => {
+  if (asignacionesDelArticulo.value.length === 0) return 1
+  return Math.max(...asignacionesDelArticulo.value.map(a => a.ronda || 1))
+})
+
+const asignacionesUltimaRonda = computed(() => 
+  asignacionesDelArticulo.value.filter(a => (a.ronda || 1) === ultimaRonda.value)
+)
+
+const asignacionesCompletadasUltimaRonda = computed(() => 
+  asignacionesUltimaRonda.value.filter(a => a.estado === 'COMPLETADA')
+)
+
 const asignacionesCompletadas = computed(() => 
   asignacionesDelArticulo.value.filter(a => a.estado === 'COMPLETADA')
 )
 
 const requiereRevisiones = computed(() => {
-  return asignacionesCompletadas.value.some(a => a.recomendacion === 'REVISION_MENOR' || a.recomendacion === 'REVISION_MAYOR')
+  return asignacionesCompletadasUltimaRonda.value.some(a => a.recomendacion === 'REVISION_MENOR' || a.recomendacion === 'REVISION_MAYOR')
 })
 
 const seccionDecisionActiva = computed(() => {
-  if (manuscrito.value?.estado === 'LISTO_PARA_DECISION' && requiereRevisiones.value) return false
-  return ['LISTO_PARA_DECISION', 'ACEPTADO', 'RECHAZADO'].includes(manuscrito.value?.estado)
+  return !['ACEPTADO', 'RECHAZADO', 'REQUERIDAS_REVISIONES'].includes(manuscrito.value?.estado)
 })
 
 onMounted(() => {

@@ -186,11 +186,9 @@ const editorStore = useEditorStore()
 const mostrarNotificaciones = ref(false)
 
 onMounted(() => {
-  if (auth.usuario?.id) {
-    notifStore.cargarNotificacionesBackend(auth.usuario.id)
-  }
-  // Mantener actualizado el polling
-  if (auth.usuario?.id) {
+  const userId = auth.usuario?.id || auth.usuario?.id_usuario
+  if (userId) {
+    notifStore.cargarNotificacionesBackend(userId)
     notifStore.iniciarPolling()
   }
 })

@@ -42,3 +42,9 @@ Thumbs.db
 .DS_Store
 .vscode/
 !.vscode/settings.json
+# =========================================
+# 7. ARCHIVOS DE USUARIO Y BINARIOS
+# =========================================
+*.pdf
+uploads/
+microservices/manuscritos/uploads/

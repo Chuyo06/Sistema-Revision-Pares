@@ -40,7 +40,7 @@ export class ManuscritosService {
     const result = await this.counterModel.findByIdAndUpdate(
       `manuscritos-${year}`,
       { $inc: { seq: 1 } },
-      { upsert: true, new: true, setDefaultsOnInsert: true },
+      { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true },
     );
     return `RPP-${year}-${String(result.seq).padStart(4, '0')}`;
   }
@@ -85,6 +85,7 @@ export class ManuscritosService {
       referencia: ref,
       estado: estadoFinal,
       fechaEnvio: d.fechaEnvio || new Date(),
+      historialVersiones: d.historialVersiones || (ref ? [{ referencia: ref, fecha: new Date() }] : []),
     });
     return await nuevoManuscrito.save();
   }

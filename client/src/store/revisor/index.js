@@ -4,6 +4,7 @@ import { fetchAsignaciones, enviarRevisionApi, actualizarEstadoRevisionApi } fro
 import { fetchManuscritos } from '@/services/api/manuscritos.js'
 import { crearNotificacionApi } from '@/services/api/notificaciones.js'
 import { useAuthStore } from '../auth.js'
+import { set as idbSet, get as idbGet, del as idbDel } from '@/utils/idb.js'
 
 export const useRevisorStore = defineStore('revisor', () => {
   const articulosAsignados = ref([])
@@ -11,14 +12,30 @@ export const useRevisorStore = defineStore('revisor', () => {
 
   const borradores = ref({})
 
-  function guardarBorrador(articuloId, datos) {
-    borradores.value[articuloId] = { ...datos, guardadoEn: new Date().toISOString() }
-    localStorage.setItem('rpp_borradores', JSON.stringify(borradores.value))
+  async function guardarBorrador(articuloId, datos) {
+    const draft = { ...datos, guardadoEn: new Date().toISOString() }
+    borradores.value[articuloId] = draft
+    await idbSet(`borrador_${articuloId}`, draft)
   }
 
-  function cargarBorrador(articuloId) {
-    const guardados = JSON.parse(localStorage.getItem('rpp_borradores') || '{}')
-    return guardados[articuloId] || null
+  async function cargarBorrador(articuloId) {
+    // Intento de fallback a localStorage (migración transparente)
+    const oldGuardados = JSON.parse(localStorage.getItem('rpp_borradores') || '{}')
+    let guardado = await idbGet(`borrador_${articuloId}`)
+    
+    if (!guardado && oldGuardados[articuloId]) {
+      guardado = oldGuardados[articuloId]
+      await idbSet(`borrador_${articuloId}`, guardado) // Migrar a IDB
+      
+      // Eliminar el fantasma de localStorage
+      delete oldGuardados[articuloId]
+      localStorage.setItem('rpp_borradores', JSON.stringify(oldGuardados))
+    }
+    
+    if (guardado) {
+      borradores.value[articuloId] = guardado
+    }
+    return guardado || null
   }
 
   async function cargarDashboard() {
@@ -63,14 +80,25 @@ export const useRevisorStore = defineStore('revisor', () => {
             deadline: asig.fecha_limite ? asig.fecha_limite.split('T')[0] : 'Sin fecha',
             estado: estadoUI,
             resumen: manuscrito.resumen || 'Sin resumen disponible',
-            // Campos necesarios para que el visor PDF y la vista de detalle
-            // (RevisionPage) funcionen: la referencia es la "RPP-YYYY-NNNN" que
-            // el backend usa para servir el archivo en GET /manuscritos/download/:ref.
             referencia: manuscrito.referencia || null,
             contenido: manuscrito.contenido || '',
             fechaEnvio: manuscrito.fechaEnvio || manuscrito.fechaSubida || null,
+            // IDs necesarios para notificaciones correctas al editor y autor
+            editorId: manuscrito.editorId || manuscrito.editorSeccionId || null,
           }
         })
+
+        // Caché proactivo en background de los PDFs asignados (no completados)
+        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+          articulosAsignados.value.forEach(articulo => {
+            if (articulo.referencia && articulo.estado !== 'COMPLETADA') {
+              navigator.serviceWorker.controller.postMessage({
+                tipo: 'CACHE_MANUSCRITO',
+                payload: { url: `/api/manuscritos/download/${articulo.referencia}` }
+              })
+            }
+          })
+        }
       }
     } catch (e) {
       console.warn('[Revisor] No se pudo cargar el dashboard:', e.message)
@@ -82,14 +110,24 @@ export const useRevisorStore = defineStore('revisor', () => {
   async function enviarRevision(articuloId, revision) {
     const res = await enviarRevisionApi(articuloId, revision)
     if (res) {
-      const articulo = articulosAsignados.value.find(a => String(a.id) === String(articuloId))
-      if (articulo) {
+      const idx = articulosAsignados.value.findIndex(a => String(a.id) === String(articuloId))
+      if (idx !== -1) {
+        const articulo = articulosAsignados.value[idx]
         articulo.estado = 'COMPLETADA'
         articulo.revision = revision
+        
+        // Limpiar de memoria la caché offline para liberar espacio
+        if ('serviceWorker' in navigator && navigator.serviceWorker.controller && articulo.referencia) {
+          navigator.serviceWorker.controller.postMessage({
+            tipo: 'DELETE_MANUSCRITO_CACHE',
+            payload: { url: `/api/manuscritos/download/${articulo.referencia}` }
+          })
+        }
       }
       delete borradores.value[articuloId]
-      localStorage.setItem('rpp_borradores', JSON.stringify(borradores.value))
+      await idbDel(`borrador_${articuloId}`)
     }
+    return res
   }
 
   async function responderInvitacion(idAsignacion, aceptar) {
@@ -101,20 +139,41 @@ export const useRevisorStore = defineStore('revisor', () => {
         asig.estado = aceptar ? 'EN_PROGRESO' : 'DECLINADO'
       }
 
-      // Si declinó, notificar al editor (fire-and-forget). Si el backend
+      // Notificar al editor (fire-and-forget). Si el backend
       // de notificaciones no responde, se silencia: el flujo no se rompe.
-      if (!aceptar && asig) {
+      if (asig) {
         try {
           const authStore = useAuthStore()
-          await crearNotificacionApi({
-            tipo: 'INVITACION_RECHAZADA',
-            rol_destinatario: 'editor',
-            mensaje: `${authStore.usuario?.nombre || 'Un revisor'} declinó la invitación a revisar "${asig.titulo}". Considera asignar otro revisor.`,
-            referencia_manuscrito: asig.id_manuscrito,
-            referencia_asignacion: idAsignacion,
-          })
+          const accion = aceptar ? 'aceptó' : 'declinó'
+          const tipoNotif = aceptar ? 'INVITACION_ACEPTADA' : 'INVITACION_RECHAZADA'
+          
+          // Si el manuscrito no tiene editorId guardado, obtener el primer editor del sistema
+          let editorDestId = asig.editorId
+          if (!editorDestId) {
+            try {
+              const resEditores = await fetch('/api/usuarios/rol/editor')
+              if (resEditores.ok) {
+                const editores = await resEditores.json()
+                // Preferir editor_jefe si existe, sino el primer editor
+                const jefe = editores.find(e => e.roles?.includes('editor_jefe'))
+                editorDestId = jefe?.id || editores[0]?.id
+              }
+            } catch (e2) {
+              console.warn('[Revisor] No se pudo resolver el editor:', e2)
+            }
+          }
+          
+          if (editorDestId) {
+            await crearNotificacionApi({
+              destinatarioId: editorDestId,
+              tipo: tipoNotif,
+              mensaje: `${authStore.usuario?.nombre || 'Un revisor'} ${accion} la invitación a revisar "${asig.titulo}".`,
+              referencia_manuscrito: asig.id_manuscrito,
+              referencia_asignacion: idAsignacion,
+            })
+          }
         } catch (e) {
-          console.warn('[Revisor] No se pudo notificar al editor sobre rechazo:', e)
+          console.warn(`[Revisor] No se pudo notificar al editor sobre la respuesta:`, e)
         }
       }
     }

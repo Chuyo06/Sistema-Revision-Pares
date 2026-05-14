@@ -10,6 +10,11 @@ export class UsuariosController {
     return { status: 'ok', service: 'usuarios', timestamp: new Date().toISOString() };
   }
 
+  @Get('rol/:rol')
+  obtenerPorRol(@Param('rol') rol: string) {
+    return this.usuariosService.obtenerPorRol(rol);
+  }
+
   @Get()
   obtenerTodos() {
     return this.usuariosService.obtenerTodos();

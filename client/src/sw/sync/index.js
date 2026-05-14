@@ -53,12 +53,18 @@ export const borradoresQueue = new Queue('sync-borradores', {
  */
 export async function encolarSiEsOffline(request, error) {
   if (!navigator.onLine) {
-    if (request.url.includes('/revisiones')) {
+    if (request.url.includes('/enviar') || request.url.includes('/revisiones')) {
       await revisionesQueue.pushRequest({ request })
       if (self.location.hostname === 'localhost') console.log('[SW Sync] Revisión encolada para reintento')
+      // Simular éxito para que el frontend no colapse
+      return new Response(JSON.stringify({ success: true, offlineSync: true, message: "Encolado para sincronización offline" }), { 
+        status: 202, 
+        headers: { 'Content-Type': 'application/json' } 
+      })
     } else if (request.url.includes('/borradores')) {
       await borradoresQueue.pushRequest({ request })
       if (self.location.hostname === 'localhost') console.log('[SW Sync] Borrador encolada para reintento')
+      return new Response(JSON.stringify({ success: true, offlineSync: true }), { status: 202, headers: { 'Content-Type': 'application/json' } })
     }
   }
   throw error

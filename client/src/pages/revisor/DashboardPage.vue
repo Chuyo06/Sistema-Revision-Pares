@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div>
     <!-- Banner -->
     <div
@@ -42,26 +42,42 @@
         <div
           v-for="a in pendientesLista"
           :key="a.id"
-          style="background:#FFFFFF; border:1px solid #D3E0D7; border-radius:12px; margin-bottom:10px; overflow:hidden; cursor:pointer"
-          @click="$router.push(`/revisor/revision/${a.id}`)"
+          style="background:#FFFFFF; border:1px solid #D3E0D7; border-radius:12px; margin-bottom:10px; overflow:hidden;"
+          :style="a.estado !== 'PENDIENTE' ? 'cursor:pointer' : ''"
+          @click="a.estado !== 'PENDIENTE' ? $router.push(`/revisor/revision/${a.id}`) : null"
         >
-          <div style="height:5px; background:#e65100" />
+          <div :style="`height:5px; background:${a.estado === 'PENDIENTE' ? '#e65100' : '#546e7a'}`" />
           <div style="padding:14px 16px; display:flex; align-items:flex-start; gap:12px">
-            <div style="background:#e6510022; border-radius:50%; width:36px; height:36px; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:2px">
-              <v-icon color="#e65100" size="18">mdi-clock-outline</v-icon>
+            <div :style="`background:${a.estado === 'PENDIENTE' ? '#e6510022' : '#546e7a22'}; border-radius:50%; width:36px; height:36px; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:2px`"
+            >
+              <v-icon :color="a.estado === 'PENDIENTE' ? '#e65100' : '#546e7a'" size="18">{{ a.estado === 'PENDIENTE' ? 'mdi-clock-outline' : 'mdi-pencil-outline' }}</v-icon>
             </div>
             <div style="flex:1; min-width:0">
               <div style="font-size:14px; font-weight:600; color:#1B4332; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">
                 {{ a.titulo }}
               </div>
               <div style="font-size:12px; color:#8B5A2B; margin-top:2px">{{ a.convocatoria }}</div>
-              <div style="font-size:11px; color:#c62828; margin-top:2px">
+              <div v-if="a.estado === 'PENDIENTE'" style="font-size:11px; color:#e65100; margin-top:2px; font-weight:600">
+                <v-icon size="11">mdi-alert-circle-outline</v-icon> Invitación pendiente
+              </div>
+              <div v-else style="font-size:11px; color:#c62828; margin-top:2px">
                 <v-icon size="11">mdi-calendar-clock</v-icon> Deadline: {{ a.deadline }}
               </div>
             </div>
-            <v-btn size="small" color="primary" rounded="lg" elevation="0">
-              Revisar
-            </v-btn>
+            
+            <div style="display:flex; gap:6px">
+              <template v-if="a.estado === 'PENDIENTE'">
+                <v-btn size="x-small" color="success" rounded="lg" elevation="0" @click.stop="aceptarYRevisar(a.id)">
+                  Aceptar
+                </v-btn>
+                <v-btn size="x-small" color="error" variant="outlined" rounded="lg" @click.stop="revisorStore.responderInvitacion(a.id, false)">
+                  Declinar
+                </v-btn>
+              </template>
+              <v-btn v-else size="small" color="primary" rounded="lg" elevation="0">
+                Revisar
+              </v-btn>
+            </div>
           </div>
         </div>
 
@@ -122,9 +138,11 @@
 
 <script setup>
 import { computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/store/auth.js'
 import { useRevisorStore } from '@/store/revisor/index.js'
 
+const router = useRouter()
 const auth = useAuthStore()
 const revisorStore = useRevisorStore()
 
@@ -132,8 +150,15 @@ onMounted(() => {
   revisorStore.cargarDashboard()
 })
 
-const pendientes      = computed(() => revisorStore.articulosAsignados.filter(a => a.estado !== 'COMPLETADA').length)
-const pendientesLista = computed(() => revisorStore.articulosAsignados.filter(a => a.estado === 'PENDIENTE'))
+async function aceptarYRevisar(id) {
+  const exito = await revisorStore.responderInvitacion(id, true)
+  if (exito) {
+    router.push(`/revisor/revision/${id}`)
+  }
+}
+
+const pendientes      = computed(() => revisorStore.articulosAsignados.filter(a => a.estado !== 'COMPLETADA' && a.estado !== 'DECLINADO').length)
+const pendientesLista = computed(() => revisorStore.articulosAsignados.filter(a => a.estado === 'PENDIENTE' || a.estado === 'EN_PROGRESO'))
 const completadas     = computed(() => revisorStore.articulosAsignados.filter(a => a.estado === 'COMPLETADA'))
 
 const stats = computed(() => [

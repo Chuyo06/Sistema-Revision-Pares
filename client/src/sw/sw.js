@@ -18,6 +18,7 @@
 import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching'
 import { registerRoute, NavigationRoute } from 'workbox-routing'
 import { createHandlerBoundToURL } from 'workbox-precaching'
+import { CacheFirst } from 'workbox-strategies'
 
 import { cacheFirstStrategy }            from './strategies/CacheFirstStrategy/index.js'
 import { networkFirstStrategy }          from './strategies/NetworkFirstStrategy/index.js'
@@ -26,10 +27,8 @@ import { encolarSiEsOffline }            from './sync/index.js'
 import { handlePush, handleNotificationClick } from './push/index.js'
 
 // ─── 1. PRECACHÉ (inyectado por Workbox en build) ────────────────────────────
-if (self.__WB_MANIFEST) {
-  precacheAndRoute(self.__WB_MANIFEST)
-  cleanupOutdatedCaches()
-}
+precacheAndRoute(self.__WB_MANIFEST || [])
+cleanupOutdatedCaches()
 
 // ─── 2. ESTRATEGIAS DE CACHÉ ─────────────────────────────────────────────────
 
@@ -55,12 +54,16 @@ registerRoute(
   staleWhileRevalidateStrategy
 )
 
+// Interceptar las descargas de PDFs del modo Offline y servirlas directo del caché dedicado
+registerRoute(
+  ({ url }) => url.pathname.startsWith('/api/manuscritos/download/'),
+  new CacheFirst({ cacheName: 'manuscritos-cache-v1' })
+)
+
 // API REST: SIEMPRE pasar por la red (sin cachear) para que GET refleje
 // inmediatamente lo que se acaba de crear/modificar en POST/PATCH/DELETE.
-// Bug detectado antes: SWR sobre /api/manuscritos servía la lista vieja
-// y los nuevos manuscritos NO aparecían tras subirlos.
 registerRoute(
-  ({ url }) => url.pathname.startsWith('/api') || url.pathname.startsWith('/graphql'),
+  ({ url }) => (url.pathname.startsWith('/api') || url.pathname.startsWith('/graphql')) && !url.pathname.startsWith('/api/manuscritos/download/'),
   networkFirstStrategy
 )
 
@@ -115,6 +118,15 @@ self.addEventListener('message', (event) => {
       event.waitUntil(
         caches.open('manuscritos-cache-v1').then((cache) =>
           cache.add(payload.url)
+        )
+      )
+      break
+
+    case 'DELETE_MANUSCRITO_CACHE':
+      // La app solicita borrar un manuscrito (ej. revisión completada) para liberar memoria
+      event.waitUntil(
+        caches.open('manuscritos-cache-v1').then((cache) =>
+          cache.delete(payload.url)
         )
       )
       break

@@ -29,7 +29,7 @@ export class Manuscrito {
   @Prop()
   convocatoria: string;
 
-  @Prop()
+  @Prop({ unique: true, sparse: true })
   referencia: string;
 
   @Prop()
@@ -49,6 +49,9 @@ export class Manuscrito {
 
   @Prop()
   motivoRechazo: string;
+
+  @Prop({ type: [{ referencia: String, fecha: Date }] })
+  historialVersiones: { referencia: string; fecha: Date }[];
 }
 
 export const ManuscritoSchema = SchemaFactory.createForClass(Manuscrito);

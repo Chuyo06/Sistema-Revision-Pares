@@ -47,9 +47,8 @@
     <div
       v-for="m in manuscritosPaginados"
       :key="m.id"
-      style="background:#FFFFFF; border:1px solid #D3E0D7; border-radius:12px; margin-bottom:10px; overflow:hidden; transition: 0.2s;"
-      :style="m.estado !== 'BORRADOR' ? 'cursor: pointer;' : ''"
-      @click="m.estado !== 'BORRADOR' ? abrirComentarios(m) : null"
+      style="background:#FFFFFF; border:1px solid #D3E0D7; border-radius:12px; margin-bottom:10px; overflow:hidden; transition: 0.2s; cursor: pointer;"
+      @click="m.estado !== 'BORRADOR' ? abrirComentarios(m) : $router.push(`/autor/borrador/${m.id}`)"
       class="articulo-card"
     >
       <div :style="`height:5px; background:${hexEstado(m.estado)}`" />
@@ -167,6 +166,33 @@
               <strong>Carta del Editor:</strong><br/>
               <span style="white-space: pre-wrap;">{{ articuloSeleccionado.motivoRechazo }}</span>
             </v-alert>
+
+            <!-- HISTORIAL DE VERSIONES PDF -->
+            <div v-if="articuloSeleccionado?.historialVersiones && articuloSeleccionado.historialVersiones.length > 0" class="mb-6">
+              <h3 class="text-h6 mb-2" style="color:#8B5A2B">Versiones del Documento</h3>
+              <v-list class="bg-grey-lighten-4 rounded-lg border">
+                <v-list-item v-for="(v, index) in articuloSeleccionado.historialVersiones" :key="v.referencia" class="border-bottom">
+                  <template v-slot:prepend>
+                    <v-icon color="brown">mdi-file-pdf-box</v-icon>
+                  </template>
+                  <v-list-item-title class="font-weight-bold">Versión {{ index + 1 }}</v-list-item-title>
+                  <v-list-item-subtitle>{{ formatDate(v.fecha) }} - REF: {{ v.referencia }}</v-list-item-subtitle>
+                  <template v-slot:append>
+                    <v-btn
+                      size="small"
+                      variant="tonal"
+                      color="primary"
+                      prepend-icon="mdi-download"
+                      class="text-none"
+                      :href="`/api/manuscritos/download/${v.referencia}`"
+                      target="_blank"
+                    >Descargar</v-btn>
+                  </template>
+                </v-list-item>
+              </v-list>
+            </div>
+
+            <v-divider class="mb-6" />
 
             <!-- Gating de opiniones: solo se publican al autor cuando la decisión
                  editorial está tomada O cuando todos los revisores terminaron.
@@ -413,5 +439,11 @@ function chipEstado(e)  { return CHIPS[e]   ?? 'secondary' }
 <style scoped>
 .articulo-card:hover {
   box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+.border-bottom {
+  border-bottom: 1px solid #e0e0e0;
+}
+.border-bottom:last-child {
+  border-bottom: none;
 }
 </style>

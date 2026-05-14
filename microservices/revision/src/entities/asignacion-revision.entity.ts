@@ -49,4 +49,7 @@ export class AsignacionRevision {
 
   @Column({ type: 'timestamp', name: 'fecha_completada', nullable: true })
   fecha_completada: Date | null;
+
+  @Column({ type: 'varchar', length: 200, name: 'especialidad_revisor', nullable: true })
+  especialidad_revisor: string;
 }

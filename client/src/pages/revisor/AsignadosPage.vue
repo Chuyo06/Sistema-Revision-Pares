@@ -12,7 +12,7 @@
           <v-text-field
             v-model="busqueda"
             prepend-inner-icon="mdi-magnify"
-            label="Buscar por título o autor..."
+            label="Buscar por título..."
             variant="outlined"
             density="compact"
             hide-details
@@ -62,7 +62,7 @@
         <!-- Fila 2: Meta -->
         <div style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:10px">
           <span style="font-size:12px; color:#8B5A2B; display:flex; align-items:center; gap:4px">
-            <v-icon size="13">mdi-account-outline</v-icon> {{ a.estado === 'PENDIENTE' ? 'Autor Anónimo (Doble ciego)' : a.autores }}
+            <v-icon size="13">mdi-account-outline</v-icon> Autor Anónimo (Doble ciego)
           </span>
           <span style="font-size:12px; color:#4CAF50; display:flex; align-items:center; gap:4px">
             <v-icon size="13">mdi-tag-outline</v-icon>{{ a.convocatoria }}
@@ -157,7 +157,7 @@ const articulosFiltrados = computed(() => {
 
     const matchesBusqueda = !busqueda.value || 
       a.titulo.toLowerCase().includes(busqueda.value.toLowerCase()) ||
-      (a.autores && a.autores.toLowerCase().includes(busqueda.value.toLowerCase()))
+      false
     
     const matchesEstado = filtroEstado.value === 'TODOS' || a.estado === filtroEstado.value
     

@@ -50,17 +50,21 @@ export async function fetchAsignacionesPorManuscrito(manuscritoId) {
 /**
  * Crear una asignación de revisión.
  */
-export async function crearAsignacion(revisorId, manuscritoId) {
+export async function crearAsignacion(revisorId, manuscritoId, especialidadRevisor = null) {
   try {
+    const body = {
+      id_revisor: revisorId,
+      id_manuscrito_mongo: String(manuscritoId),
+      estado: 'INVITADO',
+      fecha_invitacion: new Date(),
+      fecha_limite: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // 15 días
+    }
+    if (especialidadRevisor) {
+      body.especialidad_revisor = especialidadRevisor
+    }
     const res = await apiFetch(BASE_URL, {
       method: 'POST',
-      body: JSON.stringify({
-        id_revisor: revisorId,
-        id_manuscrito_mongo: String(manuscritoId),
-        estado: 'INVITADO',
-        fecha_invitacion: new Date(),
-        fecha_limite: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // 15 días
-      }),
+      body: JSON.stringify(body),
     })
     return res.ok
   } catch (err) {

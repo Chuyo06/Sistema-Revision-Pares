@@ -87,6 +87,15 @@
               chips
               :rules="[r => !!r || 'Requerido']"
             />
+            <v-text-field
+              v-if="nuevoUsuario.roles?.includes('revisor')"
+              v-model="nuevoUsuario.especialidad"
+              label="Especialidad académica"
+              placeholder="Ej: Inteligencia Artificial, Redes, etc."
+              prepend-inner-icon="mdi-school"
+              class="mb-2"
+              hide-details
+            />
           </v-form>
         </v-card-text>
         <v-card-actions>
@@ -114,7 +123,7 @@ const snackbar = ref(false)
 const mensajeSnackbar = ref('')
 const editandoId = ref(null)
 
-const nuevoUsuario = ref({ nombre: '', email: '', roles: [] })
+const nuevoUsuario = ref({ nombre: '', email: '', roles: [], especialidad: '' })
 
 onMounted(() => {
   adminStore.cargarUsuarios()
@@ -139,7 +148,7 @@ const headers = [
 
 function abrirNuevo() {
   editandoId.value = null
-  nuevoUsuario.value = { nombre: '', email: '', roles: [] }
+  nuevoUsuario.value = { nombre: '', email: '', roles: [], especialidad: '' }
   dialogoNuevo.value = true
 }
 
@@ -148,7 +157,8 @@ function abrirEditar(usuario) {
   nuevoUsuario.value = { 
     nombre: usuario.nombre, 
     email: usuario.email, 
-    roles: usuario.roles || [] 
+    roles: usuario.roles || [],
+    especialidad: usuario.especialidad || ''
   }
   dialogoNuevo.value = true
 }
@@ -156,7 +166,7 @@ function abrirEditar(usuario) {
 function cerrarDialogo() {
   dialogoNuevo.value = false
   editandoId.value = null
-  nuevoUsuario.value = { nombre: '', email: '', roles: [] }
+  nuevoUsuario.value = { nombre: '', email: '', roles: [], especialidad: '' }
 }
 
 async function guardarUsuario() {

@@ -63,6 +63,7 @@ CREATE TABLE asignaciones_revision (
     comentarios_editor TEXT NULL,
     recomendacion VARCHAR(50) NULL,
     fecha_completada TIMESTAMP NULL,
+    especialidad_revisor VARCHAR(200) NULL,
     FOREIGN KEY (id_revisor) REFERENCES usuarios(id_usuario) ON DELETE RESTRICT
 );
 

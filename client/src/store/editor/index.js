@@ -211,7 +211,10 @@ export const useEditorStore = defineStore('editor', () => {
       return { ok: false, motivo: 'AUTOR_DEL_ARTICULO' }
     }
 
-    const exito = await crearAsignacion(revisorId, manuscritoId)
+    const revisor = revisoresDisponibles.value.find(r => Number(r.id) === Number(revisorId))
+    const especialidad = revisor?.especialidad || revisor?.especialidades?.join(', ') || null
+
+    const exito = await crearAsignacion(revisorId, manuscritoId, especialidad)
     if (exito) {
       const authStore = useAuthStore()
       const editorId = authStore.usuario?.id || authStore.usuario?.id_usuario

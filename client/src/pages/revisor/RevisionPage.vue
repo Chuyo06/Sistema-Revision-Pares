@@ -405,11 +405,12 @@ async function enviarRevision() {
 
   if (resultado) {
     await cargarOpinionesOtrosRevisores()
-    dialogoConfirmacion.value = true
-  }
+    dialogoConfirmacion.value = true 
 
-  enviando.value = false
-}
+    if (resultado.offlineSync) {
+       alert("Estás sin conexión. Tu revisión ha sido guardada...")
+    }
+  }
 
 async function cargarOpinionesOtrosRevisores() {
   try {

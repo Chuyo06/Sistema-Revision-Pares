@@ -73,6 +73,11 @@ export class ManuscritosController {
     return this.manuscritosService.obtenerTodos();
   }
 
+  @Get(':id')
+  obtenerPorId(@Param('id') id: string) {
+    return this.manuscritosService.obtenerPorId(id);
+  }
+
   @Patch(':id')
   actualizar(@Param('id') id: string, @Body() datos: Partial<Manuscrito>) {
     return this.manuscritosService.actualizar(id, datos);

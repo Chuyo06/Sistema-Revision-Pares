@@ -136,10 +136,10 @@ const referenciaActual = ref(null)
 const manuscritoId = route.params.id
 
 onMounted(async () => {
-  if (autorStore.manuscritos.length === 0) {
-    await autorStore.cargarMisManuscritos()
+  if (autorStore.borradores.length === 0) {
+    await autorStore.cargarBorradores()
   }
-  const m = autorStore.manuscritos.find(m => String(m.id) === String(manuscritoId))
+  const m = autorStore.borradores.find(m => String(m.id) === String(manuscritoId))
   if (m) {
     form.value = { 
       titulo: m.titulo || '', 
@@ -147,6 +147,13 @@ onMounted(async () => {
       resumen: m.resumen || '' 
     }
     referenciaActual.value = m.referencia || null
+  } else {
+    // Si no está en borradores, quizá ya se envió; buscar en enviados por si acaso
+    if (autorStore.manuscritos.length === 0) await autorStore.cargarMisManuscritos()
+    const me = autorStore.manuscritos.find(m => String(m.id) === String(manuscritoId))
+    if (me) {
+      router.push('/autor/articulos') // Redirigir si ya no es borrador
+    }
   }
   manuscritoCargado.value = true
 })

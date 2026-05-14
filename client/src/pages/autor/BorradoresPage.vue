@@ -104,14 +104,13 @@ const borradorAEliminar = ref(null)
 const eliminando = ref(false)
 
 onMounted(() => {
-  autorStore.cargarMisManuscritos()
+  autorStore.cargarBorradores()
 })
 
 const borradoresFiltrados = computed(() =>
-  autorStore.manuscritos.filter(m => {
-    const isBorrador = m.estado === 'BORRADOR'
+  autorStore.borradores.filter(m => {
     const matchBusqueda = (m.titulo || '').toLowerCase().includes(busqueda.value.toLowerCase())
-    return isBorrador && matchBusqueda
+    return matchBusqueda
   })
 )
 

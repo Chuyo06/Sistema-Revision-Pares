@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div>
     <!-- â”€â”€ Banner estilo Classroom â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
     <div
@@ -141,15 +141,16 @@ const autorStore = useAutorStore()
 
 onMounted(() => {
   autorStore.cargarMisManuscritos()
+  autorStore.cargarBorradores()
 })
 
 const convocatoriasAbiertas = computed(() => autorStore.convocatorias.filter(c => c.estado === 'ABIERTA'))
 
 const stats = computed(() => [
-  { label:'Enviados',    valor: autorStore.manuscritos.filter(m => m.estado !== 'BORRADOR').length },
+  { label:'Enviados',    valor: autorStore.manuscritos.length },
   { label:'En revisión', valor: autorStore.manuscritos.filter(m => m.estado === 'EN_REVISION').length },
   { label:'Aceptados',   valor: autorStore.manuscritos.filter(m => m.estado === 'ACEPTADO').length },
-  { label:'Borradores',  valor: autorStore.manuscritos.filter(m => m.estado === 'BORRADOR').length },
+  { label:'Borradores',  valor: autorStore.borradores.length },
 ])
 
 const ESTADOS = { BORRADOR:'Borrador', ENVIADO:'Enviado', EN_REVISION:'En revisión', ACEPTADO:'Aceptado', RECHAZADO:'Rechazado' }

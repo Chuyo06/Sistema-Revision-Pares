@@ -63,7 +63,7 @@ services:
       # container Linux. Forzamos polling para que `nest start --watch` detecte
       # cambios del host y recompile sin necesidad de rebuildear la imagen.
       - CHOKIDAR_USEPOLLING=true
-      - CHOKIDAR_INTERVAL=1000
+      - CHOKIDAR_INTERVAL=5000
     depends_on:
       mariadb:
         condition: service_healthy
@@ -87,7 +87,7 @@ services:
       # container Linux. Forzamos polling para que `nest start --watch` detecte
       # cambios del host y recompile sin necesidad de rebuildear la imagen.
       - CHOKIDAR_USEPOLLING=true
-      - CHOKIDAR_INTERVAL=1000
+      - CHOKIDAR_INTERVAL=5000
     depends_on:
       mariadb:
         condition: service_healthy
@@ -112,7 +112,7 @@ services:
       # container Linux. Forzamos polling para que `nest start --watch` detecte
       # cambios del host y recompile sin necesidad de rebuildear la imagen.
       - CHOKIDAR_USEPOLLING=true
-      - CHOKIDAR_INTERVAL=1000
+      - CHOKIDAR_INTERVAL=5000
     depends_on:
       mariadb:
         condition: service_healthy
@@ -134,7 +134,7 @@ services:
       # container Linux. Forzamos polling para que `nest start --watch` detecte
       # cambios del host y recompile sin necesidad de rebuildear la imagen.
       - CHOKIDAR_USEPOLLING=true
-      - CHOKIDAR_INTERVAL=1000
+      - CHOKIDAR_INTERVAL=5000
     depends_on:
       mariadb:
         condition: service_healthy
@@ -158,7 +158,7 @@ services:
       # container Linux. Forzamos polling para que `nest start --watch` detecte
       # cambios del host y recompile sin necesidad de rebuildear la imagen.
       - CHOKIDAR_USEPOLLING=true
-      - CHOKIDAR_INTERVAL=1000
+      - CHOKIDAR_INTERVAL=5000
     depends_on:
       mongodb:
         condition: service_healthy
@@ -182,7 +182,7 @@ services:
       # container Linux. Forzamos polling para que `nest start --watch` detecte
       # cambios del host y recompile sin necesidad de rebuildear la imagen.
       - CHOKIDAR_USEPOLLING=true
-      - CHOKIDAR_INTERVAL=1000
+      - CHOKIDAR_INTERVAL=5000
     depends_on:
       mariadb:
         condition: service_healthy

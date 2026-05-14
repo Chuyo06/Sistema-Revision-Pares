@@ -21,7 +21,7 @@
 
             <div class="flex-grow-1" style="min-height: 800px; display:flex; flex-direction:column">
               <iframe
-                v-if="articulo.referencia"
+                v-if="articulo.referencia && articulo.estado !== 'COMPLETADA'"
                 :src="`/api/manuscritos/download/${articulo.referencia}#toolbar=1&navpanes=0&scrollbar=1`"
                 style="width:100%; height:100%; border:none; flex-grow:1"
                 title="Visor PDF del Manuscrito"
@@ -266,21 +266,32 @@ const route = useRoute()
 const router = useRouter()
 const revisorStore = useRevisorStore()
 
-const articuloId = route.params.id
-const articulo = computed(() => revisorStore.articulosAsignados.find(a => String(a.id) === String(articuloId)))
+const articuloId = computed(() => route.params.id)
+const articulo = computed(() => revisorStore.articulosAsignados.find(a => String(a.id) === String(articuloId.value)))
 
-onMounted(() => {
+watch(articuloId, async (newId) => {
+  if (!newId) return;
+
+  // Resetear el formulario para evitar cruces al cambiar de artículo
+  Object.assign(revision, {
+    originalidad: 0, metodologia: 0, claridad: 0, relevancia: 0,
+    recomendacion: '', comentariosAutor: '', comentariosEditor: '',
+  })
+  comentariosPorSeccion.value = []
+  otrasOpiniones.value = []
+  todasLasRevisionesCompletadas.value = false
+
   if (revisorStore.articulosAsignados.length === 0) {
-    revisorStore.cargarDashboard()
+    await revisorStore.cargarDashboard()
   }
 
-  // Cargar borrador local si existe
-  const borrador = revisorStore.cargarBorrador(articuloId)
+  // Cargar borrador local si existe (asíncrono desde IndexedDB)
+  const borrador = await revisorStore.cargarBorrador(newId)
   if (borrador) {
     if (borrador.revision) Object.assign(revision, borrador.revision)
     if (borrador.comentariosPorSeccion) comentariosPorSeccion.value = borrador.comentariosPorSeccion
   }
-})
+}, { immediate: true })
 
 const valido = ref(false)
 const enviando = ref(false)
@@ -310,7 +321,7 @@ watch(
     if (timeoutBorrador) clearTimeout(timeoutBorrador)
     
     timeoutBorrador = setTimeout(() => {
-      revisorStore.guardarBorrador(articuloId, {
+      revisorStore.guardarBorrador(articuloId.value, {
         revision: { ...revision },
         comentariosPorSeccion: [...comentariosPorSeccion.value]
       })
@@ -401,14 +412,20 @@ async function enviarRevision() {
     recomendacion: revision.recomendacion
   }
 
-  const resultado = await revisorStore.enviarRevision(articuloId, dataParaBackend)
-
-  if (resultado) {
-    await cargarOpinionesOtrosRevisores()
-  }
+  const resultado = await revisorStore.enviarRevision(articuloId.value, dataParaBackend)
 
   enviando.value = false
-  dialogoConfirmacion.value = true
+
+  if (resultado) {
+    if (resultado.offlineSync) {
+      alert("Estás sin conexión. Tu revisión ha sido guardada en tu dispositivo y se enviará automáticamente cuando recuperes el internet.")
+    } else {
+      await cargarOpinionesOtrosRevisores()
+    }
+    dialogoConfirmacion.value = true
+  } else {
+    alert("Hubo un error al enviar la revisión. Asegúrate de tener conexión a internet.")
+  }
 }
 
 async function cargarOpinionesOtrosRevisores() {
@@ -419,7 +436,7 @@ async function cargarOpinionesOtrosRevisores() {
     const asignaciones = await fetchAsignacionesPorManuscrito(idManuscrito)
     if (!asignaciones || asignaciones.length === 0) return
 
-    const currentUserId = revisorStore.articulosAsignados.find(a => String(a.id) === String(articuloId))?.id
+    const currentUserId = revisorStore.articulosAsignados.find(a => String(a.id) === String(articuloId.value))?.id
 
     const opiniones = asignaciones
       .filter(a => a.estado === 'COMPLETADA' && String(a.id_asignacion) !== String(currentUserId))

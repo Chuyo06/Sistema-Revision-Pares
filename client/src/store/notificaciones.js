@@ -20,7 +20,9 @@ function persistir(lista) {
 }
 
 export const useNotificacionesStore = defineStore('notificaciones', () => {
-  const notificaciones = ref(cargarPersistidas())
+  // Empezar siempre vacío — el backend es la única fuente de verdad.
+  // (Se llenará al hacer el primer cargarNotificacionesBackend)
+  const notificaciones = ref([])
 
   const sinLeer = computed(() => notificaciones.value.filter(n => !n.leida))
 
@@ -71,21 +73,58 @@ export const useNotificacionesStore = defineStore('notificaciones', () => {
       // Éxito (puede ser []): reseteamos el contador de fallos.
       fallosConsecutivos = 0
 
-      const nuevas = delBackend.map(b => {
-        let titulo = b.tipo.replace('_', ' ')
+      const authStore = useAuthStore()
+      const rolActivoRaw = authStore.rolActivo || 'autor'
+      const rolActivo = rolActivoRaw.toLowerCase()
+
+      const roleMap = {
+        editor: ['NUEVO_MANUSCRITO', 'INVITACION_ACEPTADA', 'INVITACION_RECHAZADA', 'REVISION_RECIBIDA', 'REVISIONES_COMPLETADAS', 'NUEVA_VERSION'],
+        editor_jefe: ['NUEVO_MANUSCRITO', 'INVITACION_ACEPTADA', 'INVITACION_RECHAZADA', 'REVISION_RECIBIDA', 'REVISIONES_COMPLETADAS', 'NUEVA_VERSION'],
+        editor_seccion: ['NUEVO_MANUSCRITO', 'INVITACION_ACEPTADA', 'INVITACION_RECHAZADA', 'REVISION_RECIBIDA', 'REVISIONES_COMPLETADAS', 'NUEVA_VERSION'],
+        revisor: ['NUEVA_INVITACION', 'NUEVA_INVITACION_REVISION', 'NUEVA_VERSION'],
+        autor: ['REVISOR_ASIGNADO', 'REVISION_PARCIAL_COMPLETADA', 'LISTO_PARA_VEREDICTO', 'DECISION_EDITORIAL']
+      }
+
+      const allowedTipos = roleMap[rolActivo] || []
+      const filtradas = delBackend.filter(b => allowedTipos.includes(b.tipo))
+
+      const nuevas = filtradas.map(b => {
+        let titulo = b.tipo.replace(/_/g, ' ')
         let ruta = '/editor/manuscritos'
 
-        if (b.tipo === 'NUEVA_INVITACION' || b.tipo === 'NUEVA_INVITACION_REVISION') {
-          titulo = 'Nueva Invitación a Revisar'
-          ruta = '/revisor/asignados'
+        if (b.tipo === 'NUEVO_MANUSCRITO') {
+          titulo = 'Nuevo Manuscrito'
+          ruta = '/editor/manuscritos'
+        } else if (b.tipo === 'INVITACION_ACEPTADA') {
+          titulo = 'Invitación Aceptada'
+          ruta = '/editor/manuscritos'
         } else if (b.tipo === 'INVITACION_RECHAZADA') {
           titulo = 'Invitación Declinada'
+          ruta = '/editor/manuscritos'
+        } else if (b.tipo === 'REVISION_RECIBIDA') {
+          titulo = 'Revisión Recibida'
+          ruta = '/editor/manuscritos'
         } else if (b.tipo === 'REVISIONES_COMPLETADAS') {
           titulo = 'Revisiones Completadas'
           ruta = '/editor/manuscritos'
+        } else if (b.tipo === 'NUEVA_INVITACION' || b.tipo === 'NUEVA_INVITACION_REVISION') {
+          titulo = 'Nueva Invitación a Revisar'
+          ruta = '/revisor/asignados'
         } else if (b.tipo === 'NUEVA_VERSION') {
           titulo = 'Nueva Versión Corregida'
-          ruta = '/editor/manuscritos'
+          ruta = rolActivo.startsWith('editor') ? '/editor/manuscritos' : '/revisor/asignados'
+        } else if (b.tipo === 'REVISOR_ASIGNADO') {
+          titulo = 'Revisor Asignado'
+          ruta = '/autor/mis-articulos'
+        } else if (b.tipo === 'REVISION_PARCIAL_COMPLETADA') {
+          titulo = 'Revisión Completada'
+          ruta = '/autor/mis-articulos'
+        } else if (b.tipo === 'LISTO_PARA_VEREDICTO') {
+          titulo = 'Listo para Veredicto'
+          ruta = '/autor/mis-articulos'
+        } else if (b.tipo === 'DECISION_EDITORIAL') {
+          titulo = 'Decisión Editorial'
+          ruta = '/autor/mis-articulos'
         }
 
         return {
@@ -100,17 +139,9 @@ export const useNotificacionesStore = defineStore('notificaciones', () => {
         }
       })
 
-      // Conservar las locales para no romper la maqueta del editor
-      const locals = notificaciones.value.filter(n => !n.backendId)
-      
-      // Fusionar y ordenar
-      const todas = [...locals, ...nuevas].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp))
-      
-      // Para evitar duplicados en la interfaz si se llama varias veces:
-      const unicas = Array.from(new Map(todas.map(item => [item.id, item])).values())
-      
-      notificaciones.value = unicas
-      persistir(notificaciones.value)
+      // El backend es la única fuente de verdad — reemplazamos completamente.
+      notificaciones.value = nuevas
+      persistir(nuevas)
     } catch {
       // Esperado cuando el backend de notificaciones está apagado o no responde.
       // No tocamos las notificaciones locales (in-memory + localStorage) para
@@ -150,25 +181,6 @@ export const useNotificacionesStore = defineStore('notificaciones', () => {
     persistir([])
   }
 
-  function agregarNotificacionRevision(manuscrito, revisor) {
-    agregar({
-      tipo: 'REVISION_COMPLETADA',
-      titulo: 'Revisión completada',
-      mensaje: `${revisor.nombre} completó la revisión de "${manuscrito.titulo}"`,
-      ruta: `/editor/asignacion/${manuscrito.id}`
-    })
-  }
-
-  function agregarNotificacionDecision(manuscrito, decision) {
-    const labels = { ACEPTADO: 'aceptado', RECHAZADO: 'rechazado', EN_REVISION: 'enviado a revisión' }
-    agregar({
-      tipo: 'DECISION_EDITORIAL',
-      titulo: 'Decisión editorial tomada',
-      mensaje: `El manuscrito "${manuscrito.titulo}" fue ${labels[decision] || decision}`,
-      ruta: `/editor/asignacion/${manuscrito.id}`
-    })
-  }
-
   return {
     notificaciones,
     sinLeer,
@@ -177,10 +189,9 @@ export const useNotificacionesStore = defineStore('notificaciones', () => {
     marcarLeida,
     marcarTodasLeidas,
     limpiar,
-    agregarNotificacionRevision,
-    agregarNotificacionDecision,
     cargarNotificacionesBackend,
     iniciarPolling,
     detenerPolling
   }
 })
+

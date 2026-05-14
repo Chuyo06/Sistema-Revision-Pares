@@ -1,80 +1,114 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import { useAuthStore } from '@/store/auth.js'
 
+// Importaciones estáticas para eager loading (Alternativa 2 para offline en dev)
+import LoginPage from '@/pages/auth/LoginPage.vue'
+import AppLayout from '@/components/common/AppLayout.vue'
+
+// Autor
+import AutorDashboardPage from '@/pages/autor/DashboardPage.vue'
+import AutorBorradoresPage from '@/pages/autor/BorradoresPage.vue'
+import AutorEditarBorradorPage from '@/pages/autor/EditarBorradorPage.vue'
+import AutorArticulosPage from '@/pages/autor/ArticulosPage.vue'
+import AutorNuevoArticuloPage from '@/pages/autor/NuevoArticuloPage.vue'
+import AutorReenviarArticuloPage from '@/pages/autor/ReenviarArticuloPage.vue'
+
+// Revisor
+import RevisorDashboardPage from '@/pages/revisor/DashboardPage.vue'
+import RevisorAsignadosPage from '@/pages/revisor/AsignadosPage.vue'
+import RevisorRevisionPage from '@/pages/revisor/RevisionPage.vue'
+
+// Editor
+import EditorDashboardPage from '@/pages/editor/DashboardPage.vue'
+import EditorManuscritosPage from '@/pages/editor/ManuscritosPage.vue'
+import EditorAsignacionPage from '@/pages/editor/AsignacionPage.vue'
+import EditorConvocatoriasPage from '@/pages/editor/ConvocatoriasPage.vue'
+
+// Admin
+import AdminDashboardPage from '@/pages/administrador/DashboardPage.vue'
+import AdminUsuariosPage from '@/pages/administrador/UsuariosPage.vue'
+import AdminManuscritosPage from '@/pages/administrador/ManuscritosPage.vue'
+import AdminAreasPage from '@/pages/administrador/AreasPage.vue'
+import AdminMonitorPage from '@/pages/administrador/MonitorPage.vue'
+import AdminIAPage from '@/pages/administrador/ConfiguracionIAPage.vue'
+
+// Perfil
+import PerfilPage from '@/pages/perfil/PerfilPage.vue'
+
 const routes = [
   { path: '/', redirect: '/login' },
   {
     path: '/login',
     name: 'login',
-    component: () => import('@/pages/auth/LoginPage.vue'),
+    component: LoginPage,
     meta: { publico: true }
   },
 
   // ── AUTOR ──────────────────────────────────────────────────────
   {
     path: '/autor',
-    component: () => import('@/components/common/AppLayout.vue'),
+    component: AppLayout,
     meta: { rol: 'autor' },
     children: [
       { path: '', redirect: '/autor/dashboard' },
-      { path: 'dashboard', name: 'autor-dashboard', component: () => import('@/pages/autor/DashboardPage.vue') },
-      { path: 'borradores', name: 'autor-borradores', component: () => import('@/pages/autor/BorradoresPage.vue') },
-      { path: 'borrador/:id', name: 'autor-editar-borrador', component: () => import('@/pages/autor/EditarBorradorPage.vue') },
-      { path: 'articulos', name: 'autor-articulos', component: () => import('@/pages/autor/ArticulosPage.vue') },
-      { path: 'nuevo', name: 'autor-nuevo', component: () => import('@/pages/autor/NuevoArticuloPage.vue') },
-      { path: 'reenviar/:id', name: 'autor-reenviar', component: () => import('@/pages/autor/ReenviarArticuloPage.vue') },
+      { path: 'dashboard', name: 'autor-dashboard', component: AutorDashboardPage },
+      { path: 'borradores', name: 'autor-borradores', component: AutorBorradoresPage },
+      { path: 'borrador/:id', name: 'autor-editar-borrador', component: AutorEditarBorradorPage },
+      { path: 'articulos', name: 'autor-articulos', component: AutorArticulosPage },
+      { path: 'nuevo', name: 'autor-nuevo', component: AutorNuevoArticuloPage },
+      { path: 'reenviar/:id', name: 'autor-reenviar', component: AutorReenviarArticuloPage },
     ]
   },
 
   // ── REVISOR ────────────────────────────────────────────────────
   {
     path: '/revisor',
-    component: () => import('@/components/common/AppLayout.vue'),
+    component: AppLayout,
     meta: { rol: 'revisor' },
     children: [
       { path: '', redirect: '/revisor/dashboard' },
-      { path: 'dashboard', name: 'revisor-dashboard', component: () => import('@/pages/revisor/DashboardPage.vue') },
-      { path: 'asignados', name: 'revisor-asignados', component: () => import('@/pages/revisor/AsignadosPage.vue') },
-      { path: 'revision/:id', name: 'revisor-revision', component: () => import('@/pages/revisor/RevisionPage.vue') },
+      { path: 'dashboard', name: 'revisor-dashboard', component: RevisorDashboardPage },
+      { path: 'asignados', name: 'revisor-asignados', component: RevisorAsignadosPage },
+      { path: 'revision/:id', name: 'revisor-revision', component: RevisorRevisionPage },
     ]
   },
 
   // ── EDITOR ─────────────────────────────────────────────────────
   {
     path: '/editor',
-    component: () => import('@/components/common/AppLayout.vue'),
+    component: AppLayout,
     meta: { rol: 'editor' },
     children: [
       { path: '', redirect: '/editor/dashboard' },
-      { path: 'dashboard', name: 'editor-dashboard', component: () => import('@/pages/editor/DashboardPage.vue') },
-      { path: 'manuscritos', name: 'editor-manuscritos', component: () => import('@/pages/editor/ManuscritosPage.vue') },
-      { path: 'asignacion/:id', name: 'editor-asignacion', component: () => import('@/pages/editor/AsignacionPage.vue') },
-      { path: 'convocatorias', name: 'editor-convocatorias', component: () => import('@/pages/editor/ConvocatoriasPage.vue') },
+      { path: 'dashboard', name: 'editor-dashboard', component: EditorDashboardPage },
+      { path: 'manuscritos', name: 'editor-manuscritos', component: EditorManuscritosPage },
+      { path: 'asignacion/:id', name: 'editor-asignacion', component: EditorAsignacionPage },
+      { path: 'convocatorias', name: 'editor-convocatorias', component: EditorConvocatoriasPage },
     ]
   },
 
   // ── ADMINISTRADOR ──────────────────────────────────────────────
   {
     path: '/administrador',
-    component: () => import('@/components/common/AppLayout.vue'),
+    component: AppLayout,
     meta: { rol: 'administrador' },
     children: [
       { path: '', redirect: '/administrador/dashboard' },
-      { path: 'dashboard', name: 'admin-dashboard', component: () => import('@/pages/administrador/DashboardPage.vue') },
-      { path: 'usuarios', name: 'admin-usuarios', component: () => import('@/pages/administrador/UsuariosPage.vue') },
-      { path: 'manuscritos', name: 'admin-manuscritos', component: () => import('@/pages/administrador/ManuscritosPage.vue') },
-      { path: 'areas', name: 'admin-areas', component: () => import('@/pages/administrador/AreasPage.vue') },
-      { path: 'monitor', name: 'admin-monitor', component: () => import('@/pages/administrador/MonitorPage.vue') },
-      { path: 'ia', name: 'admin-ia', component: () => import('@/pages/administrador/ConfiguracionIAPage.vue') },
+      { path: 'dashboard', name: 'admin-dashboard', component: AdminDashboardPage },
+      { path: 'usuarios', name: 'admin-usuarios', component: AdminUsuariosPage },
+      { path: 'manuscritos', name: 'admin-manuscritos', component: AdminManuscritosPage },
+      { path: 'areas', name: 'admin-areas', component: AdminAreasPage },
+      { path: 'monitor', name: 'admin-monitor', component: AdminMonitorPage },
+      { path: 'ia', name: 'admin-ia', component: AdminIAPage },
     ]
   },
 
   // ── PERFIL GLOBAL ──────────────────────────────────────────────
   {
     path: '/perfil',
-    component: () => import('@/components/common/AppLayout.vue'),
+    component: AppLayout,
     children: [
-      { path: '', name: 'perfil', component: () => import('@/pages/perfil/PerfilPage.vue') },
+      { path: '', name: 'perfil', component: PerfilPage },
     ]
   },
 

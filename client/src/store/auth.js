@@ -62,11 +62,29 @@ export const useAuthStore = defineStore('auth', () => {
     if (!usuario.value) return
     if (!usuario.value.roles.includes(nuevoRol)) return
     persistir({ ...usuario.value, rolActivo: nuevoRol })
+    
+    // Limpiar notificaciones al cambiar de rol para no mezclarlas
+    import('./notificaciones.js').then(({ useNotificacionesStore }) => {
+      const notifStore = useNotificacionesStore()
+      notifStore.limpiar()
+      const userId = usuario.value.id || usuario.value.id_usuario
+      if (userId) notifStore.cargarNotificacionesBackend(userId)
+    })
   }
 
   function logout() {
     usuario.value = null
     localStorage.removeItem('rpp_usuario')
+    localStorage.removeItem('rpp_notificaciones')
+    localStorage.removeItem('rpp_notif_reenvios')
+    
+    import('./notificaciones.js').then(({ useNotificacionesStore }) => {
+      useNotificacionesStore().limpiar()
+    })
+    
+    setTimeout(() => {
+      window.location.href = '/login'
+    }, 100)
   }
 
   function actualizarPerfil(nuevosDatos) {

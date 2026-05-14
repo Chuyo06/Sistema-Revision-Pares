@@ -22,6 +22,7 @@ function mapManuscrito(m) {
     fechaSubida: m.fechaSubida,
     fechaDecision: m.fechaDecision,
     convocatoria: m.convocatoria || 'General',
+    historialVersiones: m.historialVersiones || [],
     respuestasRevisores: m.respuestasRevisores,
     revisores: m.revisoresAsignados || 0,
     revisionesPendientes: Math.max(0, (m.revisoresAsignados || 0) - (m.revisionesCompletadas || 0)),
@@ -109,6 +110,37 @@ export const useAutorStore = defineStore('autor', () => {
     // crearManuscrito lanza si falla; si tiene éxito devuelve el documento creado.
     const nuevo = await crearManuscrito(payload)
     if (!nuevo) throw new Error('Respuesta vacía del backend al crear manuscrito.')
+    
+    // Notificar al editor
+    try {
+      // Resolvemos el editorId: si el manuscrito ya tiene editor asignado lo usamos;
+      // si no, consultamos al sistema por el editor jefe o el primer editor disponible.
+      let editorDestId = nuevo.editorId
+      if (!editorDestId) {
+        try {
+          const resEditores = await fetch('/api/usuarios/rol/editor')
+          if (resEditores.ok) {
+            const editores = await resEditores.json()
+            const jefe = editores.find(e => e.roles?.includes('editor_jefe'))
+            editorDestId = jefe?.id || editores[0]?.id
+          }
+        } catch (e2) {
+          console.warn('[Autor] No se pudo resolver editor desde ms_usuarios:', e2)
+        }
+      }
+
+      if (editorDestId) {
+        await crearNotificacionApi({
+          tipo: 'NUEVO_MANUSCRITO',
+          destinatarioId: editorDestId,
+          mensaje: `El autor ${authStore.usuario?.nombre || 'Desconocido'} ha enviado un nuevo manuscrito titulado "${payload.titulo}".`,
+          referencia_manuscrito: nuevo.id || nuevo._id
+        })
+      }
+    } catch (e) {
+      console.warn('[Autor] No se pudo notificar al editor:', e)
+    }
+
     await cargarMisManuscritos()
     return nuevo
   }
@@ -153,6 +185,19 @@ export const useAutorStore = defineStore('autor', () => {
 
   async function reenviarManuscrito(id, referenciaPdf, respuestasRevisores) {
     try {
+      const m = manuscritos.value.find(m => String(m.id) === String(id));
+      let historial = m?.historialVersiones ? [...m.historialVersiones] : [];
+      
+      // Fallback para manuscritos antiguos que no tienen historial inicializado
+      if (historial.length === 0 && m?.referencia) {
+        historial.push({ referencia: m.referencia, fecha: m.fechaSubida || new Date().toISOString() });
+      }
+
+      // Agregar la nueva versión al historial
+      if (referenciaPdf) {
+        historial.push({ referencia: referenciaPdf, fecha: new Date().toISOString() });
+      }
+
       // Al reenviar el manuscrito vuelve a estado EN_REVISION, no
       // LISTO_PARA_DECISION, porque las revisiones se reabren para una nueva
       // ronda. Solo pasará a LISTO_PARA_DECISION cuando todos los revisores
@@ -161,6 +206,7 @@ export const useAutorStore = defineStore('autor', () => {
         referencia: referenciaPdf,
         respuestasRevisores: respuestasRevisores,
         estado: 'EN_REVISION',
+        historialVersiones: historial,
       })
 
       if (exito) {
@@ -172,18 +218,56 @@ export const useAutorStore = defineStore('autor', () => {
           console.warn('[Autor] No se pudieron reabrir las revisiones:', e.message)
         }
 
-        // Notificar a los editores que el autor reenvió la versión corregida.
+        // Notificar al editor Y a los revisores de que llegó versión corregida.
         try {
           const authStore = useAuthStore()
           const manuscrito = manuscritos.value.find(m => String(m.id) === String(id))
-          await crearNotificacionApi({
-            tipo: 'NUEVA_VERSION',
-            rol_destinatario: 'editor',
-            mensaje: `${authStore.usuario?.nombre || 'El autor'} reenvió la versión corregida de "${manuscrito?.titulo || 'un manuscrito'}". Los revisores ya pueden re-evaluarla.`,
-            referencia_manuscrito: id,
-          })
+          const titulo = manuscrito?.titulo || 'un manuscrito'
+          
+          // Resolver el editorId: del manuscrito o consultando la API
+          let editorDestId = manuscrito?.editorId || manuscrito?.editorSeccionId
+          if (!editorDestId) {
+            try {
+              const resEditores = await fetch('/api/usuarios/rol/editor')
+              if (resEditores.ok) {
+                const editores = await resEditores.json()
+                const jefe = editores.find(e => e.roles?.includes('editor_jefe'))
+                editorDestId = jefe?.id || editores[0]?.id
+              }
+            } catch (e2) { /* silent */ }
+          }
+          
+          const notifs = []
+          
+          // Notificación al editor (NUEVA_VERSION)
+          if (editorDestId) {
+            notifs.push(crearNotificacionApi({
+              tipo: 'NUEVA_VERSION',
+              destinatarioId: editorDestId,
+              mensaje: `${authStore.usuario?.nombre || 'El autor'} reenvió la versión corregida de "${titulo}". Los revisores ya pueden re-evaluarla.`,
+              referencia_manuscrito: id,
+            }))
+          }
+          
+          // Obtener revisores asignados y notificarles que llegó nueva versión
+          try {
+            const asigs = await fetchAsignacionesPorManuscrito(id)
+            const revisoresActivos = (asigs || []).filter(a => ['ACEPTADO', 'COMPLETADA'].includes(a.estado))
+            for (const asig of revisoresActivos) {
+              if (asig.id_revisor) {
+                notifs.push(crearNotificacionApi({
+                  tipo: 'NUEVA_VERSION',
+                  destinatarioId: asig.id_revisor,
+                  mensaje: `El autor reenvió una versión corregida de "${titulo}". Por favor actualiza tu evaluación.`,
+                  referencia_manuscrito: id,
+                }))
+              }
+            }
+          } catch (e3) { console.warn('[Autor] No se pudieron notificar revisores:', e3) }
+          
+          await Promise.allSettled(notifs)
         } catch (e) {
-          console.warn('[Autor] No se pudo notificar a los editores sobre el reenvío:', e)
+          console.warn('[Autor] No se pudo notificar sobre el reenvío:', e)
         }
 
         await cargarMisManuscritos()

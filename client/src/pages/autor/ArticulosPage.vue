@@ -191,7 +191,12 @@
                 <div class="border rounded-b-lg pa-4 bg-white">
                   <div v-for="comentario in ronda.items" :key="comentario.id" class="mb-4 pa-4 bg-grey-lighten-4 rounded-lg border-dashed">
                     <div class="d-flex align-center justify-space-between mb-2">
-                      <div class="font-weight-bold" style="color:#8B5A2B">Revisor #{{ comentario.id }}</div>
+                      <div class="d-flex align-center gap-2">
+                        <span class="font-weight-bold" style="color:#8B5A2B">Revisor #{{ comentario.id }}</span>
+                        <v-chip v-if="comentario.especialidad" size="x-small" variant="tonal" color="teal" prepend-icon="mdi-school">
+                          {{ comentario.especialidad }}
+                        </v-chip>
+                      </div>
                       <div v-if="comentario.puntuacion" class="mb-2">
                         <div class="d-flex align-center">
                           <v-rating :model-value="comentario.puntuacion" color="amber" density="compact" size="small" readonly></v-rating>
@@ -205,7 +210,25 @@
                         </div>
                       </div>
                     </div>
-                    <div style="color:#1B4332; white-space: pre-wrap; font-size: 14px;">{{ comentario.comentarios }}</div>
+                    <template v-if="parsearSecciones(comentario.comentarios).length > 1">
+                      <div
+                        v-for="(sec, sIdx) in parsearSecciones(comentario.comentarios)"
+                        :key="sIdx"
+                        class="mb-2 pa-3 rounded-lg"
+                        :style="{ background: sec.esGeneral ? '#e8f5e9' : '#f5f5f5', border: '1px solid ' + (sec.esGeneral ? '#c8e6c9' : '#e0e0e0') }"
+                      >
+                        <div class="d-flex align-center mb-1">
+                          <v-icon size="14" :color="sec.esGeneral ? 'success' : 'brown'" class="mr-1">
+                            {{ sec.esGeneral ? 'mdi-comment-text-outline' : 'mdi-bookmark-outline' }}
+                          </v-icon>
+                          <span class="text-caption font-weight-bold" :style="{ color: sec.esGeneral ? '#2e7d32' : '#5d4037' }">
+                            {{ sec.titulo }}
+                          </span>
+                        </div>
+                        <div style="color:#1B4332; white-space: pre-wrap; font-size: 13px; line-height: 1.5;">{{ sec.texto }}</div>
+                      </div>
+                    </template>
+                    <div v-else style="color:#1B4332; white-space: pre-wrap; font-size: 14px;">{{ comentario.comentarios }}</div>
                   </div>
                 </div>
               </div>
@@ -408,6 +431,51 @@ const CHIPS   = { BORRADOR:'secondary', ENVIADO:'info', EN_REVISION:'warning', R
 function estadoLabel(e) { return ESTADOS[e] ?? e }
 function hexEstado(e)   { return HEX[e]     ?? '#9e9e9e' }
 function chipEstado(e)  { return CHIPS[e]   ?? 'secondary' }
+
+/**
+ * Parsea el texto de comentarios con marcadores [Sección: X] en bloques
+ * estructurados para mostrar al autor de forma organizada.
+ */
+function parsearSecciones(texto) {
+  if (!texto) return [{ titulo: 'Comentario', texto: '', esGeneral: true }]
+
+  // Primero encontrar todos los marcadores y sus posiciones
+  const regex = /\[Sección:\s*([^\]]+)\]|\[General\]/g
+  const marcadores = []
+  let match
+
+  while ((match = regex.exec(texto)) !== null) {
+    marcadores.push({
+      index: match.index,
+      length: match[0].length,
+      esGeneral: match[0] === '[General]',
+      titulo: match[0] === '[General]' ? 'Comentarios Generales' : match[1].trim(),
+    })
+  }
+
+  // Si no hay marcadores, devolver el texto completo
+  if (marcadores.length === 0) {
+    return [{ titulo: 'Comentario', texto: texto, esGeneral: true }]
+  }
+
+  const secciones = []
+
+  // Texto antes del primer marcador
+  if (marcadores[0].index > 0) {
+    const previo = texto.substring(0, marcadores[0].index).trim()
+    if (previo) secciones.push({ titulo: 'Comentario', texto: previo, esGeneral: true })
+  }
+
+  // Procesar cada marcador
+  marcadores.forEach((m, i) => {
+    const startContent = m.index + m.length
+    const endContent = i < marcadores.length - 1 ? marcadores[i + 1].index : texto.length
+    const contenido = texto.substring(startContent, endContent).trim()
+    secciones.push({ titulo: m.titulo, texto: contenido, esGeneral: m.esGeneral })
+  })
+
+  return secciones
+}
 </script>
 
 <style scoped>

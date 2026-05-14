@@ -56,12 +56,13 @@ export const useRevisorStore = defineStore('revisor', () => {
             id: asig.id_asignacion, // ID numérico de MariaDB
             id_manuscrito: asig.id_manuscrito_mongo,
             titulo: manuscrito.titulo || 'Manuscrito Desconocido',
-            autores: manuscrito.autores || 'Desconocido',
+            autores: 'Anónimo (Doble ciego)',
             convocatoria: manuscrito.convocatoria || 'General',
             fecha_invitacion: asig.fecha_invitacion,
             diasRestantesRespuesta,
             deadline: asig.fecha_limite ? asig.fecha_limite.split('T')[0] : 'Sin fecha',
             estado: estadoUI,
+            ronda: asig.ronda || 1,
             resumen: manuscrito.resumen || 'Sin resumen disponible',
             // Campos necesarios para que el visor PDF y la vista de detalle
             // (RevisionPage) funcionen: la referencia es la "RPP-YYYY-NNNN" que
@@ -90,6 +91,7 @@ export const useRevisorStore = defineStore('revisor', () => {
       delete borradores.value[articuloId]
       localStorage.setItem('rpp_borradores', JSON.stringify(borradores.value))
     }
+    return res
   }
 
   async function responderInvitacion(idAsignacion, aceptar) {

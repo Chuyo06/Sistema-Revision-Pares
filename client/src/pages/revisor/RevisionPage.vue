@@ -405,10 +405,10 @@ async function enviarRevision() {
 
   if (resultado) {
     await cargarOpinionesOtrosRevisores()
+    dialogoConfirmacion.value = true
   }
 
   enviando.value = false
-  dialogoConfirmacion.value = true
 }
 
 async function cargarOpinionesOtrosRevisores() {

@@ -225,7 +225,8 @@ export const useAutorStore = defineStore('autor', () => {
               metodologia: a.metodologia,
               claridad: a.claridad,
               relevancia: a.relevancia,
-              ronda: a.ronda
+              ronda: a.ronda,
+              especialidad: a.especialidad_revisor || null,
             };
           })
         return { comentarios: comentariosParseados, asignaciones }

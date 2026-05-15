@@ -155,13 +155,16 @@
 
             <v-divider class="mb-6" />
 
-            <!-- ALERTA DE DECISIÓN DEL EDITOR (Rechazo o Petición de Revisiones) -->
+            <!-- CARTA DEL EDITOR — visible cuando el editor ya tomó una
+                 decisión final (ACEPTADO / RECHAZADO / REQUERIDAS_REVISIONES).
+                 Se mantiene `motivoRechazo` como campo de transporte para no
+                 romper datos anteriores; ahora actúa como "carta editorial". -->
             <v-alert
-              v-if="['RECHAZADO', 'REQUERIDAS_REVISIONES'].includes(articuloSeleccionado?.estado) && articuloSeleccionado?.motivoRechazo"
-              :type="articuloSeleccionado?.estado === 'RECHAZADO' ? 'error' : 'warning'"
+              v-if="['ACEPTADO', 'RECHAZADO', 'REQUERIDAS_REVISIONES'].includes(articuloSeleccionado?.estado) && articuloSeleccionado?.motivoRechazo"
+              :type="cartaAlertaTipo"
               variant="tonal"
               class="mb-6"
-              :icon="articuloSeleccionado?.estado === 'RECHAZADO' ? 'mdi-alert-circle' : 'mdi-clipboard-text-outline'"
+              :icon="cartaAlertaIcono"
             >
               <strong>Carta del Editor:</strong><br/>
               <span style="white-space: pre-wrap;">{{ articuloSeleccionado.motivoRechazo }}</span>
@@ -341,6 +344,20 @@ function formatDate(dateStr) {
 //  (a) la decisión editorial está tomada (ACEPTADO / RECHAZADO / REQUERIDAS_REVISIONES), o
 //  (b) hay al menos una revisión completada y TODAS las asignaciones lo están.
 // Antes de eso solo se muestra un placeholder, no se filtran datos sensibles del backend.
+// Estilo del alert "Carta del Editor" según la decisión final.
+const cartaAlertaTipo = computed(() => {
+  const e = articuloSeleccionado.value?.estado
+  if (e === 'ACEPTADO') return 'success'
+  if (e === 'RECHAZADO') return 'error'
+  return 'warning' // REQUERIDAS_REVISIONES
+})
+const cartaAlertaIcono = computed(() => {
+  const e = articuloSeleccionado.value?.estado
+  if (e === 'ACEPTADO') return 'mdi-check-decagram'
+  if (e === 'RECHAZADO') return 'mdi-alert-circle'
+  return 'mdi-clipboard-text-outline'
+})
+
 const puedeVerOpiniones = computed(() => {
   const m = articuloSeleccionado.value
   if (!m) return false

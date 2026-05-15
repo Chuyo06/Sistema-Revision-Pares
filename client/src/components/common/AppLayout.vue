@@ -137,7 +137,7 @@
               v-for="n in notifStore.notificaciones"
               :key="n.id"
               :class="n.leida ? '' : 'bg-blue-lighten-5'"
-              @click="n.ruta && router.push(n.ruta); notifStore.marcarLeida(n.id); mostrarNotificaciones = false"
+              @click="abrirNotificacion(n)"
             >
               <template #prepend>
                 <v-avatar
@@ -184,6 +184,63 @@ const drawer = ref(true)
 const notifStore = useNotificacionesStore()
 const editorStore = useEditorStore()
 const mostrarNotificaciones = ref(false)
+
+/**
+ * Maneja el click sobre una notificación de forma defensiva:
+ *  1. Marca como leída SIEMPRE (incluso si no hay ruta válida).
+ *  2. Cierra el menú.
+ *  3. Si la notificación trae `ruta`, valida que el router la pueda resolver.
+ *     - Si la resolución cae en el catch-all (login) o no matchea ninguna
+ *       ruta con componente, navega al dashboard del rol activo en su lugar.
+ *     - Si está autenticado y el destino es público (login/register), también
+ *       cae al dashboard activo para no expulsar la sesión.
+ *  4. Errores de navigation duplicada se silencian (no son bugs reales).
+ */
+// Sólo estos roles tienen rutas `/<rol>/dashboard` en el router. Los sub-roles
+// (editor_jefe, editor_seccion) se normalizan a 'editor'.
+const ROLES_NAVEGABLES = ['autor', 'revisor', 'editor', 'administrador']
+function rolPrimario() {
+  const activo = String(auth.rol || '').toLowerCase()
+  if (ROLES_NAVEGABLES.includes(activo)) return activo
+  // Mapeo de sub-roles editoriales → primario
+  if (activo === 'editor_jefe' || activo === 'editor_seccion') return 'editor'
+  if (activo === 'admin') return 'administrador'
+  // Si nada matchea, usar el primer rol navegable que tenga.
+  return (auth.roles || []).map(r => String(r).toLowerCase()).find(r => ROLES_NAVEGABLES.includes(r))
+}
+
+/**
+ * Maneja el click sobre una notificación de forma defensiva:
+ *  1. Marca como leída SIEMPRE (incluso si no hay ruta válida).
+ *  2. Cierra el menú.
+ *  3. Si la notificación trae `ruta`, valida que el router la pueda resolver.
+ *     - Si cae al catch-all (login) o el destino es público y el usuario está
+ *       autenticado, redirige al dashboard del rol primario.
+ *  4. Errores de navigation duplicada se silencian.
+ */
+function abrirNotificacion(n) {
+  notifStore.marcarLeida(n.id)
+  mostrarNotificaciones.value = false
+
+  if (!n?.ruta) return
+
+  const rol = rolPrimario()
+  const fallback = rol ? `/${rol}/dashboard` : '/login'
+
+  let destino = n.ruta
+  try {
+    const resolved = router.resolve(n.ruta)
+    const matched = resolved.matched
+    const cayoEnCatchAll = matched.length === 0 || resolved.path === '/login'
+    if (cayoEnCatchAll && auth.estaAutenticado) {
+      destino = fallback
+    }
+  } catch {
+    destino = fallback
+  }
+
+  router.push(destino).catch(() => { /* navigation duplicada, ignorar */ })
+}
 
 onMounted(() => {
   const userId = auth.usuario?.id || auth.usuario?.id_usuario

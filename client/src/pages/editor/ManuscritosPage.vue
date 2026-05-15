@@ -80,14 +80,30 @@
             clearable
           />
         </v-col>
-        <v-col cols="12" md="6" class="d-flex align-center justify-end gap-2">
-          <v-switch
-            v-model="agruparPorConvocatoria"
-            color="primary"
-            density="compact"
-            hide-details
-            label="Agrupar por convocatoria"
-          />
+        <v-col cols="12" md="6" class="d-flex align-center justify-end" style="gap: 12px; flex-wrap: wrap;">
+          <div class="d-flex align-center" style="gap: 8px;">
+            <span class="text-caption font-weight-medium text-medium-emphasis">Agrupar:</span>
+            <v-btn-toggle
+              v-model="agrupacion"
+              color="brown-darken-2"
+              variant="outlined"
+              density="compact"
+              divided
+              rounded="lg"
+            >
+              <v-btn value="convocatoria" prepend-icon="mdi-calendar-star" class="text-none">
+                Convocatoria
+              </v-btn>
+              <v-btn
+                v-if="editorStore.esEditorJefe"
+                value="editorSeccion"
+                prepend-icon="mdi-account-tie-outline"
+                class="text-none"
+              >
+                Editor sección
+              </v-btn>
+            </v-btn-toggle>
+          </div>
           <v-btn variant="tonal" color="brown" prepend-icon="mdi-download" @click="exportarCSV">
             Exportar CSV
           </v-btn>
@@ -99,19 +115,31 @@
         <div v-for="grupo in gruposParaMostrar" :key="grupo.nombre || 'todos'">
           <!-- Encabezado de grupo (solo si está agrupado) -->
           <div v-if="grupo.nombre" class="d-flex align-center mb-2 mt-4">
-            <v-icon color="brown" class="mr-2">mdi-calendar-star</v-icon>
+            <v-icon :color="agruparPorEditorSeccion ? 'brown-darken-2' : 'brown'" class="mr-2">
+              {{ agruparPorEditorSeccion ? 'mdi-account-tie-outline' : 'mdi-calendar-star' }}
+            </v-icon>
             <span class="text-h6 font-weight-bold" style="color:#1B4332">{{ grupo.nombre }}</span>
-            <v-chip size="x-small" variant="tonal" color="brown" class="ml-2">{{ grupo.items.length }}</v-chip>
+            <v-chip size="x-small" variant="tonal" :color="agruparPorEditorSeccion ? 'brown-darken-2' : 'brown'" class="ml-2">
+              {{ grupo.items.length }}
+            </v-chip>
           </div>
 
           <v-row>
             <v-col v-for="m in paginar(grupo.items)" :key="m.id" cols="12">
-              <!-- ... card content ... -->
+              <!-- La card entera es clickeable: abre la pantalla de gestión de
+                   revisores. Los botones internos llevan @click.stop para que
+                   su acción no propague aquí. -->
               <v-card
                 border
                 elevation="1"
                 class="mb-3 hover-elevation"
-                style="background:#FFFFFF; border-radius:12px; overflow:hidden;"
+                style="background:#FFFFFF; border-radius:12px; overflow:hidden; cursor: pointer;"
+                role="button"
+                tabindex="0"
+                :aria-label="`Abrir ${m.titulo || 'manuscrito'}`"
+                @click="irAAsignacion(m)"
+                @keydown.enter.prevent="irAAsignacion(m)"
+                @keydown.space.prevent="irAAsignacion(m)"
               >
                 <!-- (Keep existing card content exactly as is) -->
                 <div :style="`height:6px; background:${hexEstado(m.estado)}`" />
@@ -167,7 +195,7 @@
                     color="brown-darken-2"
                     prepend-icon="mdi-file-pdf-box"
                     class="text-none mr-1"
-                    @click="abrirPdf(m)"
+                    @click.stop="abrirPdf(m)"
                   >
                     Ver PDF
                   </v-btn>
@@ -177,6 +205,7 @@
                     :to="`/editor/asignacion/${m.id}`"
                     prepend-icon="mdi-account-plus"
                     class="text-none"
+                    @click.stop
                   >
                     Gestionar Revisores
                   </v-btn>
@@ -187,15 +216,15 @@
                     variant="tonal"
                     prepend-icon="mdi-account-tie-outline"
                     class="text-none ml-2"
-                    @click="abrirDialogAsignarEditor(m)"
+                    @click.stop="abrirDialogAsignarEditor(m)"
                   >
                     {{ m.editorSeccionId ? 'Reasignar editor sección' : 'Asignar editor sección' }}
                   </v-btn>
                   <v-spacer></v-spacer>
                   <template v-if="editorStore.esEditorJefe && m.estado === 'EN_REVISION' && (m.revisionesCompletadas || 0) >= 2">
-                    <v-btn size="small" color="success" variant="tonal" class="text-none mr-2" @click="decidir(m.id, 'ACEPTADO')">Aceptar</v-btn>
-                    <v-btn size="small" color="warning" variant="tonal" class="text-none mr-2" @click="decidir(m.id, 'EN_REVISION')">Pedir revisiones</v-btn>
-                    <v-btn size="small" color="error" variant="tonal" class="text-none" @click="decidir(m.id, 'RECHAZADO')">Rechazar</v-btn>
+                    <v-btn size="small" color="success" variant="tonal" class="text-none mr-2" @click.stop="decidir(m.id, 'ACEPTADO')">Aceptar</v-btn>
+                    <v-btn size="small" color="warning" variant="tonal" class="text-none mr-2" @click.stop="decidir(m.id, 'EN_REVISION')">Pedir revisiones</v-btn>
+                    <v-btn size="small" color="error" variant="tonal" class="text-none" @click.stop="decidir(m.id, 'RECHAZADO')">Rechazar</v-btn>
                   </template>
                   <v-chip
                     v-else-if="editorStore.esEditorSeccion"
@@ -212,9 +241,9 @@
           </v-row>
         </div>
 
-        <!-- Paginación -->
+        <!-- Paginación: solo cuando no hay ninguna agrupación activa -->
         <v-pagination
-          v-if="!agruparPorConvocatoria"
+          v-if="!agruparPorConvocatoria && !agruparPorEditorSeccion"
           v-model="pagina"
           :length="Math.ceil(manuscritosVisibles.length / itemsPorPagina)"
           rounded="lg"
@@ -288,27 +317,66 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useEditorStore } from '@/store/editor/index.js'
 import { useConvocatoriasStore } from '@/store/convocatorias.js'
 import PdfViewer from '@/components/common/PdfViewer.vue'
 
+const router = useRouter()
 const editorStore = useEditorStore()
 const convStore = useConvocatoriasStore()
+
+// Click en cualquier parte vacía de la card → navega a la pantalla de gestión
+// de revisores (equivalente al botón "Gestionar Revisores", pero más cómodo).
+// Los botones internos llevan @click.stop, así que su acción manda sin
+// disparar esta navegación.
+function irAAsignacion(m) {
+  if (!m?.id) return
+  router.push(`/editor/asignacion/${m.id}`)
+}
 const busqueda = ref('')
 const filtroEstado = ref('TODOS')
 const agruparPorConvocatoria = ref(false)
+const agruparPorEditorSeccion = ref(false)
 const dialogAsignar = ref(false)
 const manuscritoSeleccionado = ref(null)
 const editorSeccionElegido = ref(null)
 const dialogPdf = ref(false)
 const manuscritoPdf = ref(null)
 
+// Las dos agrupaciones son mutuamente excluyentes; activar una desactiva la otra.
+function onCambiarAgrupacion(cual) {
+  if (cual === 'convocatoria' && agruparPorConvocatoria.value) {
+    agruparPorEditorSeccion.value = false
+  } else if (cual === 'editorSeccion' && agruparPorEditorSeccion.value) {
+    agruparPorConvocatoria.value = false
+  }
+  pagina.value = 1
+}
+
+// Adaptador para que un único v-btn-toggle controle ambos refs internos sin
+// romper la lógica de los computeds existentes (`gruposParaMostrar`, etc.).
+// Valor: 'convocatoria' | 'editorSeccion' | null.
+const agrupacion = computed({
+  get() {
+    if (agruparPorConvocatoria.value) return 'convocatoria'
+    if (agruparPorEditorSeccion.value) return 'editorSeccion'
+    return null
+  },
+  set(v) {
+    agruparPorConvocatoria.value = v === 'convocatoria'
+    agruparPorEditorSeccion.value = v === 'editorSeccion'
+    pagina.value = 1
+  },
+})
+
 // Paginación
 const pagina = ref(1)
 const itemsPorPagina = 6
 
 function paginar(items) {
-  if (agruparPorConvocatoria.value) return items // No paginar dentro de grupos
+  // No paginar dentro de grupos (cualquiera de las dos agrupaciones activas).
+  if (agruparPorConvocatoria.value || agruparPorEditorSeccion.value) return items
   const inicio = (pagina.value - 1) * itemsPorPagina
   return items.slice(inicio, inicio + itemsPorPagina)
 }
@@ -356,19 +424,41 @@ const manuscritosVisibles = computed(() => {
   })
 })
 
-// Agrupa por convocatoria si está activo el toggle. Si no, un solo grupo sin nombre.
+// Resuelve el nombre del editor de sección asignado a un manuscrito.
+// Si no hay asignación, lo coloca en un grupo dedicado para que el editor jefe
+// vea de inmediato qué manuscritos aún necesita repartir.
+function nombreEditorSeccion(m) {
+  if (!m.editorSeccionId) return 'Sin editor de sección asignado'
+  const e = (editorStore.editoresSeccion || []).find(x => Number(x.id) === Number(m.editorSeccionId))
+  return e?.nombre ? `${e.nombre}` : `Editor de Sección #${m.editorSeccionId}`
+}
+
+// Agrupa según el toggle activo: convocatoria, editor de sección, o ninguno
+// (un solo grupo sin nombre = vista plana paginada).
 const gruposParaMostrar = computed(() => {
-  if (!agruparPorConvocatoria.value) {
+  if (!agruparPorConvocatoria.value && !agruparPorEditorSeccion.value) {
     return [{ nombre: '', items: manuscritosVisibles.value }]
   }
   const mapa = new Map()
   for (const m of manuscritosVisibles.value) {
-    const key = m.convocatoria || 'Sin convocatoria'
+    const key = agruparPorEditorSeccion.value
+      ? nombreEditorSeccion(m)
+      : (m.convocatoria || 'Sin convocatoria')
     if (!mapa.has(key)) mapa.set(key, [])
     mapa.get(key).push(m)
   }
+  // Cuando agrupamos por editor de sección, ponemos primero "Sin asignación"
+  // (los que requieren acción del editor jefe). Luego alfabético.
   return [...mapa.entries()]
-    .sort((a, b) => a[0].localeCompare(b[0]))
+    .sort((a, b) => {
+      if (agruparPorEditorSeccion.value) {
+        const sinA = a[0].startsWith('Sin editor')
+        const sinB = b[0].startsWith('Sin editor')
+        if (sinA && !sinB) return -1
+        if (!sinA && sinB) return 1
+      }
+      return a[0].localeCompare(b[0])
+    })
     .map(([nombre, items]) => ({ nombre, items }))
 })
 

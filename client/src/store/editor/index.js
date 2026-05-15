@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { fetchManuscritos, actualizarEstadoManuscrito, asignarEditorSeccionApi } from '@/services/api/manuscritos.js'
+import { fetchManuscritos, actualizarEstadoManuscrito, actualizarDatosManuscrito, asignarEditorSeccionApi } from '@/services/api/manuscritos.js'
 import { fetchUsuarios } from '@/services/api/usuarios.js'
 import { fetchAsignacionesGeneral, crearAsignacion, eliminarAsignacionApi } from '@/services/api/revision.js'
 import { crearNotificacionApi } from '@/services/api/notificaciones.js'
@@ -370,11 +370,18 @@ export const useEditorStore = defineStore('editor', () => {
       editorNombre: auth.usuario?.nombre || 'Editor',
     })
 
-    // Primero confirmar con el backend — solo notificar si tuvo éxito
-    const exito = await actualizarEstadoManuscrito(manuscritoId, decision)
+    // Persistir el estado Y la carta editorial juntos. Reusamos el campo
+    // motivoRechazo existente como "carta editorial" para los 3 tipos de
+    // decisión (ACEPTADO/RECHAZADO/REQUERIDAS_REVISIONES). De este modo el
+    // autor ve la carta tal como el editor la editó y aprobó.
+    // Nota: el autor NO ve nada hasta que el editor confirma este flujo —
+    // antes la carta solo vive como borrador en el DecisionDialog.
+    const payload = { estado: decision }
+    if (carta) payload.motivoRechazo = carta
+    const exito = await actualizarDatosManuscrito(manuscritoId, payload)
     if (exito) {
       try {
-        const labels = { ACEPTADO: 'aceptado', RECHAZADO: 'rechazado', EN_REVISION: 'enviado a revisión' }
+        const labels = { ACEPTADO: 'aceptado', RECHAZADO: 'rechazado', REQUERIDAS_REVISIONES: 'enviado a revisión' }
         await crearNotificacionApi({
           destinatarioId: manuscrito.autorId,
           tipo: 'DECISION_EDITORIAL',
@@ -392,6 +399,36 @@ export const useEditorStore = defineStore('editor', () => {
 
   function getPlantillas(decision) {
     return PLANTILLAS_DECISION[decision] || []
+  }
+
+  /**
+   * Envía un mensaje privado del editor a otro usuario (autor o revisor)
+   * referenciado a un manuscrito. Internamente se persiste como notificación
+   * del tipo MENSAJE_EDITOR para reusar la infraestructura existente:
+   * el destinatario lo verá en su centro de notificaciones con badge en vivo.
+   *
+   * @returns {Promise<{ ok: boolean, motivo?: string }>}
+   */
+  async function enviarMensaje({ destinatarioId, mensaje, manuscritoId, contexto }) {
+    if (!destinatarioId || !String(mensaje || '').trim()) {
+      return { ok: false, motivo: 'PAYLOAD_VACIO' }
+    }
+    const auth = useAuthStore()
+    const remitente = auth.usuario?.nombre || 'Editor'
+    const prefijoCtx = contexto ? ` (${contexto})` : ''
+
+    try {
+      const res = await crearNotificacionApi({
+        destinatarioId: Number(destinatarioId),
+        tipo: 'MENSAJE_EDITOR',
+        mensaje: `${remitente}${prefijoCtx}: ${String(mensaje).trim()}`,
+        referencia_manuscrito: manuscritoId || null,
+      })
+      return res ? { ok: true } : { ok: false, motivo: 'BACKEND' }
+    } catch (e) {
+      console.warn('[Editor] No se pudo enviar el mensaje:', e.message)
+      return { ok: false, motivo: 'BACKEND' }
+    }
   }
 
   return {
@@ -417,5 +454,6 @@ export const useEditorStore = defineStore('editor', () => {
     tomarDecisionConPlantilla,
     asignarEditorSeccion,
     getPlantillas,
+    enviarMensaje,
   }
 })

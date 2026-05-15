@@ -28,7 +28,7 @@
                     {{ estadoLabel(manuscrito.estado).toUpperCase() }}
                   </v-chip>
                 </div>
-                <div class="d-flex flex-column align-end">
+                <div class="d-flex flex-column align-end" style="gap: 8px;">
                   <v-btn
                     v-if="manuscrito.referencia"
                     color="brown"
@@ -38,6 +38,17 @@
                     class="ml-4"
                   >
                     Ver PDF Actual
+                  </v-btn>
+                  <!-- Mensaje privado al autor sobre este manuscrito (req. #3) -->
+                  <v-btn
+                    v-if="manuscrito.autorId"
+                    color="primary"
+                    variant="tonal"
+                    prepend-icon="mdi-message-text-outline"
+                    @click="abrirMensajeAutor"
+                    class="ml-4 text-none"
+                  >
+                    Mensaje al autor
                   </v-btn>
                   
                   <v-menu v-if="manuscrito.historialVersiones && manuscrito.historialVersiones.length > 0" location="bottom end">
@@ -134,19 +145,31 @@
                       <div v-else-if="asig.estado !== 'COMPLETADA'" class="text-caption text-grey mt-2">Esperando respuesta del revisor...</div>
                     </div>
 
-                    <!-- Quitar revisor: solo si NO ha enviado su revisión -->
-                    <v-btn
-                      v-if="asig.estado !== 'COMPLETADA'"
-                      icon
-                      variant="text"
-                      size="small"
-                      color="error"
-                      title="Quitar revisor"
-                      class="flex-shrink-0"
-                      @click="quitar(asig.id_asignacion)"
-                    >
-                      <v-icon>mdi-account-remove-outline</v-icon>
-                    </v-btn>
+                    <div class="d-flex flex-column flex-shrink-0" style="gap: 4px;">
+                      <!-- Mensaje privado a este revisor (req. #2) -->
+                      <v-btn
+                        icon
+                        variant="text"
+                        size="small"
+                        color="primary"
+                        title="Enviar mensaje al revisor"
+                        @click="abrirMensajeRevisor(asig.id_revisor)"
+                      >
+                        <v-icon>mdi-message-text-outline</v-icon>
+                      </v-btn>
+                      <!-- Quitar revisor: solo si NO ha enviado su revisión -->
+                      <v-btn
+                        v-if="asig.estado !== 'COMPLETADA'"
+                        icon
+                        variant="text"
+                        size="small"
+                        color="error"
+                        title="Quitar revisor"
+                        @click="quitar(asig.id_asignacion)"
+                      >
+                        <v-icon>mdi-account-remove-outline</v-icon>
+                      </v-btn>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -207,9 +230,20 @@
               <p class="text-body-2 mb-4">
                 Has gestionado las revisiones de este manuscrito. El <strong>Editor en Jefe</strong> ha sido notificado y tomará la decisión final (aceptar, rechazar o solicitar cambios) basándose en los resultados obtenidos.
               </p>
-              <v-btn color="info" variant="tonal" prepend-icon="mdi-email-outline" block class="text-none">
+              <v-btn
+                color="info"
+                variant="tonal"
+                prepend-icon="mdi-email-outline"
+                block
+                class="text-none"
+                :disabled="!editorJefeDestinatario"
+                @click="abrirNotaEditorJefe"
+              >
                 Enviar nota al Editor Jefe
               </v-btn>
+              <p v-if="!editorJefeDestinatario" class="text-caption text-medium-emphasis mt-2 mb-0 text-center">
+                Aún no hay un editor jefe disponible en el sistema.
+              </p>
             </v-card-text>
           </v-card>
 
@@ -378,6 +412,17 @@
       @confirmar="confirmarDecision"
     />
 
+    <!-- Mensaje privado al autor o a un revisor (req. #1, #2, #3) -->
+    <MensajeDialog
+      v-model="dialogoMensaje"
+      :destinatario-id="mensajeDestinatarioId"
+      :destinatario-nombre="mensajeDestinatarioNombre"
+      :contexto="manuscrito ? manuscrito.titulo : ''"
+      :hint="hintMensaje"
+      :enviando="enviandoMensaje"
+      @enviar="enviarMensaje"
+    />
+
     <v-snackbar v-model="snackbar" timeout="3000" :color="snackbarColor" location="top right">
       <v-icon start>{{ snackbarColor === 'success' ? 'mdi-check-circle' : 'mdi-alert-circle' }}</v-icon>
       {{ snackbarMsg }}
@@ -432,13 +477,18 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useEditorStore } from '@/store/editor/index.js'
 import { useHistorialStore } from '@/store/historial.js'
+import { useAdminStore } from '@/store/administrador/index.js'
+import { useAuthStore } from '@/store/auth.js'
 import { sugerirRevisoresApi } from '@/services/api/matching.js'
 import DecisionDialog from '@/components/common/DecisionDialog.vue'
+import MensajeDialog from '@/components/common/MensajeDialog.vue'
 import PdfViewer from '@/components/common/PdfViewer.vue'
 
 const route = useRoute()
 const editorStore = useEditorStore()
 const historialStore = useHistorialStore()
+const adminStore = useAdminStore()
+const auth = useAuthStore()
 const snackbar = ref(false)
 const snackbarColor = ref('success')
 const snackbarMsg = ref('Operaci�n completada con �xito')
@@ -545,6 +595,11 @@ const seccionDecisionActiva = computed(() => {
 
 onMounted(() => {
   editorStore.cargarDashboardEditor()
+  // Cargamos la lista global de usuarios sólo si todavía no la tenemos.
+  // Necesaria para resolver el editor jefe destinatario de la "nota".
+  if (!adminStore.usuarios || adminStore.usuarios.length === 0) {
+    adminStore.cargarUsuarios()
+  }
 })
 
 function revisorAsignado(id) { 
@@ -579,6 +634,70 @@ async function quitar(idAsignacion) {
 
 const dialogDecision = ref(false)
 const decisionActual = ref('ACEPTADO')
+
+// Mensajería privada del editor (req. #1, #2, #3).
+const dialogoMensaje = ref(false)
+const mensajeDestinatarioId = ref(null)
+const mensajeDestinatarioNombre = ref('')
+const hintMensaje = ref('')
+const enviandoMensaje = ref(false)
+
+function abrirMensajeAutor() {
+  if (!manuscrito.value?.autorId) return
+  mensajeDestinatarioId.value = manuscrito.value.autorId
+  mensajeDestinatarioNombre.value = manuscrito.value.autores || `Autor #${manuscrito.value.autorId}`
+  hintMensaje.value = 'El autor recibirá esto como notificación privada (no es la carta editorial oficial).'
+  dialogoMensaje.value = true
+}
+
+function abrirMensajeRevisor(revisorId) {
+  if (!revisorId) return
+  mensajeDestinatarioId.value = revisorId
+  mensajeDestinatarioNombre.value = nombreRevisor(revisorId)
+  hintMensaje.value = 'El revisor recibirá esto como notificación privada.'
+  dialogoMensaje.value = true
+}
+
+/**
+ * Primer editor jefe disponible (preferentemente, distinto del usuario actual).
+ * Se busca en la lista global de usuarios del sistema vía AdminStore.
+ * Si nadie está disponible, el computed devuelve null y el botón queda deshabilitado.
+ */
+const editorJefeDestinatario = computed(() => {
+  const candidatos = (adminStore.usuarios || []).filter(u => {
+    const roles = (u.roles || []).map(r => String(r).toLowerCase())
+    return (roles.includes('editor_jefe') || roles.includes('editor')) &&
+           Number(u.id) !== Number(auth.usuario?.id) &&
+           (!u.estado || String(u.estado).toLowerCase() === 'activo')
+  })
+  return candidatos[0] || null
+})
+
+function abrirNotaEditorJefe() {
+  const jefe = editorJefeDestinatario.value
+  if (!jefe) return
+  mensajeDestinatarioId.value = jefe.id
+  mensajeDestinatarioNombre.value = jefe.nombre || `Editor Jefe #${jefe.id}`
+  hintMensaje.value = 'Tu nota acompañará el manuscrito y será visible para el editor jefe.'
+  dialogoMensaje.value = true
+}
+
+async function enviarMensaje({ destinatarioId, mensaje }) {
+  enviandoMensaje.value = true
+  const res = await editorStore.enviarMensaje({
+    destinatarioId,
+    mensaje,
+    manuscritoId,
+    contexto: manuscrito.value?.titulo,
+  })
+  enviandoMensaje.value = false
+  if (res?.ok) {
+    notify('Mensaje enviado.', 'success')
+    dialogoMensaje.value = false
+  } else {
+    notify('No se pudo enviar el mensaje.', 'error')
+  }
+}
 
 function abrirDecision(decision) {
   decisionActual.value = decision

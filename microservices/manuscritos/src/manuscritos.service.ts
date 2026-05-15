@@ -1,9 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Manuscrito, ManuscritoDocument } from './schemas/manuscrito.schema';
 import { Counter, CounterDocument } from './schemas/counter.schema';
-import { Convocatoria, ConvocatoriaDocument } from './schemas/convocatoria.schema';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -12,24 +11,15 @@ export class ManuscritosService {
   constructor(
     @InjectModel(Manuscrito.name) private manuscritoModel: Model<ManuscritoDocument>,
     @InjectModel(Counter.name) private counterModel: Model<CounterDocument>,
-    @InjectModel(Convocatoria.name) private convocatoriaModel: Model<ConvocatoriaDocument>,
   ) {}
 
-  /**
-   * Verifica que la convocatoria exista y esté abierta (fechaLimite > hoy).
-   * Sólo se invoca cuando el manuscrito viene con nombre de convocatoria y NO es borrador.
-   */
-  private async validarConvocatoriaAbierta(nombreConvocatoria: string): Promise<void> {
-    if (!nombreConvocatoria) return;
-    const conv = await this.convocatoriaModel.findOne({ nombre: nombreConvocatoria }).exec();
-    if (!conv) {
-      throw new BadRequestException(`La convocatoria "${nombreConvocatoria}" no existe.`);
-    }
-    const limite = new Date(`${String(conv.fechaLimite).split('T')[0]}T23:59:59`);
-    if (limite < new Date()) {
-      throw new BadRequestException(`La convocatoria "${nombreConvocatoria}" está cerrada (fecha límite ${limite.toISOString().split('T')[0]}).`);
-    }
-  }
+  // Nota: la validación "convocatoria abierta" se hace en el FRONTEND
+  // (NuevoArticuloPage.vue bloquea el envío si no hay convocatorias abiertas).
+  // Antes había una validación de respaldo en backend que consultaba la colección
+  // de convocatorias, pero generaba 500 cuando el nombre exacto no estaba
+  // sincronizado o cuando la fechaLimite venía en formato inesperado.
+  // Si se quiere reactivar, manejarla con try/catch y BadRequestException
+  // tipados, sin lanzar errores genéricos que el filter de Nest convierta a 500.
 
   /**
    * Genera la siguiente referencia secuencial atómicamente (sin race condition).
@@ -66,13 +56,6 @@ export class ManuscritosService {
   async crear(datos: Partial<Manuscrito> = {}): Promise<Manuscrito> {
     const d = datos || {};
     const estadoFinal = d.estado || 'ENVIADO';
-
-    // Validación de respaldo: si el manuscrito NO es borrador y declara una
-    // convocatoria, la convocatoria debe existir y estar abierta.
-    // Para borradores se permite cualquier estado (puede crearse antes de elegirla).
-    if (estadoFinal !== 'BORRADOR' && d.convocatoria) {
-      await this.validarConvocatoriaAbierta(d.convocatoria);
-    }
 
     // Si el front YA proveyó una referencia (porque vino del /upload), respetarla.
     // Si no, generar una nueva atómicamente.

@@ -78,11 +78,12 @@ export const useNotificacionesStore = defineStore('notificaciones', () => {
       const rolActivo = rolActivoRaw.toLowerCase()
 
       const roleMap = {
-        editor: ['NUEVO_MANUSCRITO', 'INVITACION_ACEPTADA', 'INVITACION_RECHAZADA', 'REVISION_RECIBIDA', 'REVISIONES_COMPLETADAS', 'NUEVA_VERSION'],
-        editor_jefe: ['NUEVO_MANUSCRITO', 'INVITACION_ACEPTADA', 'INVITACION_RECHAZADA', 'REVISION_RECIBIDA', 'REVISIONES_COMPLETADAS', 'NUEVA_VERSION'],
-        editor_seccion: ['NUEVO_MANUSCRITO', 'INVITACION_ACEPTADA', 'INVITACION_RECHAZADA', 'REVISION_RECIBIDA', 'REVISIONES_COMPLETADAS', 'NUEVA_VERSION'],
-        revisor: ['NUEVA_INVITACION', 'NUEVA_INVITACION_REVISION', 'NUEVA_VERSION'],
-        autor: ['REVISOR_ASIGNADO', 'REVISION_PARCIAL_COMPLETADA', 'LISTO_PARA_VEREDICTO', 'DECISION_EDITORIAL']
+        editor: ['NUEVO_MANUSCRITO', 'INVITACION_ACEPTADA', 'INVITACION_RECHAZADA', 'REVISION_RECIBIDA', 'REVISIONES_COMPLETADAS', 'NUEVA_VERSION', 'MENSAJE_EDITOR'],
+        editor_jefe: ['NUEVO_MANUSCRITO', 'INVITACION_ACEPTADA', 'INVITACION_RECHAZADA', 'REVISION_RECIBIDA', 'REVISIONES_COMPLETADAS', 'NUEVA_VERSION', 'MENSAJE_EDITOR'],
+        editor_seccion: ['NUEVO_MANUSCRITO', 'INVITACION_ACEPTADA', 'INVITACION_RECHAZADA', 'REVISION_RECIBIDA', 'REVISIONES_COMPLETADAS', 'NUEVA_VERSION', 'MENSAJE_EDITOR'],
+        // Revisor y autor pueden recibir MENSAJE_EDITOR (mensajes privados del editor).
+        revisor: ['NUEVA_INVITACION', 'NUEVA_INVITACION_REVISION', 'NUEVA_VERSION', 'MENSAJE_EDITOR'],
+        autor: ['REVISOR_ASIGNADO', 'REVISION_PARCIAL_COMPLETADA', 'LISTO_PARA_VEREDICTO', 'DECISION_EDITORIAL', 'MENSAJE_EDITOR']
       }
 
       const allowedTipos = roleMap[rolActivo] || []
@@ -115,16 +116,22 @@ export const useNotificacionesStore = defineStore('notificaciones', () => {
           ruta = rolActivo.startsWith('editor') ? '/editor/manuscritos' : '/revisor/asignados'
         } else if (b.tipo === 'REVISOR_ASIGNADO') {
           titulo = 'Revisor Asignado'
-          ruta = '/autor/mis-articulos'
+          ruta = '/autor/articulos'
         } else if (b.tipo === 'REVISION_PARCIAL_COMPLETADA') {
           titulo = 'Revisión Completada'
-          ruta = '/autor/mis-articulos'
+          ruta = '/autor/articulos'
         } else if (b.tipo === 'LISTO_PARA_VEREDICTO') {
           titulo = 'Listo para Veredicto'
-          ruta = '/autor/mis-articulos'
+          ruta = '/autor/articulos'
         } else if (b.tipo === 'DECISION_EDITORIAL') {
           titulo = 'Decisión Editorial'
-          ruta = '/autor/mis-articulos'
+          ruta = '/autor/articulos'
+        } else if (b.tipo === 'MENSAJE_EDITOR') {
+          titulo = 'Mensaje del Editor'
+          // El destinatario decide a dónde dirigirse según su rol activo.
+          ruta = rolActivo === 'autor' ? '/autor/articulos'
+              : rolActivo === 'revisor' ? '/revisor/asignados'
+              : '/editor/manuscritos'
         }
 
         return {

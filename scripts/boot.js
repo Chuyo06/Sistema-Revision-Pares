@@ -88,6 +88,10 @@ async function main() {
 
     await runStep("Docker Compose Up", "docker compose up -d --build");
 
+    // Esperar un poco para que los contenedores NestJS comiencen a compilar TypeScript
+    log("Esperando a que los servicios compilen...", cyan);
+    await new Promise(r => setTimeout(r, 5000));
+
     // 2. Esperar a los servicios
     log("\n[2/3] Verificando Salud de Servicios y APIs", magenta);
     
@@ -108,7 +112,7 @@ async function main() {
       let apiUp = false;
       let retries = 0;
       
-      while ((!healthy || !apiUp) && retries < 30) {
+      while ((!healthy || !apiUp) && retries < 90) {
         try {
           // Check Container
           const status = execSync(`docker inspect --format="{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}" ${service.id}`, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }).trim();
@@ -136,6 +140,17 @@ async function main() {
       } else {
         process.stdout.write(` ${red}✗ No disponible${reset}\n`);
       }
+    }
+
+    // Reiniciar el gateway para asegurar resolución DNS fresca
+    log("\nRefrescando Gateway (Nginx)...", cyan);
+    try {
+      execSync('docker compose restart gateway', { stdio: 'ignore' });
+      // Esperar a que Nginx reinicie
+      await new Promise(r => setTimeout(r, 3000));
+      log("Gateway refrescado correctamente.", green);
+    } catch (e) {
+      log("⚠ No se pudo reiniciar el gateway.", yellow);
     }
 
     // 3. Iniciar Cliente

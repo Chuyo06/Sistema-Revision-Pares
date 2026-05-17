@@ -29,4 +29,9 @@ export class AnalisisController {
   async draftDecision(@Body() body: { decisionEditor: string; revisiones: string[] }) {
     return this.analisisService.draftDecision(body.decisionEditor, body.revisiones);
   }
+
+  @Post('check-plagiarism')
+  async checkPlagiarism(@Body() body: { titulo: string; resumen: string; contenido: string }) {
+    return this.analisisService.checkPlagiarism(body.titulo, body.resumen, body.contenido);
+  }
 }

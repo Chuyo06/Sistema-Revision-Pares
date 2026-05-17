@@ -57,3 +57,43 @@ export async function testConexionIAApi() {
     return { ok: false, message: e.message }
   }
 }
+
+/**
+ * Solicita un análisis de plagio al servicio de IA.
+ *
+ * @param {{ titulo:string, resumen:string, contenido:string }} payload
+ * @returns {Promise<{ porcentajeSimilitud: number, nivelPlagio: string, seccionesSospechosas: Array<{texto: string, posibleFuente: string}> }|null>}
+ */
+export async function verificarPlagioApi(payload) {
+  try {
+    const res = await apiFetch(`${BASE_URL}/check-plagiarism`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+    if (!res.ok) return null
+    return await res.json()
+  } catch (e) {
+    console.warn('[Analisis IA] check-plagiarism no disponible:', e.message)
+    return null
+  }
+}
+
+/**
+ * Solicita un análisis ético al servicio de IA.
+ *
+ * @param {{ titulo:string, resumen:string, contenido:string }} payload
+ * @returns {Promise<{ alertas: string[], categoria: string, justificacion: string }|null>}
+ */
+export async function verificarEticaApi(payload) {
+  try {
+    const res = await apiFetch(`${BASE_URL}/ethics-check`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+    if (!res.ok) return null
+    return await res.json()
+  } catch (e) {
+    console.warn('[Analisis IA] ethics-check no disponible:', e.message)
+    return null
+  }
+}

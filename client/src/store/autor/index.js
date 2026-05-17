@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { fetchManuscritosPorAutor, fetchBorradoresPorAutor, crearManuscrito, actualizarDatosManuscrito, eliminarManuscrito } from '@/services/api/manuscritos.js'
 import { fetchAsignacionesPorManuscrito, reabrirRevisionesApi } from '@/services/api/revision.js'
 import { crearNotificacionApi } from '@/services/api/notificaciones.js'
+import { verificarPlagioApi, verificarEticaApi } from '@/services/api/analisis.js'
 import { useAuthStore } from '../auth.js'
 import { useConvocatoriasStore } from '../convocatorias.js'
 
@@ -24,6 +25,8 @@ function mapManuscrito(m) {
     convocatoria: m.convocatoria || 'General',
     historialVersiones: m.historialVersiones || [],
     respuestasRevisores: m.respuestasRevisores,
+    analisisPlagio: m.analisisPlagio,
+    analisisEtico: m.analisisEtico,
     revisores: m.revisoresAsignados || 0,
     revisionesPendientes: Math.max(0, (m.revisoresAsignados || 0) - (m.revisionesCompletadas || 0)),
   }
@@ -98,6 +101,31 @@ export const useAutorStore = defineStore('autor', () => {
       // No enviar 'PENDIENTE' como referencia: el backend la generará si falta.
       referencia: datos.referencia && datos.referencia !== 'PENDIENTE' ? datos.referencia : undefined,
       estado: 'ENVIADO',
+    }
+
+    // Análisis automático de plagio y ética al enviar
+    try {
+      const [reportePlagio, reporteEtico] = await Promise.all([
+        verificarPlagioApi({
+          titulo: payload.titulo,
+          resumen: payload.resumen,
+          contenido: payload.contenido || payload.resumen || ''
+        }),
+        verificarEticaApi({
+          titulo: payload.titulo,
+          resumen: payload.resumen,
+          contenido: payload.contenido || payload.resumen || ''
+        })
+      ])
+      
+      if (reportePlagio) {
+        payload.analisisPlagio = reportePlagio
+      }
+      if (reporteEtico) {
+        payload.analisisEtico = reporteEtico
+      }
+    } catch (e) {
+      console.warn('[Autor] No se pudo obtener reportes de IA automáticos:', e)
     }
 
     if (id) {

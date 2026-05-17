@@ -50,6 +50,12 @@ export class Manuscrito {
   @Prop()
   motivoRechazo: string;
 
+  @Prop({ type: Object })
+  analisisPlagio: any;
+
+  @Prop({ type: Object })
+  analisisEtico: any;
+
   @Prop({ type: [{ referencia: String, fecha: Date }] })
   historialVersiones: { referencia: string; fecha: Date }[];
 }

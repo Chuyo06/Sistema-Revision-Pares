@@ -90,6 +90,122 @@
             </v-card-item>
           </v-card>
 
+          <!-- Reporte de Plagio (IA) -->
+          <v-card class="mb-6" elevation="2" rounded="lg" border>
+            <v-card-title class="pa-4 d-flex align-center justify-space-between">
+              <div class="d-flex align-center">
+                <v-icon color="indigo" class="mr-2">mdi-text-search</v-icon>
+                Reporte de Originalidad (IA)
+              </div>
+              <v-btn
+                color="indigo"
+                variant="tonal"
+                size="small"
+                prepend-icon="mdi-robot-outline"
+                :loading="analizandoPlagio"
+                @click="analizarPlagio"
+              >
+                Analizar Plagio
+              </v-btn>
+            </v-card-title>
+            <v-divider></v-divider>
+            <v-card-text class="pa-4" v-if="reportePlagio">
+              <div class="d-flex align-center mb-4">
+                <v-progress-circular
+                  :model-value="reportePlagio.porcentajeSimilitud"
+                  :color="colorPlagio(reportePlagio.nivelPlagio)"
+                  size="64"
+                  width="8"
+                  class="mr-4"
+                >
+                  <strong>{{ reportePlagio.porcentajeSimilitud }}%</strong>
+                </v-progress-circular>
+                <div>
+                  <div class="text-h6 font-weight-bold" :class="`text-${colorPlagio(reportePlagio.nivelPlagio)}`">
+                    Nivel de Plagio: {{ reportePlagio.nivelPlagio }}
+                  </div>
+                  <div class="text-caption text-grey-darken-1">
+                    Evaluación de similitud con fuentes externas no citadas.
+                  </div>
+                </div>
+              </div>
+              
+              <div v-if="reportePlagio.seccionesSospechosas && reportePlagio.seccionesSospechosas.length > 0">
+                <div class="font-weight-bold mb-2 text-indigo-darken-4">Secciones Sospechosas:</div>
+                <div v-for="(seccion, i) in reportePlagio.seccionesSospechosas" :key="i" class="bg-indigo-lighten-5 pa-3 rounded border mb-2 text-body-2">
+                  <div class="font-italic mb-1">"{{ seccion.texto }}"</div>
+                  <div class="text-caption text-indigo-darken-2">
+                    <v-icon size="14" class="mr-1">mdi-source-branch</v-icon>
+                    <strong>Posible fuente:</strong> {{ seccion.posibleFuente }}
+                  </div>
+                </div>
+              </div>
+              <div v-else class="text-success text-body-2 font-weight-medium">
+                <v-icon size="16" class="mr-1">mdi-check-circle</v-icon>
+                No se detectaron secciones sospechosas significativas.
+              </div>
+            </v-card-text>
+            <v-card-text class="pa-4 text-center text-grey" v-else>
+              Aún no se ha generado el reporte de originalidad para este manuscrito. Haz clic en "Analizar Plagio".
+            </v-card-text>
+          </v-card>
+
+          <!-- Reporte de Ética (IA) -->
+          <v-card class="mb-6" elevation="2" rounded="lg" border>
+            <v-card-title class="pa-4 d-flex align-center justify-space-between">
+              <div class="d-flex align-center">
+                <v-icon color="teal" class="mr-2">mdi-shield-account-outline</v-icon>
+                Reporte de Análisis Ético (IA)
+              </div>
+              <v-btn
+                color="teal"
+                variant="tonal"
+                size="small"
+                prepend-icon="mdi-robot-outline"
+                :loading="analizandoEtica"
+                @click="analizarEtica"
+              >
+                Analizar Ética
+              </v-btn>
+            </v-card-title>
+            <v-divider></v-divider>
+            <v-card-text class="pa-4" v-if="reporteEtico">
+              <div class="d-flex align-center mb-4">
+                <v-icon :color="colorEtica(reporteEtico.categoria)" size="48" class="mr-4">
+                  {{ iconEtica(reporteEtico.categoria) }}
+                </v-icon>
+                <div>
+                  <div class="text-h6 font-weight-bold text-capitalize" :class="`text-${colorEtica(reporteEtico.categoria)}`">
+                    {{ reporteEtico.categoria }}
+                  </div>
+                  <div class="text-caption text-grey-darken-1">
+                    Evaluación de problemas éticos (consentimiento, datos sensibles).
+                  </div>
+                </div>
+              </div>
+              
+              <div v-if="reporteEtico.alertas && reporteEtico.alertas.length > 0">
+                <div class="font-weight-bold mb-2 text-teal-darken-4">Alertas Detectadas:</div>
+                <div v-for="(alerta, i) in reporteEtico.alertas" :key="i" class="bg-teal-lighten-5 pa-3 rounded border mb-2 text-body-2 text-teal-darken-4">
+                  <v-icon size="14" class="mr-1">mdi-alert-circle-outline</v-icon>
+                  {{ alerta }}
+                </div>
+              </div>
+              <div v-else class="text-success text-body-2 font-weight-medium mb-3">
+                <v-icon size="16" class="mr-1">mdi-check-circle</v-icon>
+                No se detectaron alertas éticas específicas.
+              </div>
+              
+              <v-divider class="my-3"></v-divider>
+              <div class="text-body-2">
+                <strong>Justificación:</strong> {{ reporteEtico.justificacion }}
+              </div>
+            </v-card-text>
+            <v-card-text class="pa-4 text-center text-grey" v-else>
+              Aún no se ha generado el reporte ético para este manuscrito. Haz clic en "Analizar Ética".
+            </v-card-text>
+          </v-card>
+
           <!-- SECCIÓN: REVISORES ASIGNADOS -->
           <v-card class="mb-6" elevation="2" rounded="lg" border>
             <v-card-title class="pa-4 d-flex align-center">
@@ -461,6 +577,74 @@
       </v-card>
     </v-dialog>
 
+    <!-- Modal Verificando Conflictos -->
+    <v-dialog v-model="verificandoConflicto" persistent max-width="300">
+      <v-card color="primary" class="pt-4 pb-4">
+        <v-card-text class="text-center text-white">
+          Verificando conflictos de interés...
+          <v-progress-linear indeterminate color="white" class="mt-4"></v-progress-linear>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+
+    <!-- Modal Conflicto Detectado -->
+    <v-dialog v-model="dialogoConflicto" max-width="500">
+      <v-card rounded="xl" border>
+        <div style="background:#f57f17; height:6px; border-radius:8px 8px 0 0" />
+        <v-card-title class="pa-5 pb-2 text-h5 font-weight-bold text-warning">
+          <v-icon start color="warning">mdi-alert</v-icon>
+          Posible Conflicto de Interés
+        </v-card-title>
+        <v-card-text class="px-5">
+          <p class="mb-4">El sistema ha detectado un posible conflicto de interés con este revisor:</p>
+          <div v-for="(alerta, idx) in conflictosDetectados" :key="idx" class="pa-3 rounded mb-3 text-body-2" :class="alerta.riesgo === 'Alto' ? 'bg-red-lighten-4' : 'bg-amber-lighten-4'">
+            <strong>Riesgo:</strong> {{ alerta.riesgo }}<br/>
+            <strong>Razón:</strong> {{ alerta.justificacion }}
+          </div>
+          <p v-if="tieneConflictoGrave" class="text-error font-weight-bold">
+            El conflicto detectado es grave y no se permite la asignación de este revisor.
+          </p>
+          <p v-else>¿Desea proceder con la asignación de todos modos?</p>
+        </v-card-text>
+        <v-card-actions class="pa-4 justify-end">
+          <v-btn variant="text" @click="dialogoConflicto = false">{{ tieneConflictoGrave ? 'Cerrar' : 'Cancelar' }}</v-btn>
+          <v-btn 
+            v-if="!tieneConflictoGrave"
+            color="warning" 
+            variant="flat" 
+            @click="confirmarAsignacionConConflicto"
+          >
+            Asignar de todos modos
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Modal Alerta Plagio -->
+    <v-dialog v-model="dialogoAlertaPlagio" max-width="500">
+      <v-card rounded="xl" border>
+        <div style="background:#d32f2f; height:6px; border-radius:8px 8px 0 0" />
+        <v-card-title class="pa-5 pb-2 text-h5 font-weight-bold text-error">
+          <v-icon start color="error">mdi-alert-octagon</v-icon>
+          Nivel de Plagio Alto
+        </v-card-title>
+        <v-card-text class="px-5">
+          <p class="mb-4">Este manuscrito tiene un <strong>Nivel de Plagio Alto ({{ reportePlagio?.porcentajeSimilitud }}%)</strong> según el análisis de IA.</p>
+          <p>¿Está seguro de que desea proceder y asignar este manuscrito a un revisor?</p>
+        </v-card-text>
+        <v-card-actions class="pa-4 justify-end">
+          <v-btn variant="text" @click="dialogoAlertaPlagio = false">Cancelar Asignación</v-btn>
+          <v-btn 
+            color="error" 
+            variant="flat" 
+            @click="confirmarAsignacionPeseAPlagio"
+          >
+            Continuar de todos modos
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <!-- Visor PDF -->
     <PdfViewer
       v-model="dialogoPdf"
@@ -473,13 +657,14 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useEditorStore } from '@/store/editor/index.js'
 import { useHistorialStore } from '@/store/historial.js'
 import { useAdminStore } from '@/store/administrador/index.js'
 import { useAuthStore } from '@/store/auth.js'
-import { sugerirRevisoresApi } from '@/services/api/matching.js'
+import { sugerirRevisoresApi, verificarConflictosApi } from '@/services/api/matching.js'
+import { verificarPlagioApi, verificarEticaApi } from '@/services/api/analisis.js'
 import DecisionDialog from '@/components/common/DecisionDialog.vue'
 import MensajeDialog from '@/components/common/MensajeDialog.vue'
 import PdfViewer from '@/components/common/PdfViewer.vue'
@@ -610,23 +795,177 @@ function revisorAsignado(id) {
   )
 }
 
+const verificandoConflicto = ref(false)
+const dialogoConflicto = ref(false)
+const conflictosDetectados = ref([])
+const revisorPendienteAsignar = ref(null)
+
+const reportePlagio = ref(null)
+const analizandoPlagio = ref(false)
+const dialogoAlertaPlagio = ref(false)
+const revisorPendientePlagio = ref(null)
+
+const reporteEtico = ref(null)
+const analizandoEtica = ref(false)
+
+watch(manuscrito, (newVal) => {
+  if (newVal) {
+    if (newVal.analisisPlagio && !reportePlagio.value) {
+      reportePlagio.value = newVal.analisisPlagio
+    }
+    if (newVal.analisisEtico && !reporteEtico.value) {
+      reporteEtico.value = newVal.analisisEtico
+    }
+  }
+}, { immediate: true })
+
+const tieneConflictoGrave = computed(() => {
+  return conflictosDetectados.value.some(a => a.riesgo === 'Alto' || a.riesgo === 'Graves' || a.riesgo?.toLowerCase().includes('alto'))
+})
+
+async function analizarPlagio() {
+  if (!manuscrito.value) return
+  analizandoPlagio.value = true
+  try {
+    const res = await verificarPlagioApi({
+      titulo: manuscrito.value.titulo,
+      resumen: manuscrito.value.resumen,
+      contenido: manuscrito.value.contenido || manuscrito.value.resumen
+    })
+    if (res) {
+      reportePlagio.value = res
+      notify('Reporte de plagio generado correctamente', 'success')
+    } else {
+      notify('No se pudo generar el reporte de plagio', 'error')
+    }
+  } catch (e) {
+    notify('Error al generar el reporte de plagio', 'error')
+  } finally {
+    analizandoPlagio.value = false
+  }
+}
+
+function colorPlagio(nivel) {
+  if (nivel === 'Alto') return 'error'
+  if (nivel === 'Medio') return 'warning'
+  return 'success'
+}
+
+async function analizarEtica() {
+  if (!manuscrito.value) return
+  analizandoEtica.value = true
+  try {
+    const res = await verificarEticaApi({
+      titulo: manuscrito.value.titulo,
+      resumen: manuscrito.value.resumen,
+      contenido: manuscrito.value.contenido || manuscrito.value.resumen
+    })
+    if (res) {
+      reporteEtico.value = res
+      notify('Reporte ético generado correctamente', 'success')
+    } else {
+      notify('No se pudo generar el reporte ético', 'error')
+    }
+  } catch (e) {
+    notify('Error al generar el reporte ético', 'error')
+  } finally {
+    analizandoEtica.value = false
+  }
+}
+
+function colorEtica(categoria) {
+  const c = categoria?.toLowerCase() || ''
+  if (c === 'requiere revisión' || c === 'requiere revision') return 'error'
+  if (c === 'advertencia') return 'warning'
+  return 'success'
+}
+
+function iconEtica(categoria) {
+  const c = categoria?.toLowerCase() || ''
+  if (c === 'requiere revisión' || c === 'requiere revision') return 'mdi-shield-alert'
+  if (c === 'advertencia') return 'mdi-shield-half-full'
+  return 'mdi-shield-check'
+}
+
 async function asignar(revisorId) {
+  const revisor = getRevisorCompleto(revisorId)
+  if (!revisor) return
+
+  // 1. Verificamos alerta de plagio si ya se corrió el reporte
+  if (reportePlagio.value && reportePlagio.value.nivelPlagio === 'Alto') {
+    revisorPendientePlagio.value = revisorId
+    dialogoAlertaPlagio.value = true
+    return
+  }
+
+  await procesarAsignacionVerificarConflictos(revisorId)
+}
+
+function confirmarAsignacionPeseAPlagio() {
+  dialogoAlertaPlagio.value = false
+  if (revisorPendientePlagio.value) {
+    procesarAsignacionVerificarConflictos(revisorPendientePlagio.value)
+    revisorPendientePlagio.value = null
+  }
+}
+
+async function procesarAsignacionVerificarConflictos(revisorId) {
+  const revisor = getRevisorCompleto(revisorId)
+  
+  verificandoConflicto.value = true
+  
+  // Tratar de obtener la institución del autor si está en adminStore.usuarios
+  const autorId = manuscrito.value?.autorId
+  const autorInfo = (adminStore.usuarios || []).find(u => Number(u.id) === Number(autorId))
+  const autorContexto = autorInfo ? `${manuscrito.value.autores} (Institución: ${autorInfo.institucion || 'No especificada'})` : manuscrito.value.autores || 'Autor desconocido'
+
+  try {
+    const resConflicto = await verificarConflictosApi({
+      autor: autorContexto,
+      revisores: [{ id: revisor.id, nombre: revisor.nombre, institucion: revisor.institucion }]
+    })
+
+    if (resConflicto.hayConflicto || (resConflicto.alertas && resConflicto.alertas.length > 0)) {
+      conflictosDetectados.value = resConflicto.alertas || []
+      revisorPendienteAsignar.value = revisorId
+      dialogoConflicto.value = true
+      return // Detener el flujo de asignación hasta que confirme
+    }
+  } catch (error) {
+    console.error('Error al verificar conflictos:', error)
+    // Continuamos si falla la API
+  } finally {
+    verificandoConflicto.value = false
+  }
+
+  await procesarAsignacion(revisorId)
+}
+
+async function procesarAsignacion(revisorId) {
   const res = await editorStore.asignarRevisor(manuscritoId, revisorId)
   if (res?.ok) {
     notify('Revisor invitado correctamente', 'success')
   } else if (res?.motivo === 'AUTOR_DEL_ARTICULO') {
-    notify('No puedes asignar al autor del art�culo como revisor', 'error')
+    notify('No puedes asignar al autor del artículo como revisor', 'error')
   } else {
     notify('No se pudo invitar al revisor', 'error')
+  }
+}
+
+function confirmarAsignacionConConflicto() {
+  dialogoConflicto.value = false
+  if (revisorPendienteAsignar.value) {
+    procesarAsignacion(revisorPendienteAsignar.value)
+    revisorPendienteAsignar.value = null
   }
 }
 
 async function quitar(idAsignacion) {
   const res = await editorStore.quitarRevisor(idAsignacion)
   if (res?.ok) {
-    notify('Revisor quitado de la asignaci�n', 'success')
+    notify('Revisor quitado de la asignacin', 'success')
   } else if (res?.motivo === 'YA_COMPLETADA') {
-    notify('No se puede quitar: el revisor ya envi� su revisi�n', 'error')
+    notify('No se puede quitar: el revisor ya envi su revisin', 'error')
   } else {
     notify('No se pudo quitar al revisor', 'error')
   }

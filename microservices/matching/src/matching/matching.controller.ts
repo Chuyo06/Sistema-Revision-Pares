@@ -16,7 +16,7 @@ export class MatchingController {
   }
 
   @Post('check-conflicts')
-  async checkConflicts(@Body() body: { autor: string; revisoresId: string[] }) {
-    return this.matchingService.checkConflicts(body.autor, body.revisoresId);
+  async checkConflicts(@Body() body: { autor: string; revisores: { id: string | number; nombre: string; institucion?: string }[] }) {
+    return this.matchingService.checkConflicts(body.autor, body.revisores);
   }
 }

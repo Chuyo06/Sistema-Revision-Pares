@@ -48,15 +48,15 @@ export class AnalisisService {
   async ethicsCheck(titulo: string, resumen: string, contenido: string): Promise<any> {
     const prompt = `
       Eres un comité de ética automatizado.
-      Analiza el siguiente manuscrito en busca de posibles problemas éticos o alertas de plagio conceptual.
+      Analiza el siguiente manuscrito en busca de posibles problemas éticos (ej. falta de consentimiento informado, datos sensibles, manejo de sujetos humanos/animales) o alertas de plagio conceptual.
       
       Título: ${titulo}
       Resumen: ${resumen}
       Fragmento de contenido: ${contenido.substring(0, 3000)}
 
       Devuelve estrictamente un objeto JSON con las siguientes propiedades:
-      - alertas: un arreglo de strings con posibles problemas (ej. falta de consentimiento informado, problemas con datos).
-      - nivelRiesgo: "Alto", "Medio", o "Bajo".
+      - alertas: un arreglo de strings detallando los posibles problemas encontrados.
+      - categoria: estrictamente uno de los siguientes valores: "sin problemas", "advertencia", o "requiere revisión".
       - justificacion: una explicación breve de la evaluación.
       
       No incluyas formato Markdown en la respuesta, solo el JSON puro.
@@ -98,6 +98,33 @@ export class AnalisisService {
       return JSON.parse(cleanJson);
     } catch (e) {
       this.logger.error('Error drafting decision:', e);
+      throw e;
+    }
+  }
+
+  async checkPlagiarism(titulo: string, resumen: string, contenido: string): Promise<any> {
+    const prompt = `
+      Eres un sistema avanzado de detección de similitud de textos académicos.
+      Analiza el siguiente manuscrito y simula un reporte realista de originalidad.
+      
+      Título: ${titulo}
+      Resumen: ${resumen}
+      Fragmento de contenido: ${contenido.substring(0, 3000)}
+
+      Devuelve estrictamente un objeto JSON con las siguientes propiedades:
+      - porcentajeSimilitud: un número del 0 al 100 estimando qué tanto del texto parece provenir de fuentes no citadas.
+      - nivelPlagio: "Alto", "Medio", o "Bajo" dependiendo del porcentaje.
+      - seccionesSospechosas: un arreglo de objetos con 'texto' (breve fragmento sospechoso) y 'posibleFuente' (qué podría estar copiando).
+
+      No incluyas formato Markdown en la respuesta, solo el JSON puro.
+    `;
+
+    try {
+      const responseText = await this.geminiService.generateText(prompt);
+      const cleanJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+      return JSON.parse(cleanJson);
+    } catch (e) {
+      this.logger.error('Error checking plagiarism:', e);
       throw e;
     }
   }

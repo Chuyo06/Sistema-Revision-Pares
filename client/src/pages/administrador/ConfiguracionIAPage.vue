@@ -14,7 +14,7 @@
         <v-col cols="12" md="6">
           <v-select
             v-model="adminStore.configuracionIA.modeloMatching"
-            :items="['gemini-1.5-flash', 'gemini-1.5-pro']"
+            :items="['gemini-2.5-flash', 'gemini-2.5-pro']"
             label="Modelo para Asignación (Matching)"
             variant="outlined"
             density="compact"
@@ -23,7 +23,7 @@
         <v-col cols="12" md="6">
           <v-select
             v-model="adminStore.configuracionIA.modeloAnalisis"
-            :items="['gemini-1.5-flash', 'gemini-1.5-pro']"
+            :items="['gemini-2.5-flash', 'gemini-2.5-pro']"
             label="Modelo para Análisis (Calidad/Ética)"
             variant="outlined"
             density="compact"
@@ -31,20 +31,7 @@
         </v-col>
       </v-row>
 
-      <div class="d-flex align-center mt-2">
-        <v-text-field
-          v-model="apiKey"
-          label="Clave API de Gemini (Local)"
-          type="password"
-          variant="outlined"
-          density="compact"
-          placeholder="AIzaSy..."
-          hint="Para este MVP, la API key se define en el entorno del backend. Este campo es demostrativo."
-          persistent-hint
-          disabled
-          hide-details="auto"
-          class="flex-grow-1 mr-4"
-        ></v-text-field>
+      <div class="d-flex justify-end mt-2">
         <v-btn
           color="info"
           variant="tonal"
@@ -53,7 +40,7 @@
           @click="probarConexion"
           style="height: 40px;"
         >
-          Probar Conexión
+          Probar Conexión del Backend
         </v-btn>
       </div>
     </v-card>
@@ -127,7 +114,6 @@ import { useAdminStore } from '@/store/administrador/index.js'
 import { testConexionIAApi } from '@/services/api/analisis.js'
 
 const adminStore = useAdminStore()
-const apiKey = ref('************************')
 const snackbar = ref(false)
 const snackbarMsg = ref('')
 const snackbarColor = ref('success')

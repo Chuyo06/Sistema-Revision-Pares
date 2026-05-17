@@ -17,8 +17,8 @@ export const useAdminStore = defineStore('administrador', () => {
   const manuscritos = ref([])
 
   const configuracionIA = ref({
-    modeloMatching: 'gemini-1.5-flash',
-    modeloAnalisis: 'gemini-1.5-flash',
+    modeloMatching: 'gemini-2.5-flash',
+    modeloAnalisis: 'gemini-2.5-flash',
     umbralConflictoInteres: 0.85,
     umbralPlagio: 0.75,
     asistenciaCalidadActiva: true,

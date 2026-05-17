@@ -21,7 +21,7 @@ export async function sugerirRevisoresApi(payload) {
 /**
  * Comprueba conflictos de interés entre el autor de un artículo y los revisores propuestos.
  *
- * @param {{ autor:string, revisoresId:Array<string|number> }} payload
+ * @param {{ autor:string, revisores:Array<{id:string|number, nombre:string, institucion:string}> }} payload
  * @returns {Promise<{ alertas: Array<{ revisorId, riesgo, justificacion }>, hayConflicto: boolean }>}
  */
 export async function verificarConflictosApi(payload) {

@@ -191,13 +191,14 @@ export class MatchingService implements OnModuleInit {
     return { sugerencias };
   }
 
-  async checkConflicts(autor: string, revisoresId: string[]): Promise<any> {
+  async checkConflicts(autor: string, revisores: { id: string | number; nombre: string; institucion?: string }[]): Promise<any> {
+    const revisoresInfo = revisores.map(r => `ID: ${r.id}, Nombre: ${r.nombre}, Institución: ${r.institucion || 'No especificada'}`).join(' | ');
     const prompt = `
       Analiza posibles conflictos de interés.
-      Autor del artículo: ${autor}
-      Revisores propuestos: ${revisoresId.join(', ')}
+      Autor del artículo (y su información si está disponible): ${autor}
+      Revisores propuestos: ${revisoresInfo}
 
-      Verifica si hay posibles conflictos por institución o colaboración reciente.
+      Verifica si hay posibles conflictos por institución (pertenecer a la misma institución) o colaboración reciente.
       Devuelve un objeto JSON estricto con:
       - alertas: arreglo de objetos { revisorId, riesgo ("Alto", "Medio", "Bajo"), justificacion }
       - hayConflicto: boolean indicando si encontraste al menos un riesgo Alto.

@@ -11,7 +11,7 @@ export class GeminiService {
     this.genAI = new GoogleGenerativeAI(apiKey);
   }
 
-  async generateText(prompt: string, modelName: string = 'gemini-1.5-flash'): Promise<string> {
+  async generateText(prompt: string, modelName: string = 'gemini-2.5-flash'): Promise<string> {
     try {
       if (process.env.GEMINI_API_KEY === 'MOCK_KEY' || !process.env.GEMINI_API_KEY) {
         this.logger.warn('Using MOCK_KEY for Gemini Text. Returning mock response.');
@@ -33,7 +33,7 @@ export class GeminiService {
         this.logger.warn('Using MOCK_KEY for Gemini Embedding. Returning mock vector.');
         return this.getMockEmbedding(text);
       }
-      const model = this.genAI.getGenerativeModel({ model: "text-embedding-004" });
+      const model = this.genAI.getGenerativeModel({ model: "gemini-embedding-2" });
       const result = await model.embedContent(text);
       return result.embedding.values;
     } catch (error) {

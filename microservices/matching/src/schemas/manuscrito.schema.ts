@@ -33,8 +33,8 @@ export class Version {
 // 3. El Esquema Principal
 @Schema({ collection: 'manuscritos', timestamps: true })
 export class Manuscrito {
-  @Prop({ required: true, unique: true })
-  numero_referencia!: string;
+  @Prop({ required: false })
+  numero_referencia: string;
 
   @Prop({ required: true })
   titulo!: string;

@@ -147,21 +147,23 @@ test('Flujo de Integración E2E Completo con Superusuario', async ({ page }) => 
 
   // Ir directamente a la URL de asignados
   await page.goto(`${BASE_URL}/#/revisor/asignados`);
-  await page.waitForTimeout(2000);
 
-  // Buscar el artículo asignado o usar el primero de la lista
-  const articuloNuevo = page.locator('div').filter({ hasText: tituloArticulo }).first();
+  // Esperar a que aparezca el artículo nuevo
+  const articuloNuevo = page.locator('.v-card, .v-list-item, div').filter({ hasText: tituloArticulo }).first();
+  await articuloNuevo.waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+
   let itemRevisor = articuloNuevo;
-  if (!(await articuloNuevo.isVisible({ timeout: 5000 }).catch(() => false))) {
+  if (!(await articuloNuevo.isVisible())) {
     console.log('Artículo específico no visible para el revisor, seleccionando el primero...');
     itemRevisor = page.locator('.v-card, .v-list-item, div.v-row > div').first();
   }
 
-  // Aceptar la invitación
+  // Esperar y aceptar la invitación
   const btnAceptarInv = itemRevisor.locator('button', { hasText: /Aceptar Invitación/i }).first();
+  await btnAceptarInv.waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
   if (await btnAceptarInv.isVisible()) {
-      await btnAceptarInv.click();
-      await page.waitForTimeout(2000);
+    await btnAceptarInv.click();
+    await page.waitForTimeout(2000);
   }
 
   // Iniciar la evaluación

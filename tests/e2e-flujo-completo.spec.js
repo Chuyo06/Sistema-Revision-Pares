@@ -138,6 +138,13 @@ async function crearYEnviarArticulo(page, titulo, testPdfPath) {
     if (fileInputVisible) {
       await fileInput.setInputFiles(testPdfPath);
       console.log('[AUTOR] PDF seleccionado');
+
+      // Hacer click en "Subir" o "Cargar"
+      const btnSubirPdf = page.locator('button:has-text("Subir"), button:has-text("Cargar")').first();
+      if (await btnSubirPdf.isVisible()) {
+        await btnSubirPdf.click();
+      }
+
       // Wait for upload to complete - look for success state
       await page.waitForTimeout(4000);
 

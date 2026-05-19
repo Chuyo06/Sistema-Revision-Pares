@@ -26,14 +26,6 @@
             Plataforma académica para la gestión de congresos y revistas científicas.
           </div>
 
-          <!-- Roles como badges -->
-          <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:28px">
-            <span
-              v-for="r in ['Autor', 'Revisor', 'Editor', 'Admin']"
-              :key="r"
-              style="background:rgba(255,255,255,0.15); color:rgba(255,255,255,0.9); padding:4px 12px; border-radius:20px; font-size:12px; font-weight:500"
-            >{{ r }}</span>
-          </div>
         </div>
       </div>
 
@@ -173,31 +165,7 @@
           </div>
         </form>
 
-        <div v-if="!modoRegistro">
-          <!-- Divisor -->
-          <div style="display:flex; align-items:center; gap:10px; margin:20px 0">
-            <div style="flex:1; height:1px; background:#D3E0D7" />
-            <span style="font-size:12px; color:#bda89a">Accesos demo</span>
-            <div style="flex:1; height:1px; background:#D3E0D7" />
-          </div>
 
-          <!-- Botones demo 2x2 -->
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px">
-            <button
-              v-for="demo in usuariosDemo"
-              :key="demo.email"
-              type="button"
-              :disabled="auth.cargando"
-              @click="loginRapido(demo)"
-              style="border:1px solid #d7ccc8; background:#FFFFFF; border-radius:8px; padding:8px 10px; cursor:pointer; display:flex; align-items:center; gap:8px; transition:background 0.15s"
-              @mouseenter="e => e.currentTarget.style.background='#f0e9df'"
-              @mouseleave="e => e.currentTarget.style.background='#FFFFFF'"
-            >
-              <v-icon :color="demo.color" size="16">{{ demo.icon }}</v-icon>
-              <span style="font-size:13px; font-weight:500; color:#1B4332">{{ demo.rol }}</span>
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   </div>

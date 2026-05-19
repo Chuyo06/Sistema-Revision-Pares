@@ -2,6 +2,7 @@
 import { test, expect } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as os from 'os';
 
 const BASE_URL = 'http://localhost:5173';
 
@@ -362,7 +363,7 @@ test.describe('E2E: Flujo Completo de Revision por Pares', () => {
     let pdfPath = '';
 
     test.beforeAll(async () => {
-      const dir = process.env.TEMP || 'C:\\Users\\franc\\AppData\\Local\\Temp';
+      const dir = os.tmpdir();
       pdfPath = path.join(dir, `test-v1-${Date.now()}.pdf`);
       const dummyPdf = Buffer.from('%PDF-1.4\n1 0 obj\n<</Type/Catalog/Pages 2 0 R>>\nendobj\n2 0 obj\n<</Type/Pages/Kids [3 0 R] /Count 1>>\nendobj\n3 0 obj\n<</Type/Page/MediaBox [0 0 612 792]/Parent 2 0 R>>\nendobj\nxref\n0 4\n0000000000 65535 f \n0000000009 00000 n \n0000000058 00000 n \n0000000115 00000 n \ntrailer\n<</Size 4/Root 1 0 R>>\nstartxref\n194\n%%EOF');
       fs.writeFileSync(pdfPath, dummyPdf);
@@ -425,7 +426,7 @@ test.describe('E2E: Flujo Completo de Revision por Pares', () => {
     let pdfPath = '';
 
     test.beforeAll(async () => {
-      const dir = process.env.TEMP || 'C:\\Users\\franc\\AppData\\Local\\Temp';
+      const dir = os.tmpdir();
       pdfPath = path.join(dir, `test-v2-${Date.now()}.pdf`);
       const dummyPdf = Buffer.from('%PDF-1.4\n1 0 obj\n<</Type/Catalog/Pages 2 0 R>>\nendobj\n2 0 obj\n<</Type/Pages/Kids [3 0 R] /Count 1>>\nendobj\n3 0 obj\n<</Type/Page/MediaBox [0 0 612 792]/Parent 2 0 R>>\nendobj\nxref\n0 4\n0000000000 65535 f \n0000000009 00000 n \n0000000058 00000 n \n0000000115 00000 n \ntrailer\n<</Size 4/Root 1 0 R>>\nstartxref\n194\n%%EOF');
       fs.writeFileSync(pdfPath, dummyPdf);
@@ -476,7 +477,7 @@ test.describe('E2E: Flujo Completo de Revision por Pares', () => {
     let pdfPath = '';
 
     test.beforeAll(async () => {
-      const dir = process.env.TEMP || 'C:\\Users\\franc\\AppData\\Local\\Temp';
+      const dir = os.tmpdir();
       pdfPath = path.join(dir, `test-v3-${Date.now()}.pdf`);
       const dummyPdf = Buffer.from('%PDF-1.4\n1 0 obj\n<</Type/Catalog/Pages 2 0 R>>\nendobj\n2 0 obj\n<</Type/Pages/Kids [3 0 R] /Count 1>>\nendobj\n3 0 obj\n<</Type/Page/MediaBox [0 0 612 792]/Parent 2 0 R>>\nendobj\nxref\n0 4\n0000000000 65535 f \n0000000009 00000 n \n0000000058 00000 n \n0000000115 00000 n \ntrailer\n<</Size 4/Root 1 0 R>>\nstartxref\n194\n%%EOF');
       fs.writeFileSync(pdfPath, dummyPdf);
@@ -521,7 +522,7 @@ test.describe('E2E: Flujo Completo de Revision por Pares', () => {
     let pdfPath = '';
 
     test.beforeAll(async () => {
-      const dir = process.env.TEMP || 'C:\\Users\\franc\\AppData\\Local\\Temp';
+      const dir = os.tmpdir();
       pdfPath = path.join(dir, `test-v4-${Date.now()}.pdf`);
       const dummyPdf = Buffer.from('%PDF-1.4\n1 0 obj\n<</Type/Catalog/Pages 2 0 R>>\nendobj\n2 0 obj\n<</Type/Pages/Kids [3 0 R] /Count 1>>\nendobj\n3 0 obj\n<</Type/Page/MediaBox [0 0 612 792]/Parent 2 0 R>>\nendobj\nxref\n0 4\n0000000000 65535 f \n0000000009 00000 n \n0000000058 00000 n \n0000000115 00000 n \ntrailer\n<</Size 4/Root 1 0 R>>\nstartxref\n194\n%%EOF');
       fs.writeFileSync(pdfPath, dummyPdf);

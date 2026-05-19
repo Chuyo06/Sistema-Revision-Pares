@@ -1,5 +1,6 @@
 // @ts-check
 import { test, expect } from '@playwright/test';
+import * as fs from 'fs';
 
 const BASE_URL = 'http://localhost:5173';
 const idUnico = Date.now().toString().slice(-4);
@@ -9,6 +10,13 @@ test.use({ launchOptions: { slowMo: 300 } });
 
 test('Flujo de Integración E2E Completo con Superusuario', async ({ page }) => {
   test.setTimeout(120000);
+
+  // Crear el PDF de prueba de manera dinámica para que la CI lo encuentre (evitando problemas de .gitignore)
+  const testPdfPath = 'tests/test.pdf';
+  if (!fs.existsSync(testPdfPath)) {
+    const dummyPdf = Buffer.from('%PDF-1.4\n1 0 obj\n<</Type/Catalog/Pages 2 0 R>>\nendobj\n2 0 obj\n<</Type/Pages/Kids [3 0 R] /Count 1>>\nendobj\n3 0 obj\n<</Type/Page/MediaBox [0 0 612 792]/Parent 2 0 R>>\nendobj\nxref\n0 4\n0000000000 65535 f \n0000000009 00000 n \n0000000058 00000 n \n0000000115 00000 n \ntrailer\n<<<>>\nstartxref\n194\n%%EOF');
+    fs.writeFileSync(testPdfPath, dummyPdf);
+  }
 
   // Interceptamos ÚNICAMENTE las respuestas GET de la API de manuscritos
   await page.route('**/api/manuscritos**', async route => {

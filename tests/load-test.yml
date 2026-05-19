@@ -1,0 +1,25 @@
+config:
+  target: "http://localhost:5173"
+  phases:
+    - duration: 60
+      arrivalRate: 5
+      rampTo: 20
+      name: "Warm up the API"
+    - duration: 60
+      arrivalRate: 20
+      name: "Sustained load"
+  plugins:
+    expect: {}
+
+scenarios:
+  - name: "Consultar Manuscritos (Simulación de concurrencia)"
+    flow:
+      - get:
+          url: "/api/manuscritos"
+          expect:
+            - statusCode: 200
+      - think: 2
+      - get:
+          url: "/api/manuscritos/autor/1"
+          expect:
+            - statusCode: 200

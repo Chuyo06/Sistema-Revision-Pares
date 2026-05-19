@@ -29,7 +29,8 @@
     "test:headed": "npx playwright test --headed",
     "test:debug": "npx playwright test --debug",
     "test:report": "npx playwright show-report",
-    "test:install": "npx playwright install chromium --with-deps"
+    "test:install": "npx playwright install chromium --with-deps",
+    "test:load": "artillery run tests/load-test.yml"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
